@@ -28,7 +28,7 @@ const Dashboard: FC = () => {
           📁 Your Word Templates
         </h2>
         <p className="text-slate-600 dark:text-slate-300 text-lg">
-          Upload DOCX files with placeholders like {'{{'}name{'}}'}  and fill them dynamically
+          Upload DOCX files with placeholders like {'{{'}name{'}}'}  and fill them dynamically.
         </p>
       </div>
 
