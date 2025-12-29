@@ -4,6 +4,7 @@ import { WordTemplateData } from "../types/word_template";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
+import { useTranslation } from "react-i18next";
 
 interface WordTemplateProcessorProps {
   template: Doc<WordTemplateData>;
@@ -14,6 +15,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   template,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [placeholders, setPlaceholders] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -93,14 +95,14 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         parse(placeHolderContent: any) {
           return placeHolderContent;
         },
-        postparse(parsed: any, options: any) {
+        postparse(parsed: any) {
           // This runs after docxtemplater parses the document
           return parsed;
         },
-        render(part: any, options: any) {
+        render(part: any) {
           return part;
         },
-        postrender(parts: any, options: any) {
+        postrender(parts: any) {
           return parts;
         },
         matchers() {
@@ -169,7 +171,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
       a.click();
       window.URL.revokeObjectURL(url);
 
-      showSuccessToast('Document processed and downloaded successfully!');
+      showSuccessToast(t('templateProcessor.processSuccess'));
       onClose();
     } catch (error) {
       console.error('Error processing document:', error);
@@ -205,11 +207,11 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         a.click();
         window.URL.revokeObjectURL(url);
 
-        showSuccessToast('Document processed and downloaded successfully!');
+        showSuccessToast(t('templateProcessor.processSuccess'));
         onClose();
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
-        showErrorToast('Error processing document. The Word file may have complex formatting that prevents placeholder replacement. Try recreating the document with simpler formatting.');
+        showErrorToast(t('templateProcessor.processError'));
       }
     } finally {
       setProcessing(false);
@@ -219,122 +221,123 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const isFormValid = placeholders.every(placeholder => formData[placeholder]?.trim());
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-t-2xl">
+    <div className="min-h-screen">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 shadow-lg">
           <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1">
-                📄 Process Template
+            <div className="min-w-0 flex-1 pr-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
+                📄 {t('templateProcessor.title')}
               </h2>
-              <p className="text-blue-100 text-sm truncate max-w-2xl">
+              <p className="text-blue-100 text-xs sm:text-sm truncate">
                 {template.data.name}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-red-200 transition-colors p-2 rounded-full hover:bg-white/10"
+              className="text-white hover:text-red-200 transition-colors p-2 rounded-full hover:bg-white/10 flex-shrink-0"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         </div>
         
-        <div className="p-8">
+        <div className="p-4 sm:p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 min-h-screen">
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
-              <p className="text-slate-600 dark:text-slate-400 text-lg font-medium">
-                Analyzing template...
+            <div className="flex flex-col items-center justify-center py-12 sm:py-16">
+              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+              <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg font-medium">
+                {t('templateProcessor.analyzing')}
               </p>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               {placeholders.length === 0 ? (
-                <div className="text-center py-16">
+                <div className="text-center py-12 sm:py-16">
                   <div className="mb-4">
-                    <span className="text-6xl">📋</span>
+                    <span className="text-5xl sm:text-6xl">📋</span>
                   </div>
-                  <p className="text-slate-600 dark:text-slate-300 text-xl mb-2">
-                    No placeholders found
+                  <p className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl mb-2">
+                    {t('templateProcessor.noPlaceholders')}
                   </p>
-                  <p className="text-slate-500 dark:text-slate-400">
-                    This template doesn't contain any placeholders to fill.
+                  <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
+                    {t('templateProcessor.noPlaceholdersDesc')}
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-xl p-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-xl p-4 sm:p-6">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-2xl">✨</span>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">
-                        Template Customization
+                      <span className="text-xl sm:text-2xl">✨</span>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50">
+                        {t('templateProcessor.customizationTitle')}
                       </h3>
                     </div>
-                    <p className="text-slate-700 dark:text-slate-300">
-                      Found <strong>{placeholders.length}</strong> placeholder{placeholders.length !== 1 ? 's' : ''} in your template. 
-                      Fill in the values below to personalize your document.
+                    <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: placeholders.length }) }}>
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-1 gap-8">
+                  <div className="grid grid-cols-1 gap-6 sm:gap-8">
                     {placeholders.map((placeholder) => (
-                      <div key={placeholder} className="space-y-4">
-                        <label className="block text-base font-bold text-slate-900 dark:text-slate-50 uppercase tracking-wider">
+                      <div key={placeholder} className="space-y-2 sm:space-y-3">
+                        <label className="block text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 uppercase tracking-wider">
                           <span className="inline-flex items-center gap-2">
                             🏷️ {placeholder}
                           </span>
                         </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={formData[placeholder] || ''}
-                            onChange={(e) => handleInputChange(placeholder, e.target.value)}
-                            className="w-full px-6 py-5 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-lg rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500 font-mono"
-                            placeholder={`Enter value for ${placeholder}... (50-60 characters recommended)`}
-                            autoComplete="off"
-                            style={{minWidth: '60ch'}}
-                          />
-                          {formData[placeholder]?.trim() && (
-                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                              <span className="text-green-500 text-xl">✓</span>
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={formData[placeholder] || ''}
+                              onChange={(e) => handleInputChange(placeholder, e.target.value)}
+                              className="w-full px-4 py-4 sm:px-6 sm:py-5 pr-12 sm:pr-24 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-base sm:text-lg rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
+                              placeholder={t('templateProcessor.enterValue', { placeholder })}
+                              autoComplete="off"
+                            />
+                            {formData[placeholder]?.trim() && (
+                              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                <span className="text-green-500 text-lg sm:text-xl">✓</span>
+                              </div>
+                            )}
+                            <div className="hidden sm:block absolute bottom-2 right-4 text-xs text-slate-400">
+                              {formData[placeholder]?.length || 0} {t('templateProcessor.chars')}
                             </div>
-                          )}
-                          <div className="absolute bottom-2 right-4 text-xs text-slate-400">
-                            {formData[placeholder]?.length || 0} chars
+                          </div>
+                          <div className="sm:hidden text-xs text-slate-400 px-1">
+                            {formData[placeholder]?.length || 0} {t('templateProcessor.chars')}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                   
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                       <button
                         onClick={processDocument}
                         disabled={!isFormValid || processing}
-                        className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
+                        className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-3 sm:py-4 px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
                       >
                         {processing ? (
-                          <span className="flex items-center justify-center gap-3">
-                            <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
-                            <span className="text-lg">Processing...</span>
+                          <span className="flex items-center justify-center gap-2 sm:gap-3">
+                            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-white border-t-transparent"></div>
+                            <span className="text-base sm:text-lg">{t('templateProcessor.processing')}</span>
                           </span>
                         ) : (
-                          <span className="flex items-center justify-center gap-3">
-                            <span className="text-xl">🚀</span>
-                            <span className="text-lg">Generate Document</span>
+                          <span className="flex items-center justify-center gap-2 sm:gap-3">
+                            <span className="text-lg sm:text-xl">🚀</span>
+                            <span className="text-base sm:text-lg">{t('templateProcessor.generateDocument')}</span>
                           </span>
                         )}
                       </button>
                       <button
                         onClick={onClose}
-                        className="flex-1 sm:flex-none sm:px-8 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                        className="flex-1 sm:flex-none sm:px-8 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
                       >
-                        Cancel
+                        {t('templateProcessor.cancel')}
                       </button>
                     </div>
                   </div>
@@ -343,7 +346,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 };

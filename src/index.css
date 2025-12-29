@@ -76,7 +76,23 @@
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .card {
+    @apply shadow-sm;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 375px) {
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  h2 {
+    font-size: 1.25rem;
   }
 }

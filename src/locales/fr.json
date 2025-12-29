@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Se déconnecter",
+    "toggleTheme": "Changer de thème"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Connectez-vous pour gérer vos modèles Word",
+    "signIn": "Se connecter avec Internet Identity",
+    "secureNote": "Vos modèles sont stockés en toute sécurité sur Internet Computer"
+  },
+  "dashboard": {
+    "title": "Vos modèles Word",
+    "subtitle": "Téléchargez des fichiers DOCX avec des espaces réservés comme {{name}} et remplissez-les dynamiquement."
+  },
+  "fileUpload": {
+    "title": "Télécharger un modèle Word",
+    "description": "Sélectionnez un fichier .docx avec des espaces réservés à télécharger",
+    "chooseFile": "Choisir un fichier",
+    "uploading": "Téléchargement...",
+    "fileExists": "Un fichier avec le nom \"{{filename}}\" existe déjà. Veuillez renommer votre fichier ou en choisir un autre.",
+    "invalidFileType": "Veuillez sélectionner un fichier .docx",
+    "uploadSuccess": "Modèle \"{{filename}}\" téléchargé avec succès !",
+    "uploadFailed": "Échec du téléchargement. Veuillez réessayer."
+  },
+  "fileList": {
+    "noTemplates": "Pas encore de modèles",
+    "getStarted": "Téléchargez votre premier modèle Word",
+    "processTemplate": "Traiter le modèle",
+    "size": "Taille",
+    "uploaded": "Téléchargé",
+    "deleteTemplate": "Supprimer le modèle",
+    "deleteConfirmTitle": "Supprimer le modèle",
+    "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer \"{{filename}}\" ? Cette action ne peut pas être annulée.",
+    "deleteSuccess": "Modèle \"{{filename}}\" supprimé avec succès",
+    "deleteFailed": "Échec de la suppression du fichier. Veuillez réessayer."
+  },
+  "templateProcessor": {
+    "title": "Traiter le modèle",
+    "analyzing": "Analyse du modèle...",
+    "noPlaceholders": "Aucun espace réservé trouvé",
+    "noPlaceholdersDesc": "Ce modèle ne contient aucun espace réservé à remplir.",
+    "customizationTitle": "Personnalisation du modèle",
+    "customizationDesc": "<strong>{{count}}</strong> espace{{plural}} réservé trouvé dans votre modèle. Remplissez les valeurs ci-dessous pour personnaliser votre document.",
+    "enterValue": "Entrez la valeur pour {{placeholder}}...",
+    "chars": "caractères",
+    "generateDocument": "Générer le document",
+    "processing": "Traitement...",
+    "cancel": "Annuler",
+    "processSuccess": "Document traité et téléchargé avec succès !",
+    "processError": "Erreur lors du traitement du document. Le fichier Word peut avoir un formatage complexe qui empêche le remplacement des espaces réservés. Essayez de recréer le document avec un formatage plus simple."
+  },
+  "confirmDialog": {
+    "confirmAction": "Confirmer l'action",
+    "ok": "OK",
+    "cancel": "Annuler"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Cerrar sesión",
+    "toggleTheme": "Cambiar tema"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Inicie sesión para administrar sus plantillas de Word",
+    "signIn": "Iniciar sesión con Internet Identity",
+    "secureNote": "Sus plantillas se almacenan de forma segura en Internet Computer"
+  },
+  "dashboard": {
+    "title": "Sus plantillas de Word",
+    "subtitle": "Cargue archivos DOCX con marcadores como {{name}} y rellénelos dinámicamente."
+  },
+  "fileUpload": {
+    "title": "Cargar plantilla de Word",
+    "description": "Seleccione un archivo .docx con marcadores para cargar",
+    "chooseFile": "Elegir archivo",
+    "uploading": "Cargando...",
+    "fileExists": "Ya existe un archivo con el nombre \"{{filename}}\". Por favor, cambie el nombre de su archivo o elija otro.",
+    "invalidFileType": "Por favor, seleccione un archivo .docx",
+    "uploadSuccess": "¡Plantilla \"{{filename}}\" cargada exitosamente!",
+    "uploadFailed": "Error al cargar. Por favor, inténtelo de nuevo."
+  },
+  "fileList": {
+    "noTemplates": "Aún no hay plantillas",
+    "getStarted": "Cargue su primera plantilla de Word",
+    "processTemplate": "Procesar plantilla",
+    "size": "Tamaño",
+    "uploaded": "Cargado",
+    "deleteTemplate": "Eliminar plantilla",
+    "deleteConfirmTitle": "Eliminar plantilla",
+    "deleteConfirmMessage": "¿Está seguro de que desea eliminar \"{{filename}}\"? Esta acción no se puede deshacer.",
+    "deleteSuccess": "Plantilla \"{{filename}}\" eliminada exitosamente",
+    "deleteFailed": "Error al eliminar el archivo. Por favor, inténtelo de nuevo."
+  },
+  "templateProcessor": {
+    "title": "Procesar plantilla",
+    "analyzing": "Analizando plantilla...",
+    "noPlaceholders": "No se encontraron marcadores",
+    "noPlaceholdersDesc": "Esta plantilla no contiene marcadores para rellenar.",
+    "customizationTitle": "Personalización de plantilla",
+    "customizationDesc": "Se encontraron <strong>{{count}}</strong> marcador{{plural}} en su plantilla. Complete los valores a continuación para personalizar su documento.",
+    "enterValue": "Ingrese el valor para {{placeholder}}...",
+    "chars": "caracteres",
+    "generateDocument": "Generar documento",
+    "processing": "Procesando...",
+    "cancel": "Cancelar",
+    "processSuccess": "¡Documento procesado y descargado exitosamente!",
+    "processError": "Error al procesar el documento. El archivo de Word puede tener un formato complejo que impide el reemplazo de marcadores. Intente recrear el documento con un formato más simple."
+  },
+  "confirmDialog": {
+    "confirmAction": "Confirmar acción",
+    "ok": "OK",
+    "cancel": "Cancelar"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

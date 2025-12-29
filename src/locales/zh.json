@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "登出",
+    "toggleTheme": "切换主题"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "登录以管理您的 Word 模板",
+    "signIn": "使用 Internet Identity 登录",
+    "secureNote": "您的模板安全存储在 Internet Computer 上"
+  },
+  "dashboard": {
+    "title": "您的 Word 模板",
+    "subtitle": "上传带有占位符（如 {{name}}）的 DOCX 文件并动态填充它们。"
+  },
+  "fileUpload": {
+    "title": "上传 Word 模板",
+    "description": "选择带有占位符的 .docx 文件进行上传",
+    "chooseFile": "选择文件",
+    "uploading": "上传中...",
+    "fileExists": "名为 \"{{filename}}\" 的文件已存在。请重命名您的文件或选择其他文件。",
+    "invalidFileType": "请选择 .docx 文件",
+    "uploadSuccess": "模板 \"{{filename}}\" 上传成功！",
+    "uploadFailed": "上传失败。请重试。"
+  },
+  "fileList": {
+    "noTemplates": "暂无模板",
+    "getStarted": "上传您的第一个 Word 模板",
+    "processTemplate": "处理模板",
+    "size": "大小",
+    "uploaded": "已上传",
+    "deleteTemplate": "删除模板",
+    "deleteConfirmTitle": "删除模板",
+    "deleteConfirmMessage": "确定要删除 \"{{filename}}\" 吗？此操作无法撤消。",
+    "deleteSuccess": "模板 \"{{filename}}\" 已成功删除",
+    "deleteFailed": "删除文件失败。请重试。"
+  },
+  "templateProcessor": {
+    "title": "处理模板",
+    "analyzing": "正在分析模板...",
+    "noPlaceholders": "未找到占位符",
+    "noPlaceholdersDesc": "此模板不包含要填充的占位符。",
+    "customizationTitle": "模板自定义",
+    "customizationDesc": "在您的模板中找到 <strong>{{count}}</strong> 个占位符{{plural}}。填写以下值以个性化您的文档。",
+    "enterValue": "输入 {{placeholder}} 的值...",
+    "chars": "字符",
+    "generateDocument": "生成文档",
+    "processing": "处理中...",
+    "cancel": "取消",
+    "processSuccess": "文档已成功处理并下载！",
+    "processError": "处理文档时出错。Word 文件可能具有复杂的格式，导致无法替换占位符。尝试使用更简单的格式重新创建文档。"
+  },
+  "confirmDialog": {
+    "confirmAction": "确认操作",
+    "ok": "确定",
+    "cancel": "取消"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

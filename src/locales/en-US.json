@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Logout",
+    "toggleTheme": "Toggle theme"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Sign in to manage your Word templates",
+    "signIn": "Sign in with Internet Identity",
+    "secureNote": "Your templates are stored securely on the Internet Computer"
+  },
+  "dashboard": {
+    "title": "Your Word Templates",
+    "subtitle": "Upload DOCX files with placeholders like {{name}} and fill them dynamically."
+  },
+  "fileUpload": {
+    "title": "Upload Word Template",
+    "description": "Select a .docx file with placeholders to upload",
+    "chooseFile": "Choose File",
+    "uploading": "Uploading...",
+    "fileExists": "A file with the name \"{{filename}}\" already exists. Please rename your file or choose a different one.",
+    "invalidFileType": "Please select a .docx file",
+    "uploadSuccess": "Template \"{{filename}}\" uploaded successfully!",
+    "uploadFailed": "Upload failed. Please try again."
+  },
+  "fileList": {
+    "noTemplates": "No templates yet",
+    "getStarted": "Upload your first Word template to get started",
+    "processTemplate": "Process Template",
+    "size": "Size",
+    "uploaded": "Uploaded",
+    "deleteTemplate": "Delete template",
+    "deleteConfirmTitle": "Delete Template",
+    "deleteConfirmMessage": "Are you sure you want to delete \"{{filename}}\"? This action cannot be undone.",
+    "deleteSuccess": "Template \"{{filename}}\" deleted successfully",
+    "deleteFailed": "Failed to delete file. Please try again."
+  },
+  "templateProcessor": {
+    "title": "Process Template",
+    "analyzing": "Analyzing template...",
+    "noPlaceholders": "No placeholders found",
+    "noPlaceholdersDesc": "This template doesn't contain any placeholders to fill.",
+    "customizationTitle": "Template Customization",
+    "customizationDesc": "Found <strong>{{count}}</strong> placeholder{{plural}} in your template. Fill in the values below to personalize your document.",
+    "enterValue": "Enter value for {{placeholder}}...",
+    "chars": "chars",
+    "generateDocument": "Generate Document",
+    "processing": "Processing...",
+    "cancel": "Cancel",
+    "processSuccess": "Document processed and downloaded successfully!",
+    "processError": "Error processing document. The Word file may have complex formatting that prevents placeholder replacement. Try recreating the document with simpler formatting."
+  },
+  "confirmDialog": {
+    "confirmAction": "Confirm Action",
+    "ok": "OK",
+    "cancel": "Cancel"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

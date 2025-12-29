@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Abmelden",
+    "toggleTheme": "Design wechseln"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Melden Sie sich an, um Ihre Word-Vorlagen zu verwalten",
+    "signIn": "Mit Internet Identity anmelden",
+    "secureNote": "Ihre Vorlagen werden sicher auf dem Internet Computer gespeichert"
+  },
+  "dashboard": {
+    "title": "Ihre Word-Vorlagen",
+    "subtitle": "Laden Sie DOCX-Dateien mit Platzhaltern wie {{name}} hoch und füllen Sie sie dynamisch aus."
+  },
+  "fileUpload": {
+    "title": "Word-Vorlage hochladen",
+    "description": "Wählen Sie eine .docx-Datei mit Platzhaltern zum Hochladen",
+    "chooseFile": "Datei auswählen",
+    "uploading": "Wird hochgeladen...",
+    "fileExists": "Eine Datei mit dem Namen \"{{filename}}\" existiert bereits. Bitte benennen Sie Ihre Datei um oder wählen Sie eine andere.",
+    "invalidFileType": "Bitte wählen Sie eine .docx-Datei",
+    "uploadSuccess": "Vorlage \"{{filename}}\" erfolgreich hochgeladen!",
+    "uploadFailed": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut."
+  },
+  "fileList": {
+    "noTemplates": "Noch keine Vorlagen",
+    "getStarted": "Laden Sie Ihre erste Word-Vorlage hoch",
+    "processTemplate": "Vorlage verarbeiten",
+    "size": "Größe",
+    "uploaded": "Hochgeladen",
+    "deleteTemplate": "Vorlage löschen",
+    "deleteConfirmTitle": "Vorlage löschen",
+    "deleteConfirmMessage": "Möchten Sie \"{{filename}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deleteSuccess": "Vorlage \"{{filename}}\" erfolgreich gelöscht",
+    "deleteFailed": "Fehler beim Löschen der Datei. Bitte versuchen Sie es erneut."
+  },
+  "templateProcessor": {
+    "title": "Vorlage verarbeiten",
+    "analyzing": "Analysiere Vorlage...",
+    "noPlaceholders": "Keine Platzhalter gefunden",
+    "noPlaceholdersDesc": "Diese Vorlage enthält keine auszufüllenden Platzhalter.",
+    "customizationTitle": "Vorlagenanpassung",
+    "customizationDesc": "<strong>{{count}}</strong> Platzhalter{{plural}} in Ihrer Vorlage gefunden. Füllen Sie die Werte unten aus, um Ihr Dokument anzupassen.",
+    "enterValue": "Geben Sie einen Wert für {{placeholder}} ein...",
+    "chars": "Zeichen",
+    "generateDocument": "Dokument generieren",
+    "processing": "Wird verarbeitet...",
+    "cancel": "Abbrechen",
+    "processSuccess": "Dokument erfolgreich verarbeitet und heruntergeladen!",
+    "processError": "Fehler beim Verarbeiten des Dokuments. Die Word-Datei kann eine komplexe Formatierung aufweisen, die das Ersetzen der Platzhalter verhindert. Versuchen Sie, das Dokument mit einfacherer Formatierung neu zu erstellen."
+  },
+  "confirmDialog": {
+    "confirmAction": "Aktion bestätigen",
+    "ok": "OK",
+    "cancel": "Abbrechen"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

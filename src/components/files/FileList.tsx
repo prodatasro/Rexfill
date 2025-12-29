@@ -4,6 +4,7 @@ import { WordTemplateData } from '../../types/word_template';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { showErrorToast, showSuccessToast } from '../../utils/toast';
 import { useConfirm } from '../../contexts/ConfirmContext';
+import { useTranslation } from 'react-i18next';
 
 interface FileListProps {
   onTemplateSelect: (template: Doc<WordTemplateData>) => void;
@@ -12,6 +13,7 @@ interface FileListProps {
 }
 
 const FileList: FC<FileListProps> = ({ onTemplateSelect, onFileDeleted, refreshTrigger }) => {
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState<Doc<WordTemplateData>[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
@@ -36,10 +38,10 @@ const FileList: FC<FileListProps> = ({ onTemplateSelect, onFileDeleted, refreshT
 
   const handleDelete = async (template: Doc<WordTemplateData>) => {
     const confirmed = await confirm({
-      title: 'Delete Template',
-      message: `Are you sure you want to delete "${template.data.name}"? This action cannot be undone.`,
-      confirmLabel: 'Delete',
-      cancelLabel: 'Cancel',
+      title: t('fileList.deleteConfirmTitle'),
+      message: t('fileList.deleteConfirmMessage', { filename: template.data.name }),
+      confirmLabel: t('confirmDialog.ok'),
+      cancelLabel: t('confirmDialog.cancel'),
       variant: 'danger'
     });
 
@@ -59,11 +61,11 @@ const FileList: FC<FileListProps> = ({ onTemplateSelect, onFileDeleted, refreshT
         doc: template
       });
 
-      showSuccessToast(`Template "${template.data.name}" deleted successfully`);
+      showSuccessToast(t('fileList.deleteSuccess', { filename: template.data.name }));
       onFileDeleted();
     } catch (error) {
       console.error('Delete failed:', error);
-      showErrorToast('Failed to delete file. Please try again.');
+      showErrorToast(t('fileList.deleteFailed'));
     } finally {
       setDeletingIds(prev => {
         const newSet = new Set(prev);
@@ -101,13 +103,13 @@ const FileList: FC<FileListProps> = ({ onTemplateSelect, onFileDeleted, refreshT
 
   if (templates.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">📋</div>
-        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-          No templates yet
+      <div className="text-center py-8 sm:py-12 px-4">
+        <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📋</div>
+        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-50 mb-2">
+          {t('fileList.noTemplates')}
         </h3>
-        <p className="text-slate-600 dark:text-slate-300">
-          Upload your first Word template to get started
+        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300">
+          {t('fileList.getStarted')}
         </p>
       </div>
     );
@@ -121,15 +123,15 @@ const FileList: FC<FileListProps> = ({ onTemplateSelect, onFileDeleted, refreshT
         return (
           <div
             key={template.key}
-            className="card p-6 hover:shadow-lg transition-all"
+            className="card p-4 sm:p-6 hover:shadow-lg transition-all"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="text-4xl">📄</div>
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="text-3xl sm:text-4xl">📄</div>
               <button
                 onClick={() => handleDelete(template)}
                 disabled={isDeleting}
                 className="text-red-500 hover:text-red-700 disabled:text-slate-400 transition-colors p-1"
-                title="Delete template"
+                title={t('fileList.deleteTemplate')}
               >
                 {isDeleting ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-red-500 border-t-transparent"></div>
@@ -141,21 +143,21 @@ const FileList: FC<FileListProps> = ({ onTemplateSelect, onFileDeleted, refreshT
               </button>
             </div>
             
-            <h3 className="font-bold text-slate-900 dark:text-slate-50 mb-2 truncate" title={template.data.name}>
+            <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-50 mb-2 truncate" title={template.data.name}>
               {template.data.name}
             </h3>
             
-            <div className="text-sm text-slate-600 dark:text-slate-300 space-y-1 mb-4">
-              <p>Size: {formatFileSize(template.data.size)}</p>
-              <p>Uploaded: {formatDate(template.data.uploadedAt)}</p>
+            <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-1 mb-3 sm:mb-4">
+              <p>{t('fileList.size')}: {formatFileSize(template.data.size)}</p>
+              <p>{t('fileList.uploaded')}: {formatDate(template.data.uploadedAt)}</p>
             </div>
             
             <button
               onClick={() => onTemplateSelect(template)}
               disabled={isDeleting}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:cursor-not-allowed text-sm sm:text-base"
             >
-              ✨ Process Template
+              ✨ {t('fileList.processTemplate')}
             </button>
           </div>
         );

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, FC } from 'react';
-import { onAuthStateChange, signIn, signOut, User } from '@junobuild/core';
+import { onAuthStateChange, signIn, signOut, User, SignInUserInterruptError } from '@junobuild/core';
 import { showErrorToast } from '../utils/toast';
 
 interface AuthContextType {
@@ -32,9 +32,18 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const login = async () => {
     try {
       await signIn({
-        internet_identity: { }
+        internet_identity: {
+          options: {
+            domain: "id.ai"
+          } 
+      }
       });
     } catch (error) {
+      if (error instanceof SignInUserInterruptError) {
+          // User canceled sign-in, no need to show an error
+          return;
+        }
+
       console.error('Login failed:', error);
       // Don't show error for user cancellation
       if (error && typeof error === 'object' && 'name' in error && error.name !== 'UserInterruptedError') {

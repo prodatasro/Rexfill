@@ -1,0 +1,76 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Odhlásiť sa",
+    "toggleTheme": "Prepnúť tému"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Prihláste sa na správu vašich Word šablón",
+    "signIn": "Prihlásiť sa cez Internet Identity",
+    "secureNote": "Vaše šablóny sú bezpečne uložené na Internet Computeri"
+  },
+  "dashboard": {
+    "title": "Vaše Word šablóny",
+    "subtitle": "Nahrajte DOCX súbory s premennými ako {{name}} a vypĺňajte ich dynamicky."
+  },
+  "fileUpload": {
+    "title": "Nahrať Word šablónu",
+    "description": "Vyberte .docx súbor s premennými na nahratie",
+    "chooseFile": "Vybrať súbor",
+    "uploading": "Nahrávam...",
+    "fileExists": "Súbor s názvom \"{{filename}}\" už existuje. Prosím premenujte váš súbor alebo vyberte iný.",
+    "invalidFileType": "Prosím vyberte .docx súbor",
+    "uploadSuccess": "Šablóna \"{{filename}}\" bola úspešne nahraná!",
+    "uploadFailed": "Nahrávanie zlyhalo. Prosím skúste znova."
+  },
+  "fileList": {
+    "noTemplates": "Zatiaľ žiadne šablóny",
+    "getStarted": "Nahrajte svoju prvú Word šablónu",
+    "processTemplate": "Spracovať šablónu",
+    "size": "Veľkosť",
+    "uploaded": "Nahrané",
+    "deleteTemplate": "Zmazať šablónu",
+    "deleteConfirmTitle": "Zmazať šablónu",
+    "deleteConfirmMessage": "Naozaj chcete zmazať \"{{filename}}\"? Túto akciu nie je možné vrátiť späť.",
+    "deleteSuccess": "Šablóna \"{{filename}}\" bola úspešne zmazaná",
+    "deleteFailed": "Nepodarilo sa zmazať súbor. Prosím skúste znova."
+  },
+  "templateProcessor": {
+    "title": "Spracovať šablónu",
+    "analyzing": "Analyzujem šablónu...",
+    "noPlaceholders": "Neboli nájdené žiadne premenné",
+    "noPlaceholdersDesc": "Táto šablóna neobsahuje žiadne premenné na vyplnenie.",
+    "customizationTitle": "Prispôsobenie šablóny",
+    "customizationDesc_one": "Našla sa <strong>{{count}}</strong> premenná vo vašej šablóne. Vyplňte hodnotu nižšie pre prispôsobenie dokumentu.",
+    "customizationDesc_few": "Našli sa <strong>{{count}}</strong> premenné vo vašej šablóne. Vyplňte hodnoty nižšie pre prispôsobenie dokumentu.",
+    "customizationDesc_other": "Našlo sa <strong>{{count}}</strong> premenných vo vašej šablóne. Vyplňte hodnoty nižšie pre prispôsobenie dokumentu.",
+    "enterValue": "Zadajte hodnotu pre {{placeholder}}...",
+    "chars": "znakov",
+    "generateDocument": "Vygenerovať dokument",
+    "processing": "Spracúvam...",
+    "cancel": "Zrušiť",
+    "processSuccess": "Dokument bol úspešne spracovaný a stiahnutý!",
+    "processError": "Chyba pri spracovaní dokumentu. Word súbor môže mať komplexné formátovanie, ktoré bráni nahradeniu premenných. Skúste znova vytvoriť dokument s jednoduchším formátovaním."
+  },
+  "confirmDialog": {
+    "confirmAction": "Potvrdiť akciu",
+    "ok": "OK",
+    "cancel": "Zrušiť"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

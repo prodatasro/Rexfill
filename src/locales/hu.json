@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Kijelentkezés",
+    "toggleTheme": "Téma váltása"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Jelentkezzen be a Word sablonok kezeléséhez",
+    "signIn": "Bejelentkezés Internet Identity-vel",
+    "secureNote": "A sablonjai biztonságosan vannak tárolva az Internet Computeren"
+  },
+  "dashboard": {
+    "title": "Az Ön Word sablonjai",
+    "subtitle": "Töltsön fel DOCX fájlokat helyőrzőkkel, mint például {{name}}, és töltse ki őket dinamikusan."
+  },
+  "fileUpload": {
+    "title": "Word sablon feltöltése",
+    "description": "Válasszon ki egy .docx fájlt helyőrzőkkel a feltöltéshez",
+    "chooseFile": "Fájl kiválasztása",
+    "uploading": "Feltöltés...",
+    "fileExists": "A \"{{filename}}\" nevű fájl már létezik. Kérjük, nevezze át a fájlt vagy válasszon másikat.",
+    "invalidFileType": "Kérjük, válasszon .docx fájlt",
+    "uploadSuccess": "A \"{{filename}}\" sablon sikeresen feltöltve!",
+    "uploadFailed": "A feltöltés sikertelen. Kérjük, próbálja újra."
+  },
+  "fileList": {
+    "noTemplates": "Még nincsenek sablonok",
+    "getStarted": "Töltse fel az első Word sablonját",
+    "processTemplate": "Sablon feldolgozása",
+    "size": "Méret",
+    "uploaded": "Feltöltve",
+    "deleteTemplate": "Sablon törlése",
+    "deleteConfirmTitle": "Sablon törlése",
+    "deleteConfirmMessage": "Biztosan törölni szeretné a \"{{filename}}\" fájlt? Ez a művelet nem vonható vissza.",
+    "deleteSuccess": "A \"{{filename}}\" sablon sikeresen törölve",
+    "deleteFailed": "A fájl törlése sikertelen. Kérjük, próbálja újra."
+  },
+  "templateProcessor": {
+    "title": "Sablon feldolgozása",
+    "analyzing": "Sablon elemzése...",
+    "noPlaceholders": "Nem találhatók helyőrzők",
+    "noPlaceholdersDesc": "Ez a sablon nem tartalmaz kitöltendő helyőrzőket.",
+    "customizationTitle": "Sablon testreszabása",
+    "customizationDesc": "<strong>{{count}}</strong> helyőrző{{plural}} található a sablonban. Töltse ki az alábbi értékeket a dokumentum személyre szabásához.",
+    "enterValue": "Adja meg a {{placeholder}} értékét...",
+    "chars": "karakter",
+    "generateDocument": "Dokumentum generálása",
+    "processing": "Feldolgozás...",
+    "cancel": "Mégse",
+    "processSuccess": "A dokumentum sikeresen feldolgozva és letöltve!",
+    "processError": "Hiba a dokumentum feldolgozása során. A Word fájl összetett formázást tartalmazhat, amely megakadályozza a helyőrzők cseréjét. Próbálja meg újra létrehozni a dokumentumot egyszerűbb formázással."
+  },
+  "confirmDialog": {
+    "confirmAction": "Művelet megerősítése",
+    "ok": "OK",
+    "cancel": "Mégse"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

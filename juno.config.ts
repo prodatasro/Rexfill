@@ -5,7 +5,7 @@ export default defineConfig({
     ids: {
       // Add your satellite IDs here
       development: "atbka-rp777-77775-aaaaq-cai",
-      production: "your-prod-satellite-id"
+      production: "ufqml-byaaa-aaaas-amtia-cai"
     },
     source: "dist",
   }

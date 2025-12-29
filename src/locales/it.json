@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Esci",
+    "toggleTheme": "Cambia tema"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Accedi per gestire i tuoi modelli Word",
+    "signIn": "Accedi con Internet Identity",
+    "secureNote": "I tuoi modelli sono archiviati in modo sicuro su Internet Computer"
+  },
+  "dashboard": {
+    "title": "I tuoi modelli Word",
+    "subtitle": "Carica file DOCX con segnaposto come {{name}} e compilali dinamicamente."
+  },
+  "fileUpload": {
+    "title": "Carica modello Word",
+    "description": "Seleziona un file .docx con segnaposto da caricare",
+    "chooseFile": "Scegli file",
+    "uploading": "Caricamento...",
+    "fileExists": "Esiste già un file con il nome \"{{filename}}\". Si prega di rinominare il file o sceglierne un altro.",
+    "invalidFileType": "Si prega di selezionare un file .docx",
+    "uploadSuccess": "Modello \"{{filename}}\" caricato con successo!",
+    "uploadFailed": "Caricamento fallito. Si prega di riprovare."
+  },
+  "fileList": {
+    "noTemplates": "Nessun modello ancora",
+    "getStarted": "Carica il tuo primo modello Word",
+    "processTemplate": "Elabora modello",
+    "size": "Dimensione",
+    "uploaded": "Caricato",
+    "deleteTemplate": "Elimina modello",
+    "deleteConfirmTitle": "Elimina modello",
+    "deleteConfirmMessage": "Sei sicuro di voler eliminare \"{{filename}}\"? Questa azione non può essere annullata.",
+    "deleteSuccess": "Modello \"{{filename}}\" eliminato con successo",
+    "deleteFailed": "Impossibile eliminare il file. Si prega di riprovare."
+  },
+  "templateProcessor": {
+    "title": "Elabora modello",
+    "analyzing": "Analisi del modello...",
+    "noPlaceholders": "Nessun segnaposto trovato",
+    "noPlaceholdersDesc": "Questo modello non contiene segnaposto da compilare.",
+    "customizationTitle": "Personalizzazione modello",
+    "customizationDesc": "Trovati <strong>{{count}}</strong> segnaposto{{plural}} nel tuo modello. Compila i valori qui sotto per personalizzare il tuo documento.",
+    "enterValue": "Inserisci il valore per {{placeholder}}...",
+    "chars": "caratteri",
+    "generateDocument": "Genera documento",
+    "processing": "Elaborazione...",
+    "cancel": "Annulla",
+    "processSuccess": "Documento elaborato e scaricato con successo!",
+    "processError": "Errore nell'elaborazione del documento. Il file Word potrebbe avere una formattazione complessa che impedisce la sostituzione dei segnaposto. Prova a ricreare il documento con una formattazione più semplice."
+  },
+  "confirmDialog": {
+    "confirmAction": "Conferma azione",
+    "ok": "OK",
+    "cancel": "Annulla"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

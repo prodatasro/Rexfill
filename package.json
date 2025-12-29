@@ -16,10 +16,12 @@
     "@junobuild/core": "^3.3.2",
     "@junobuild/functions": "^0.5.3",
     "docxtemplater": "^3.47.2",
+    "i18next": "^25.7.3",
     "nanoid": "^5.1.5",
     "pizzip": "^3.1.6",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "react-i18next": "^16.5.0",
     "sonner": "^2.0.7"
   },
   "devDependencies": {

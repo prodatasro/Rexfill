@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Wyloguj się",
+    "toggleTheme": "Przełącz motyw"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Zaloguj się, aby zarządzać swoimi szablonami Word",
+    "signIn": "Zaloguj się przez Internet Identity",
+    "secureNote": "Twoje szablony są bezpiecznie przechowywane na Internet Computer"
+  },
+  "dashboard": {
+    "title": "Twoje szablony Word",
+    "subtitle": "Prześlij pliki DOCX ze zmiennymi takimi jak {{name}} i wypełniaj je dynamicznie."
+  },
+  "fileUpload": {
+    "title": "Prześlij szablon Word",
+    "description": "Wybierz plik .docx ze zmiennymi do przesłania",
+    "chooseFile": "Wybierz plik",
+    "uploading": "Przesyłanie...",
+    "fileExists": "Plik o nazwie \"{{filename}}\" już istnieje. Proszę zmienić nazwę pliku lub wybrać inny.",
+    "invalidFileType": "Proszę wybrać plik .docx",
+    "uploadSuccess": "Szablon \"{{filename}}\" został pomyślnie przesłany!",
+    "uploadFailed": "Przesyłanie nie powiodło się. Spróbuj ponownie."
+  },
+  "fileList": {
+    "noTemplates": "Brak szablonów",
+    "getStarted": "Prześlij swój pierwszy szablon Word",
+    "processTemplate": "Przetwórz szablon",
+    "size": "Rozmiar",
+    "uploaded": "Przesłano",
+    "deleteTemplate": "Usuń szablon",
+    "deleteConfirmTitle": "Usuń szablon",
+    "deleteConfirmMessage": "Czy na pewno chcesz usunąć \"{{filename}}\"? Tej akcji nie można cofnąć.",
+    "deleteSuccess": "Szablon \"{{filename}}\" został pomyślnie usunięty",
+    "deleteFailed": "Nie udało się usunąć pliku. Spróbuj ponownie."
+  },
+  "templateProcessor": {
+    "title": "Przetwórz szablon",
+    "analyzing": "Analizuję szablon...",
+    "noPlaceholders": "Nie znaleziono zmiennych",
+    "noPlaceholdersDesc": "Ten szablon nie zawiera żadnych zmiennych do wypełnienia.",
+    "customizationTitle": "Dostosowanie szablonu",
+    "customizationDesc": "Znaleziono <strong>{{count}}</strong> zmienna{{plural}} w Twoim szablonie. Wypełnij wartości poniżej, aby spersonalizować dokument.",
+    "enterValue": "Wprowadź wartość dla {{placeholder}}...",
+    "chars": "znaków",
+    "generateDocument": "Wygeneruj dokument",
+    "processing": "Przetwarzanie...",
+    "cancel": "Anuluj",
+    "processSuccess": "Dokument został pomyślnie przetworzony i pobrany!",
+    "processError": "Błąd podczas przetwarzania dokumentu. Plik Word może mieć złożone formatowanie, które uniemożliwia zastąpienie zmiennych. Spróbuj odtworzyć dokument z prostszym formatowaniem."
+  },
+  "confirmDialog": {
+    "confirmAction": "Potwierdź akcję",
+    "ok": "OK",
+    "cancel": "Anuluj"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

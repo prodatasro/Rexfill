@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "Odhlásit se",
+    "toggleTheme": "Přepnout téma"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Přihlaste se ke správě vašich Word šablon",
+    "signIn": "Přihlásit se přes Internet Identity",
+    "secureNote": "Vaše šablony jsou bezpečně uloženy na Internet Computeru"
+  },
+  "dashboard": {
+    "title": "Vaše Word šablony",
+    "subtitle": "Nahrajte DOCX soubory s proměnnými jako {{name}} a vyplňujte je dynamicky."
+  },
+  "fileUpload": {
+    "title": "Nahrát Word šablonu",
+    "description": "Vyberte .docx soubor s proměnnými k nahrání",
+    "chooseFile": "Vybrat soubor",
+    "uploading": "Nahrávám...",
+    "fileExists": "Soubor s názvem \"{{filename}}\" již existuje. Prosím přejmenujte váš soubor nebo vyberte jiný.",
+    "invalidFileType": "Prosím vyberte .docx soubor",
+    "uploadSuccess": "Šablona \"{{filename}}\" byla úspěšně nahrána!",
+    "uploadFailed": "Nahrávání selhalo. Prosím zkuste znovu."
+  },
+  "fileList": {
+    "noTemplates": "Zatím žádné šablony",
+    "getStarted": "Nahrajte svou první Word šablonu",
+    "processTemplate": "Zpracovat šablonu",
+    "size": "Velikost",
+    "uploaded": "Nahráno",
+    "deleteTemplate": "Smazat šablonu",
+    "deleteConfirmTitle": "Smazat šablonu",
+    "deleteConfirmMessage": "Opravdu chcete smazat \"{{filename}}\"? Tuto akci nelze vrátit zpět.",
+    "deleteSuccess": "Šablona \"{{filename}}\" byla úspěšně smazána",
+    "deleteFailed": "Nepodařilo se smazat soubor. Prosím zkuste znovu."
+  },
+  "templateProcessor": {
+    "title": "Zpracovat šablonu",
+    "analyzing": "Analyzuji šablonu...",
+    "noPlaceholders": "Nebyly nalezeny žádné proměnné",
+    "noPlaceholdersDesc": "Tato šablona neobsahuje žádné proměnné k vyplnění.",
+    "customizationTitle": "Přizpůsobení šablony",
+    "customizationDesc": "Nalezena <strong>{{count}}</strong> proměnná{{plural}} ve vaší šabloně. Vyplňte hodnoty níže pro přizpůsobení dokumentu.",
+    "enterValue": "Zadejte hodnotu pro {{placeholder}}...",
+    "chars": "znaků",
+    "generateDocument": "Vygenerovat dokument",
+    "processing": "Zpracovávám...",
+    "cancel": "Zrušit",
+    "processSuccess": "Dokument byl úspěšně zpracován a stažen!",
+    "processError": "Chyba při zpracování dokumentu. Word soubor může mít komplexní formátování, které brání nahrazení proměnných. Zkuste znovu vytvořit dokument s jednodušším formátováním."
+  },
+  "confirmDialog": {
+    "confirmAction": "Potvrdit akci",
+    "ok": "OK",
+    "cancel": "Zrušit"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}

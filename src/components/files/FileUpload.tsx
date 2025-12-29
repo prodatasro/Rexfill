@@ -2,12 +2,14 @@ import { FC, useRef, useState } from 'react';
 import { uploadFile } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
+import { useTranslation } from 'react-i18next';
 
 interface FileUploadProps {
   onUploadSuccess: () => void;
 }
 
 const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess }) => {
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +32,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess }) => {
     if (!file) return;
 
     if (!file.name.endsWith('.docx')) {
-      showWarningToast('Please select a .docx file');
+      showWarningToast(t('fileUpload.invalidFileType'));
       return;
     }
 
@@ -39,7 +41,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess }) => {
       // Check if file with same name already exists
       const fileExists = await checkFileExists(file.name);
       if (fileExists) {
-        showWarningToast(`A file with the name "${file.name}" already exists. Please rename your file or choose a different one.`);
+        showWarningToast(t('fileUpload.fileExists', { filename: file.name }));
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -72,14 +74,14 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess }) => {
         }
       });
 
-      showSuccessToast(`Template "${file.name}" uploaded successfully!`);
+      showSuccessToast(t('fileUpload.uploadSuccess', { filename: file.name }));
       onUploadSuccess();
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
       console.error('Upload failed:', error);
-      showErrorToast('Upload failed. Please try again.');
+      showErrorToast(t('fileUpload.uploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -102,27 +104,27 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess }) => {
         />
         
         <div className="mb-4">
-          <div className="text-6xl mb-4">📤</div>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-            Upload Word Template
+          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📤</div>
+          <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-50 mb-2">
+            {t('fileUpload.title')}
           </h3>
-          <p className="text-slate-600 dark:text-slate-300">
-            Select a .docx file with placeholders to upload
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300">
+            {t('fileUpload.description')}
           </p>
         </div>
         
         <button
           onClick={triggerFileSelect}
           disabled={uploading}
-          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
         >
           {uploading ? (
             <span className="flex items-center justify-center gap-2">
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-              Uploading...
+              <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
+              <span className="text-sm sm:text-base">{t('fileUpload.uploading')}</span>
             </span>
           ) : (
-            '📁 Choose File'
+            `📁 ${t('fileUpload.chooseFile')}`
           )}
         </button>
       </div>

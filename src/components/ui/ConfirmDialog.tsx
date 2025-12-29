@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -13,14 +14,16 @@ interface ConfirmDialogProps {
 
 const ConfirmDialog: FC<ConfirmDialogProps> = ({
   isOpen,
-  title = 'Confirm Action',
+  title,
   message,
-  confirmLabel = 'OK',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
   variant = 'warning'
 }) => {
+  const { t } = useTranslation();
+  
   if (!isOpen) return null;
 
   const variantStyles = {
@@ -43,7 +46,7 @@ const ConfirmDialog: FC<ConfirmDialogProps> = ({
             <div className="text-3xl">{iconStyles[variant]}</div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
-                {title}
+                {title || t('confirmDialog.confirmAction')}
               </h3>
               <p className="text-slate-600 dark:text-slate-300">
                 {message}
@@ -56,13 +59,13 @@ const ConfirmDialog: FC<ConfirmDialogProps> = ({
               onClick={onCancel}
               className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
-              {cancelLabel}
+              {cancelLabel || t('confirmDialog.cancel')}
             </button>
             <button
               onClick={onConfirm}
               className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${variantStyles[variant]}`}
             >
-              {confirmLabel}
+              {confirmLabel || t('confirmDialog.ok')}
             </button>
           </div>
         </div>

@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Rexfill"
+  },
+  "header": {
+    "logout": "ログアウト",
+    "toggleTheme": "テーマを切り替える"
+  },
+  "login": {
+    "title": "Rexfill",
+    "subtitle": "Wordテンプレートを管理するためにサインインしてください",
+    "signIn": "Internet Identityでサインイン",
+    "secureNote": "テンプレートはInternet Computer上に安全に保存されます"
+  },
+  "dashboard": {
+    "title": "あなたのWordテンプレート",
+    "subtitle": "{{name}}のようなプレースホルダーを含むDOCXファイルをアップロードし、動的に入力してください。"
+  },
+  "fileUpload": {
+    "title": "Wordテンプレートをアップロード",
+    "description": "プレースホルダーを含む.docxファイルを選択してアップロードしてください",
+    "chooseFile": "ファイルを選択",
+    "uploading": "アップロード中...",
+    "fileExists": "「{{filename}}」という名前のファイルがすでに存在します。ファイル名を変更するか、別のファイルを選択してください。",
+    "invalidFileType": ".docxファイルを選択してください",
+    "uploadSuccess": "テンプレート「{{filename}}」が正常にアップロードされました！",
+    "uploadFailed": "アップロードに失敗しました。もう一度お試しください。"
+  },
+  "fileList": {
+    "noTemplates": "まだテンプレートがありません",
+    "getStarted": "最初のWordテンプレートをアップロードしてください",
+    "processTemplate": "テンプレートを処理",
+    "size": "サイズ",
+    "uploaded": "アップロード済み",
+    "deleteTemplate": "テンプレートを削除",
+    "deleteConfirmTitle": "テンプレートを削除",
+    "deleteConfirmMessage": "「{{filename}}」を削除してもよろしいですか？この操作は元に戻せません。",
+    "deleteSuccess": "テンプレート「{{filename}}」が正常に削除されました",
+    "deleteFailed": "ファイルの削除に失敗しました。もう一度お試しください。"
+  },
+  "templateProcessor": {
+    "title": "テンプレートを処理",
+    "analyzing": "テンプレートを分析中...",
+    "noPlaceholders": "プレースホルダーが見つかりません",
+    "noPlaceholdersDesc": "このテンプレートには入力するプレースホルダーが含まれていません。",
+    "customizationTitle": "テンプレートのカスタマイズ",
+    "customizationDesc": "テンプレートに <strong>{{count}}</strong> 個のプレースホルダー{{plural}}が見つかりました。以下の値を入力して文書をカスタマイズしてください。",
+    "enterValue": "{{placeholder}}の値を入力してください...",
+    "chars": "文字",
+    "generateDocument": "文書を生成",
+    "processing": "処理中...",
+    "cancel": "キャンセル",
+    "processSuccess": "文書が正常に処理され、ダウンロードされました！",
+    "processError": "文書の処理中にエラーが発生しました。Wordファイルに複雑な書式が含まれているため、プレースホルダーの置換ができない可能性があります。より簡単な書式で文書を再作成してみてください。"
+  },
+  "confirmDialog": {
+    "confirmAction": "操作を確認",
+    "ok": "OK",
+    "cancel": "キャンセル"
+  },
+  "language": {
+    "sk": "Slovenčina",
+    "en-US": "English",
+    "cs": "Čeština",
+    "pl": "Polski",
+    "hu": "Magyar",
+    "de": "Deutsch",
+    "es": "Español",
+    "it": "Italiano",
+    "fr": "Français",
+    "zh": "中文",
+    "ja": "日本語"
+  }
+}
