@@ -24,7 +24,13 @@
     "fileExists": "Soubor s názvem \"{{filename}}\" již existuje. Prosím přejmenujte váš soubor nebo vyberte jiný.",
     "invalidFileType": "Prosím vyberte .docx soubor",
     "uploadSuccess": "Šablona \"{{filename}}\" byla úspěšně nahrána!",
-    "uploadFailed": "Nahrávání selhalo. Prosím zkuste znovu."
+    "uploadFailed": "Nahrávání selhalo. Prosím zkuste znovu.",
+    "uploadModeTitle": "Jak chcete tento soubor použít?",
+    "saveAndProcess": "Uložit a zpracovat",
+    "saveAndProcessDesc": "Uložit šablonu trvale a zpracovat ji",
+    "oneTimeProcess": "Jednorázové zpracování",
+    "oneTimeProcessDesc": "Zpracovat jednou bez uložení do databáze",
+    "cancelUpload": "Zrušit"
   },
   "fileList": {
     "noTemplates": "Zatím žádné šablony",

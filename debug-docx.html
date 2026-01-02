@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DOCX Debug Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <h1>DOCX DOCPROPERTY Field Inspector</h1>
+    <input type="file" id="fileInput" accept=".docx">
+    <pre id="output" style="white-space: pre-wrap; font-family: monospace; background: #f5f5f5; padding: 20px; margin-top: 20px;"></pre>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const arrayBuffer = await file.arrayBuffer();
+            const zip = await JSZip.loadAsync(arrayBuffer);
+
+            const output = document.getElementById('output');
+            output.textContent = 'Analyzing document...\n\n';
+
+            // Read document.xml
+            const documentXml = await zip.file('word/document.xml').async('string');
+
+            // Find all DOCPROPERTY fields
+            const docpropertyRegex = /<w:fldSimple[^>]*w:instr="[^"]*DOCPROPERTY[^"]*"[^>]*>.*?<\/w:fldSimple>/gi;
+            const matches = documentXml.match(docpropertyRegex);
+
+            if (matches) {
+                output.textContent += `Found ${matches.length} DOCPROPERTY fields:\n\n`;
+                matches.forEach((match, index) => {
+                    output.textContent += `Field ${index + 1}:\n`;
+                    output.textContent += match + '\n\n';
+                    output.textContent += '---\n\n';
+                });
+            } else {
+                output.textContent += 'No DOCPROPERTY fields found.\n\n';
+            }
+
+            // Also check for complex fields (fldChar)
+            if (documentXml.includes('w:fldChar')) {
+                output.textContent += '\n\nNOTE: This document contains complex fields (w:fldChar) which are structured differently.\n';
+                output.textContent += 'Extracting samples...\n\n';
+
+                // Find field begin/end pairs
+                const complexFieldPattern = /<w:fldChar w:fldCharType="begin"[^>]*>[\s\S]*?<w:fldChar w:fldCharType="end"[^>]*>/gi;
+                const complexMatches = documentXml.match(complexFieldPattern);
+
+                if (complexMatches) {
+                    output.textContent += `Found ${complexMatches.length} complex field structures:\n\n`;
+                    complexMatches.slice(0, 3).forEach((match, index) => {
+                        if (match.includes('DOCPROPERTY')) {
+                            output.textContent += `Complex Field ${index + 1}:\n`;
+                            output.textContent += match.substring(0, 500) + '...\n\n';
+                            output.textContent += '---\n\n';
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

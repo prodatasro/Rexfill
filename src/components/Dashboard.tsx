@@ -9,24 +9,33 @@ import { useTranslation } from 'react-i18next';
 const Dashboard: FC = () => {
   const { t } = useTranslation();
   const [selectedTemplate, setSelectedTemplate] = useState<Doc<WordTemplateData> | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleTemplateSelect = (template: Doc<WordTemplateData>) => {
     setSelectedTemplate(template);
+    setSelectedFile(null);
+  };
+
+  const handleOneTimeProcess = (file: File) => {
+    setSelectedFile(file);
+    setSelectedTemplate(null);
   };
 
   const handleCloseProcessor = () => {
     setSelectedTemplate(null);
+    setSelectedFile(null);
   };
 
   const triggerRefresh = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  if (selectedTemplate) {
+  if (selectedTemplate || selectedFile) {
     return (
       <WordTemplateProcessor
-        template={selectedTemplate}
+        template={selectedTemplate || undefined}
+        file={selectedFile || undefined}
         onClose={handleCloseProcessor}
       />
     );
@@ -43,7 +52,10 @@ const Dashboard: FC = () => {
         </p>
       </div>
 
-      <FileUpload onUploadSuccess={triggerRefresh} />
+      <FileUpload
+        onUploadSuccess={triggerRefresh}
+        onOneTimeProcess={handleOneTimeProcess}
+      />
       
       <FileList 
         onTemplateSelect={handleTemplateSelect}

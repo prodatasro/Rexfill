@@ -24,7 +24,13 @@
     "fileExists": "A file with the name \"{{filename}}\" already exists. Please rename your file or choose a different one.",
     "invalidFileType": "Please select a .docx file",
     "uploadSuccess": "Template \"{{filename}}\" uploaded successfully!",
-    "uploadFailed": "Upload failed. Please try again."
+    "uploadFailed": "Upload failed. Please try again.",
+    "uploadModeTitle": "How would you like to use this file?",
+    "saveAndProcess": "Save & Process",
+    "saveAndProcessDesc": "Save template permanently and process it",
+    "oneTimeProcess": "One-time Process",
+    "oneTimeProcessDesc": "Process once without saving to database",
+    "cancelUpload": "Cancel"
   },
   "fileList": {
     "noTemplates": "No templates yet",
