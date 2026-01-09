@@ -80,54 +80,56 @@ const FolderTree: FC<FolderTreeProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto">
-        {/* All Templates (Root) */}
-        <div
-          className={`
-            flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors mb-2
-            ${
-              selectedFolderId === null
-                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
-                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-            }
-          `}
-          onClick={() => onSelectFolder(null)}
-        >
-          <FolderIcon className="w-5 h-5 shrink-0 text-yellow-500" />
-          <span className="flex-1 font-medium text-sm">
-            {t('folders.allTemplates')}
+    <div className="h-full overflow-y-auto pb-2">
+      {/* All Templates (Root) */}
+      <div
+        className={`
+          flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 mb-2 border-l-4
+          ${
+            selectedFolderId === null
+              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 border-l-blue-500 dark:border-l-blue-400 font-semibold'
+              : 'hover:bg-blue-50/50 dark:hover:bg-blue-900/10 text-slate-700 dark:text-slate-300 hover:shadow-sm border-l-transparent'
+          }
+        `}
+        onClick={() => onSelectFolder(null)}
+      >
+        <FolderIcon className={`w-5 h-5 shrink-0 ${selectedFolderId === null ? 'text-yellow-600' : 'text-yellow-500'}`} />
+        <span className="flex-1 font-medium text-sm">
+          Root
+        </span>
+        {/* Template count */}
+        {totalTemplateCount > 0 && (
+          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${
+            selectedFolderId === null
+              ? 'bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100'
+              : 'bg-slate-200 dark:bg-slate-700'
+          }`}>
+            {totalTemplateCount}
           </span>
-          {/* Template count */}
-          {totalTemplateCount > 0 && (
-            <span className="flex-shrink-0 text-xs bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-              {totalTemplateCount}
-            </span>
-          )}
-        </div>
-
-        {/* Divider */}
-        {folders.length > 0 && (
-          <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
-        )}
-
-        {/* Folder tree */}
-        {folders.length > 0 ? (
-          <div className="space-y-1">
-            {folders.map((node) => renderFolderItem(node, 0))}
-          </div>
-        ) : (
-          <div className="text-center py-8 px-4">
-            <FolderIcon className="w-12 h-12 mx-auto mb-3 text-yellow-500" />
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-              {t('folders.noFolders')}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-500">
-              {t('folders.createFirst')}
-            </p>
-          </div>
         )}
       </div>
+
+      {/* Divider */}
+      {folders.length > 0 && (
+        <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
+      )}
+
+      {/* Folder tree */}
+      {folders.length > 0 ? (
+        <div className="space-y-1">
+          {folders.map((node) => renderFolderItem(node, 0))}
+        </div>
+      ) : (
+        <div className="text-center py-8 px-4">
+          <FolderIcon className="w-12 h-12 mx-auto mb-3 text-yellow-500" />
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            {t('folders.noFolders')}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-500">
+            {t('folders.createFirst')}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

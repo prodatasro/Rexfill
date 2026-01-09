@@ -129,7 +129,6 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
     if (!file) return;
 
     let xmlContent = file.asText();
-    const originalLength = xmlContent.length;
 
     // For each custom property, update the cached field value
     Object.entries(properties).forEach(([propName, propValue]) => {
@@ -166,8 +165,6 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
     });
 
     // Save changes - fileName is guaranteed to exist here
-    const newLength = xmlContent.length;
-    const bytesRemoved = originalLength - newLength;
     zip.file(fileName, xmlContent);
   });
 }

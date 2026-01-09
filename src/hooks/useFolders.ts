@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
-import type { Folder, FolderData, FolderTreeNode } from '../types/folder';
+import type { Folder, FolderTreeNode } from '../types/folder';
 import type { Doc } from '@junobuild/core';
 import { validateFolderName, buildFolderPath, buildFolderTree } from '../utils/folderUtils';
 import { showSuccessToast, showErrorToast } from '../utils/toast';

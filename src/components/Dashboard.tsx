@@ -8,6 +8,7 @@ import FileList from './files/FileList';
 import { WordTemplateProcessor } from './WordTemplateProcessor';
 import FolderTree from './folders/FolderTree';
 import FolderDialog from './folders/FolderDialog';
+import Breadcrumbs from './Breadcrumbs';
 import { useFolders } from '../hooks/useFolders';
 import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -43,7 +44,7 @@ const Dashboard: FC = () => {
   const { templates, allTemplates, loading: templatesLoading, refresh: refreshTemplates } = useTemplatesByFolder(selectedFolderId);
 
   // Load folders
-  const { folders, folderTree, loading: foldersLoading, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
+  const { folderTree, loading: foldersLoading, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
 
   // Handle template selection for processing
   const handleTemplateSelect = (template: Doc<WordTemplateData>) => {
@@ -296,11 +297,11 @@ const Dashboard: FC = () => {
       </div>
 
       {/* Main Layout */}
-      <div className="flex gap-6 relative h-[calc(100vh-12rem)]">
+      <div className="flex gap-6 relative h-[calc(100vh-9rem)]">
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:static inset-y-0 left-0 z-40 w-64 flex-shrink-0
+            fixed lg:static inset-y-0 left-0 z-40 w-90 shrink-0
             bg-white dark:bg-slate-900 lg:bg-transparent
             border-r border-slate-200 dark:border-slate-700 lg:border-0
             transform transition-transform duration-300 ease-in-out
@@ -308,7 +309,7 @@ const Dashboard: FC = () => {
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           `}
         >
-          <div className="h-full p-4 lg:p-0 flex flex-col">
+          <div className="h-full flex flex-col p-4 lg:p-0">
             {/* Close button for mobile */}
             <div className="lg:hidden flex justify-between items-center mb-4 shrink-0">
               <h3 className="font-bold text-slate-900 dark:text-slate-50">Folders</h3>
@@ -321,21 +322,51 @@ const Dashboard: FC = () => {
               </button>
             </div>
 
-            <div className="flex-1 min-h-0">
-              <FolderTree
-                folders={folderTree}
-                loading={foldersLoading}
-                selectedFolderId={selectedFolderId}
-                onSelectFolder={(folderId) => {
-                  setSelectedFolderId(folderId);
-                  setIsSidebarOpen(false); // Close sidebar on mobile after selection
-                }}
-                onCreateFolder={handleCreateFolder}
-                onRenameFolder={handleRenameFolder}
-                onDeleteFolder={handleDeleteFolder}
-                onUploadToFolder={handleUploadToFolder}
-                totalTemplateCount={allTemplates.filter(t => !t.data.folderId).length}
-              />
+            <div className="flex-1 overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col">
+                <div className="p-3 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-sm">{t('folders.title')}</h3>
+                  <div className="flex gap-1">
+                    <FileUpload
+                      onUploadSuccess={async (uploadedToFolderId) => {
+                        await refreshTemplates();
+                        // Navigate to the folder where files were uploaded
+                        if (uploadedToFolderId !== undefined) {
+                          setSelectedFolderId(uploadedToFolderId);
+                        }
+                      }}
+                      onOneTimeProcess={handleOneTimeProcess}
+                      selectedFolderId={selectedFolderId}
+                      folderTree={folderTree}
+                      compact={true}
+                    />
+                    <button
+                      onClick={() => handleCreateFolder(selectedFolderId)}
+                      className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                      title={t('folders.newFolder')}
+                      aria-label={t('folders.newFolder')}
+                    >
+                      <FolderPlus className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-hidden p-2">
+                  <FolderTree
+                    folders={folderTree}
+                    loading={foldersLoading}
+                    selectedFolderId={selectedFolderId}
+                    onSelectFolder={(folderId) => {
+                      setSelectedFolderId(folderId);
+                      setIsSidebarOpen(false); // Close sidebar on mobile after selection
+                    }}
+                    onCreateFolder={handleCreateFolder}
+                    onRenameFolder={handleRenameFolder}
+                    onDeleteFolder={handleDeleteFolder}
+                    onUploadToFolder={handleUploadToFolder}
+                    totalTemplateCount={allTemplates.filter(t => !t.data.folderId).length}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </aside>
@@ -349,40 +380,29 @@ const Dashboard: FC = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0">
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-3 mb-6">
-            <FileUpload
-              onUploadSuccess={async (uploadedToFolderId) => {
-                await refreshTemplates();
-                // Navigate to the folder where files were uploaded
-                if (uploadedToFolderId !== undefined) {
-                  setSelectedFolderId(uploadedToFolderId);
-                }
-              }}
-              onOneTimeProcess={handleOneTimeProcess}
-              selectedFolderId={selectedFolderId}
-              folderTree={folderTree}
-            />
-            <button
-              onClick={() => handleCreateFolder(selectedFolderId)}
-              className="btn-primary text-sm sm:text-base"
-            >
-              <FolderPlus className="w-5 h-5" /> {t('folders.newFolder')}
-            </button>
-          </div>
-
+        <main className="flex-1 min-w-0 h-full">
           {/* File List */}
-          <FileList
-            templates={templates}
-            allTemplates={allTemplates}
-            loading={templatesLoading}
-            onTemplateSelect={handleTemplateSelect}
-            onFileDeleted={refreshTemplates}
-            selectedFolderId={selectedFolderId}
-            folderTree={folderTree}
-          />
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <Breadcrumbs
+                selectedFolderId={selectedFolderId}
+                getFolderById={getFolderById}
+                onSelectFolder={setSelectedFolderId}
+              />
+            </div>
+            <div className="flex-1 min-h-0">
+              <FileList
+                templates={templates}
+                allTemplates={allTemplates}
+                loading={templatesLoading}
+                onTemplateSelect={handleTemplateSelect}
+                onFileDeleted={refreshTemplates}
+                onFolderSelect={setSelectedFolderId}
+                selectedFolderId={selectedFolderId}
+                folderTree={folderTree}
+              />
+            </div>
+          </div>
         </main>
       </div>
 

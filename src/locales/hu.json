@@ -37,6 +37,7 @@
     "rootFolder": "Root (All Templates)"
   },
   "fileList": {
+    "title": "Templates",
     "noTemplates": "Még nincsenek sablonok",
     "getStarted": "Töltse fel az első Word sablonját",
     "processTemplate": "Sablon feldolgozása",
@@ -51,7 +52,16 @@
     "moveToFolder": "Upload or move templates here",
     "moveTemplate": "Move to folder",
     "moveSuccess": "Template moved successfully",
-    "moveFailed": "Failed to move template"
+    "moveFailed": "Failed to move template",
+    "searchPlaceholder": "Search files...",
+    "sortBy": "Sort by",
+    "sortByName": "Name",
+    "sortBySize": "Size",
+    "sortByDate": "Date",
+    "itemsPerPage": "Items per page",
+    "pageOf": "Page {{current}} of {{total}}",
+    "noResults": "No files match your search",
+    "resultsCount": "{{count}} file(s) found"
   },
   "templateProcessor": {
     "title": "Sablon feldolgozása",
@@ -87,6 +97,7 @@
     "ja": "日本語"
   },
   "folders": {
+    "title": "Folders",
     "allTemplates": "All Templates",
     "newFolder": "New Folder",
     "noFolders": "No folders yet",

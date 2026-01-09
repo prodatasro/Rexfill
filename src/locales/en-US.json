@@ -42,6 +42,7 @@
     "rootFolder": "Root (All Templates)"
   },
   "fileList": {
+    "title": "Templates",
     "noTemplates": "No templates yet",
     "getStarted": "Upload your first Word template to get started",
     "noTemplatesInFolder": "No templates in this folder",
@@ -56,7 +57,20 @@
     "deleteSuccess": "Template \"{{filename}}\" deleted successfully",
     "deleteFailed": "Failed to delete file. Please try again.",
     "moveSuccess": "Template moved successfully",
-    "moveFailed": "Failed to move template"
+    "moveFailed": "Failed to move template",
+    "searchPlaceholder": "Search files...",
+    "sortBy": "Sort by",
+    "sortByName": "Name",
+    "sortBySize": "Size",
+    "sortByDate": "Date",
+    "itemsPerPage": "Items per page",
+    "pageOf": "Page {{current}} of {{total}}",
+    "noResults": "No files match your search",
+    "resultsCount": "{{count}} file(s) found",
+    "file": "file",
+    "files": "files",
+    "previous": "Previous",
+    "next": "Next"
   },
   "templateProcessor": {
     "title": "Process Template",
@@ -92,6 +106,7 @@
     "ja": "日本語"
   },
   "folders": {
+    "title": "Folders",
     "allTemplates": "All Templates",
     "newFolder": "New Folder",
     "noFolders": "No folders yet",

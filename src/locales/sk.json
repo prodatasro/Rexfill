@@ -42,6 +42,7 @@
     "rootFolder": "Koreň (Všetky šablóny)"
   },
   "fileList": {
+    "title": "Šablóny",
     "noTemplates": "Zatiaľ žiadne šablóny",
     "getStarted": "Nahrajte svoju prvú Word šablónu",
     "noTemplatesInFolder": "Žiadne šablóny v tomto priečinku",
@@ -56,7 +57,20 @@
     "deleteSuccess": "Šablóna \"{{filename}}\" bola úspešne zmazaná",
     "deleteFailed": "Nepodarilo sa zmazať súbor. Prosím skúste znova.",
     "moveSuccess": "Šablóna bola úspešne presunutá",
-    "moveFailed": "Nepodarilo sa presunúť šablónu"
+    "moveFailed": "Nepodarilo sa presunúť šablónu",
+    "searchPlaceholder": "Hľadať súbory...",
+    "sortBy": "Zoradiť podľa",
+    "sortByName": "Názov",
+    "sortBySize": "Veľkosť",
+    "sortByDate": "Dátum",
+    "itemsPerPage": "Položiek na stránku",
+    "pageOf": "Stránka {{current}} z {{total}}",
+    "noResults": "Žiadne súbory nevyhovujú vyhľadávaniu",
+    "resultsCount": "Nájdených súborov: {{count}}",
+    "file": "súbor",
+    "files": "súbory",
+    "previous": "Predchádzajúca",
+    "next": "Ďalšia"
   },
   "templateProcessor": {
     "title": "Spracovať šablónu",
@@ -94,6 +108,7 @@
     "ja": "日本語"
   },
   "folders": {
+    "title": "Priečinky",
     "allTemplates": "Všetky šablóny",
     "newFolder": "Nový priečinok",
     "noFolders": "Zatiaľ žiadne priečinky",

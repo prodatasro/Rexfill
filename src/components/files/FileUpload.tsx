@@ -1,4 +1,5 @@
 import { FC, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
 import { uploadFile, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
@@ -13,11 +14,12 @@ interface FileUploadProps {
   onOneTimeProcess: (file: File) => void;
   selectedFolderId: string | null;
   folderTree: FolderTreeNode[];
+  compact?: boolean;
 }
 
 type UploadMode = 'save' | 'oneTime' | null;
 
-const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, selectedFolderId, folderTree }) => {
+const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, selectedFolderId, folderTree, compact = false }) => {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<UploadMode>(null);
@@ -220,28 +222,44 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, se
         disabled={uploading}
       />
 
-      <button
-        onClick={triggerFileSelect}
-        disabled={uploading}
-        className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-      >
-        {uploading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            {t('fileUpload.uploading')}
-          </>
-        ) : (
-          <>
-            <Upload className="w-5 h-5" />
-            {t('fileUpload.chooseFile')}
-          </>
-        )}
-      </button>
+      {compact ? (
+        <button
+          onClick={triggerFileSelect}
+          disabled={uploading}
+          className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title={t('fileUpload.chooseFile')}
+          aria-label={t('fileUpload.chooseFile')}
+        >
+          {uploading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-slate-700 dark:text-slate-300" />
+          ) : (
+            <Upload className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+          )}
+        </button>
+      ) : (
+        <button
+          onClick={triggerFileSelect}
+          disabled={uploading}
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {t('fileUpload.uploading')}
+            </>
+          ) : (
+            <>
+              <Upload className="w-5 h-5" />
+              {t('fileUpload.chooseFile')}
+            </>
+          )}
+        </button>
+      )}
 
       {/* Upload Mode Selection Dialog */}
-      {uploadMode !== null && selectedFiles.length > 0 && (
+      {uploadMode !== null && selectedFiles.length > 0 && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl p-6 sm:p-8">
             <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-50 mb-4">
               {t('fileUpload.uploadModeTitle')}
             </h3>
@@ -346,7 +364,8 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, se
               {t('fileUpload.cancelUpload')}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
