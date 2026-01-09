@@ -1,4 +1,5 @@
 import { FC, useState, useCallback } from 'react';
+import { Folder as FolderIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { FolderTreeNode, Folder } from '../../types/folder';
 import FolderTreeItem from './FolderTreeItem';
@@ -93,7 +94,7 @@ const FolderTree: FC<FolderTreeProps> = ({
           `}
           onClick={() => onSelectFolder(null)}
         >
-          <span className="text-lg">📁</span>
+          <FolderIcon className="w-5 h-5 shrink-0 text-yellow-500" />
           <span className="flex-1 font-medium text-sm">
             {t('folders.allTemplates')}
           </span>
@@ -117,7 +118,7 @@ const FolderTree: FC<FolderTreeProps> = ({
           </div>
         ) : (
           <div className="text-center py-8 px-4">
-            <div className="text-4xl mb-3">📁</div>
+            <FolderIcon className="w-12 h-12 mx-auto mb-3 text-yellow-500" />
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
               {t('folders.noFolders')}
             </p>

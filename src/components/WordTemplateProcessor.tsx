@@ -1,5 +1,6 @@
 import { Doc } from "@junobuild/core";
 import { FC, useEffect, useState } from "react";
+import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
@@ -316,8 +317,8 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
       <div className="bg-linear-to-r from-blue-600 to-purple-600 p-4 sm:p-6 shadow-lg">
           <div className="flex justify-between items-center">
             <div className="min-w-0 flex-1 pr-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                📄 {t('templateProcessor.title')}
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                <FileText className="w-6 h-6" /> {t('templateProcessor.title')}
               </h2>
               <p className="text-blue-100 text-xs sm:text-sm truncate">
                 {file ? file.name : template?.data.name}
@@ -326,10 +327,9 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
             <button
               onClick={onClose}
               className="text-white hover:text-red-200 transition-colors p-2 rounded-full hover:bg-white/10 shrink-0"
+              aria-label="Close"
             >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
         </div>
@@ -338,7 +338,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 sm:py-16">
-              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-600 border-t-transparent mb-4"></div>
+              <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-blue-600 mb-4" />
               <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg font-medium">
                 {t('templateProcessor.analyzing')}
               </p>
@@ -347,9 +347,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
             <div className="space-y-6 sm:space-y-8">
               {allFields.length === 0 ? (
                 <div className="text-center py-12 sm:py-16">
-                  <div className="mb-4">
-                    <span className="text-5xl sm:text-6xl">📋</span>
-                  </div>
+                  <ClipboardList className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 text-slate-400 dark:text-slate-600" />
                   <p className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl mb-2">
                     {t('templateProcessor.noPlaceholders')}
                   </p>
@@ -361,7 +359,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 <>
                   <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-xl p-4 sm:p-6">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-xl sm:text-2xl">✨</span>
+                      <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 dark:text-blue-400" />
                       <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50">
                         {t('templateProcessor.customizationTitle')}
                       </h3>
@@ -375,7 +373,12 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                       <div key={fieldName} className="space-y-2 sm:space-y-3">
                         <label className="block text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 uppercase tracking-wider">
                           <span className="inline-flex items-center gap-2">
-                            {fieldName in customProperties ? '📄' : '🏷️'} {fieldName}
+                            {fieldName in customProperties ? (
+                              <FileText className="w-4 h-4" />
+                            ) : (
+                              <Tag className="w-4 h-4" />
+                            )}
+                            {fieldName}
                           </span>
                         </label>
                         <div className="space-y-2">
@@ -390,7 +393,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                             />
                             {formData[fieldName]?.trim() && (
                               <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                                <span className="text-green-500 text-lg sm:text-xl">✓</span>
+                                <Check className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                               </div>
                             )}
                             <div className="hidden sm:block absolute bottom-2 right-4 text-xs text-slate-400">
@@ -414,12 +417,12 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                       >
                         {processing ? (
                           <span className="flex items-center justify-center gap-2 sm:gap-3">
-                            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-white border-t-transparent"></div>
+                            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
                             <span className="text-base sm:text-lg">{t('templateProcessor.processing')}</span>
                           </span>
                         ) : (
                           <span className="flex items-center justify-center gap-2 sm:gap-3">
-                            <span className="text-lg sm:text-xl">🚀</span>
+                            <Rocket className="w-5 h-5 sm:w-6 sm:h-6" />
                             <span className="text-base sm:text-lg">{t('templateProcessor.generateDocument')}</span>
                           </span>
                         )}

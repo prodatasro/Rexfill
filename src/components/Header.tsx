@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -27,10 +28,10 @@ const Header: FC = () => {
           
           <button
             onClick={handleToggleTheme}
-            className="p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm sm:text-base"
+            className="p-1.5 sm:p-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
             aria-label={t('header.toggleTheme')}
           >
-            {isDarkMode ? '☀️' : '🌙'}
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
           
           <button

@@ -17,6 +17,7 @@
     "@junobuild/functions": "^0.5.3",
     "docxtemplater": "^3.47.2",
     "i18next": "^25.7.3",
+    "lucide-react": "^0.562.0",
     "nanoid": "^5.1.5",
     "pizzip": "^3.1.6",
     "react": "^19.2.1",

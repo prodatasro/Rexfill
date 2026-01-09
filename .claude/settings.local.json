@@ -3,7 +3,13 @@
     "allow": [
       "Bash(cat:*)",
       "Bash(ls:*)",
-      "Bash(python update_locales.py:*)"
+      "Bash(python update_locales.py:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 30 npx tsc:*)",
+      "Bash(echo:*)"
     ]
   }
 }

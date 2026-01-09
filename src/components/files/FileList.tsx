@@ -1,4 +1,5 @@
 import { FC, useState } from 'react';
+import { FileText, ClipboardList, Move, Trash2, Sparkles } from 'lucide-react';
 import { setDoc, deleteDoc, deleteAsset, Doc, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
@@ -176,7 +177,7 @@ const FileList: FC<FileListProps> = ({
   if (templates.length === 0) {
     return (
       <div className="text-center py-8 sm:py-12 px-4">
-        <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">📋</div>
+        <ClipboardList className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-slate-400 dark:text-slate-600" />
         <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-50 mb-2">
           {selectedFolderId ? t('fileList.noTemplatesInFolder') : t('fileList.noTemplates')}
         </h3>
@@ -196,33 +197,31 @@ const FileList: FC<FileListProps> = ({
           return (
             <div
               key={template.key}
-              className="card p-4 sm:p-6 hover:shadow-lg transition-all"
+              className="card p-5 sm:p-6 hover:shadow-md hover:scale-[1.02] transition-all"
             >
               <div className="flex items-start justify-between mb-3 sm:mb-4">
-                <div className="text-3xl sm:text-4xl">📄</div>
+                <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400 dark:text-slate-600 shrink-0" />
                 <div className="flex gap-1">
                   <button
                     onClick={() => setTemplateToMove(template)}
                     disabled={isDeleting}
-                    className="text-blue-500 hover:text-blue-700 disabled:text-slate-400 transition-colors p-1"
+                    className="text-blue-500 hover:text-blue-700 disabled:text-slate-400 transition-colors p-1.5"
                     title={t('fileList.moveTemplate')}
+                    aria-label={t('fileList.moveTemplate')}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                    </svg>
+                    <Move className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDelete(template)}
                     disabled={isDeleting}
-                    className="text-red-500 hover:text-red-700 disabled:text-slate-400 transition-colors p-1"
+                    className="text-red-500 hover:text-red-700 disabled:text-slate-400 transition-colors p-1.5"
                     title={t('fileList.deleteTemplate')}
+                    aria-label={t('fileList.deleteTemplate')}
                   >
                     {isDeleting ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-red-500 border-t-transparent"></div>
                     ) : (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Trash2 className="w-5 h-5" />
                     )}
                   </button>
                 </div>
@@ -240,9 +239,9 @@ const FileList: FC<FileListProps> = ({
               <button
                 onClick={() => onTemplateSelect(template)}
                 disabled={isDeleting}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:cursor-not-allowed text-sm sm:text-base"
+                className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-all hover:shadow-md disabled:cursor-not-allowed text-sm sm:text-base flex items-center justify-center gap-2"
               >
-                ✨ {t('fileList.processTemplate')}
+                <Sparkles className="w-5 h-5" /> {t('fileList.processTemplate')}
               </button>
             </div>
           );

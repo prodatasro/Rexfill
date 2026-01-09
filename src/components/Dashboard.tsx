@@ -1,4 +1,5 @@
 import { FC, useState, useCallback, useRef } from 'react';
+import { Menu, X, FolderPlus, Folder as FolderIcon } from 'lucide-react';
 import { Doc, setDoc, deleteDoc, deleteAsset } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder } from '../types/folder';
@@ -282,16 +283,15 @@ const Dashboard: FC = () => {
 
       {/* Mobile Header with Hamburger */}
       <div className="lg:hidden flex items-center justify-between mb-4 px-2">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">
-          📁 {t('dashboard.title')}
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+          <FolderIcon className="w-5 h-5" /> {t('dashboard.title')}
         </h2>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+          aria-label="Toggle menu"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <Menu className="w-6 h-6" />
         </button>
       </div>
 
@@ -315,10 +315,9 @@ const Dashboard: FC = () => {
               <button
                 onClick={() => setIsSidebarOpen(false)}
                 className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                aria-label="Close menu"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -355,7 +354,13 @@ const Dashboard: FC = () => {
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 mb-6">
             <FileUpload
-              onUploadSuccess={refreshTemplates}
+              onUploadSuccess={async (uploadedToFolderId) => {
+                await refreshTemplates();
+                // Navigate to the folder where files were uploaded
+                if (uploadedToFolderId !== undefined) {
+                  setSelectedFolderId(uploadedToFolderId);
+                }
+              }}
               onOneTimeProcess={handleOneTimeProcess}
               selectedFolderId={selectedFolderId}
               folderTree={folderTree}
@@ -364,7 +369,7 @@ const Dashboard: FC = () => {
               onClick={() => handleCreateFolder(selectedFolderId)}
               className="btn-primary text-sm sm:text-base"
             >
-              📁 {t('folders.newFolder')}
+              <FolderPlus className="w-5 h-5" /> {t('folders.newFolder')}
             </button>
           </div>
 

@@ -33,9 +33,9 @@ const ConfirmDialog: FC<ConfirmDialogProps> = ({
   };
 
   const iconStyles = {
-    danger: '⚠️',
-    warning: '🚨',
-    info: 'ℹ️'
+    danger: '!',
+    warning: '!',
+    info: 'i'
   };
 
   return (
