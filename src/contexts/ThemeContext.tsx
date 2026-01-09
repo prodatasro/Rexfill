@@ -16,7 +16,6 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
     try {
       // First check localStorage
       const savedTheme = localStorage.getItem('theme');
-      console.log('Saved theme:', savedTheme); // Debug log
       if (savedTheme === 'dark') {
         return true;
       } else if (savedTheme === 'light') {
@@ -24,7 +23,6 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
       }
       // If no saved theme, check system preference
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      console.log('System prefers dark:', systemPrefersDark); // Debug log
       return systemPrefersDark;
     } catch {
       // Fallback if localStorage is not available
@@ -35,16 +33,12 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
   // Apply theme immediately on mount
   useEffect(() => {
     const root = document.documentElement;
-    console.log('Applying theme - isDarkMode:', isDarkMode); // Debug log
-    console.log('Current classes before:', root.className); // Debug log
     
     if (isDarkMode) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-    
-    console.log('Current classes after:', root.className); // Debug log
     
     try {
       localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
@@ -73,7 +67,6 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
   }, []);
 
   const toggleTheme = () => {
-    console.log('Toggle theme called, current isDarkMode:', isDarkMode); // Debug log
     setIsDarkMode(prev => !prev);
   };
 

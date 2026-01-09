@@ -9,10 +9,7 @@ const Header: FC = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
 
-  console.log('Header - isDarkMode:', isDarkMode); // Debug log
-
   const handleToggleTheme = () => {
-    console.log('Theme button clicked'); // Debug log
     toggleTheme();
   };
 

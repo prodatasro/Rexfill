@@ -26,11 +26,15 @@
     "uploadSuccess": "Šablona \"{{filename}}\" byla úspěšně nahrána!",
     "uploadFailed": "Nahrávání selhalo. Prosím zkuste znovu.",
     "uploadModeTitle": "Jak chcete tento soubor použít?",
+    "saveOnly": "Pouze uložit",
+    "saveOnlyDesc": "Uložit šablonu bez zpracování",
     "saveAndProcess": "Uložit a zpracovat",
     "saveAndProcessDesc": "Uložit šablonu trvale a zpracovat ji",
     "oneTimeProcess": "Jednorázové zpracování",
     "oneTimeProcessDesc": "Zpracovat jednou bez uložení do databáze",
-    "cancelUpload": "Zrušit"
+    "cancelUpload": "Zrušit",
+    "selectFolder": "Select folder",
+    "rootFolder": "Root (All Templates)"
   },
   "fileList": {
     "noTemplates": "Zatím žádné šablony",
@@ -42,7 +46,12 @@
     "deleteConfirmTitle": "Smazat šablonu",
     "deleteConfirmMessage": "Opravdu chcete smazat \"{{filename}}\"? Tuto akci nelze vrátit zpět.",
     "deleteSuccess": "Šablona \"{{filename}}\" byla úspěšně smazána",
-    "deleteFailed": "Nepodařilo se smazat soubor. Prosím zkuste znovu."
+    "deleteFailed": "Nepodařilo se smazat soubor. Prosím zkuste znovu.",
+    "noTemplatesInFolder": "No templates in this folder",
+    "moveToFolder": "Upload or move templates here",
+    "moveTemplate": "Move to folder",
+    "moveSuccess": "Template moved successfully",
+    "moveFailed": "Failed to move template"
   },
   "templateProcessor": {
     "title": "Zpracovat šablonu",
@@ -76,5 +85,45 @@
     "fr": "Français",
     "zh": "中文",
     "ja": "日本語"
+  },
+  "folders": {
+    "allTemplates": "All Templates",
+    "newFolder": "New Folder",
+    "noFolders": "No folders yet",
+    "createFirst": "Create your first folder to organize templates",
+    "createFolder": "Create Folder",
+    "createSubfolder": "Create Subfolder",
+    "renameFolder": "Rename Folder",
+    "deleteFolder": "Delete Folder",
+    "folderName": "Folder name",
+    "parentFolder": "Parent folder",
+    "enterFolderName": "Enter folder name...",
+    "folderCreated": "Folder \"{{name}}\" created successfully",
+    "folderRenamed": "Folder renamed to \"{{name}}\"",
+    "folderDeleted": "Folder \"{{name}}\" deleted",
+    "deleteFolderConfirm": "Delete \"{{name}}\" and all its contents?",
+    "deleteFolderDetail": "This will permanently delete {{count}} template(s).",
+    "cannotUndo": "This action cannot be undone.",
+    "maxDepthReached": "Maximum folder depth reached (2 levels)",
+    "invalidFolderName": "Invalid folder name",
+    "folderNameTooLong": "Folder name too long (max 50 characters)",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderExists": "A folder with this name already exists",
+    "noSpecialChars": "No special characters allowed: /\\:*?\"<>|",
+    "actions": "Folder actions",
+    "uploadToFolder": "Nahrát do složky",
+    "creating": "Creating...",
+    "renaming": "Renaming...",
+    "loadFailed": "Failed to load folders",
+    "createFailed": "Failed to create folder",
+    "renameFailed": "Failed to rename folder",
+    "deleteFailed": "Failed to delete folder"
+  },
+  "templateMove": {
+    "title": "Move Template",
+    "currentLocation": "Current location",
+    "moveTo": "Move to",
+    "moveButton": "Move Template",
+    "moving": "Moving..."
   }
 }

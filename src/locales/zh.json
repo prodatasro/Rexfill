@@ -24,7 +24,17 @@
     "fileExists": "名为 \"{{filename}}\" 的文件已存在。请重命名您的文件或选择其他文件。",
     "invalidFileType": "请选择 .docx 文件",
     "uploadSuccess": "模板 \"{{filename}}\" 上传成功！",
-    "uploadFailed": "上传失败。请重试。"
+    "uploadFailed": "上传失败。请重试。",
+    "uploadModeTitle": "您想如何使用此文件？",
+    "saveOnly": "仅保存",
+    "saveOnlyDesc": "保存模板而不处理",
+    "saveAndProcess": "保存并处理",
+    "saveAndProcessDesc": "永久保存模板并处理",
+    "oneTimeProcess": "一次性处理",
+    "oneTimeProcessDesc": "处理一次而不保存到数据库",
+    "cancelUpload": "取消",
+    "selectFolder": "Select folder",
+    "rootFolder": "Root (All Templates)"
   },
   "fileList": {
     "noTemplates": "暂无模板",
@@ -36,7 +46,12 @@
     "deleteConfirmTitle": "删除模板",
     "deleteConfirmMessage": "确定要删除 \"{{filename}}\" 吗？此操作无法撤消。",
     "deleteSuccess": "模板 \"{{filename}}\" 已成功删除",
-    "deleteFailed": "删除文件失败。请重试。"
+    "deleteFailed": "删除文件失败。请重试。",
+    "noTemplatesInFolder": "No templates in this folder",
+    "moveToFolder": "Upload or move templates here",
+    "moveTemplate": "Move to folder",
+    "moveSuccess": "Template moved successfully",
+    "moveFailed": "Failed to move template"
   },
   "templateProcessor": {
     "title": "处理模板",
@@ -70,5 +85,45 @@
     "fr": "Français",
     "zh": "中文",
     "ja": "日本語"
+  },
+  "folders": {
+    "allTemplates": "All Templates",
+    "newFolder": "New Folder",
+    "noFolders": "No folders yet",
+    "createFirst": "Create your first folder to organize templates",
+    "createFolder": "Create Folder",
+    "createSubfolder": "Create Subfolder",
+    "renameFolder": "Rename Folder",
+    "deleteFolder": "Delete Folder",
+    "folderName": "Folder name",
+    "parentFolder": "Parent folder",
+    "enterFolderName": "Enter folder name...",
+    "folderCreated": "Folder \"{{name}}\" created successfully",
+    "folderRenamed": "Folder renamed to \"{{name}}\"",
+    "folderDeleted": "Folder \"{{name}}\" deleted",
+    "deleteFolderConfirm": "Delete \"{{name}}\" and all its contents?",
+    "deleteFolderDetail": "This will permanently delete {{count}} template(s).",
+    "cannotUndo": "This action cannot be undone.",
+    "maxDepthReached": "Maximum folder depth reached (2 levels)",
+    "invalidFolderName": "Invalid folder name",
+    "folderNameTooLong": "Folder name too long (max 50 characters)",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderExists": "A folder with this name already exists",
+    "noSpecialChars": "No special characters allowed: /\\:*?\"<>|",
+    "actions": "Folder actions",
+    "uploadToFolder": "上传到文件夹",
+    "creating": "Creating...",
+    "renaming": "Renaming...",
+    "loadFailed": "Failed to load folders",
+    "createFailed": "Failed to create folder",
+    "renameFailed": "Failed to rename folder",
+    "deleteFailed": "Failed to delete folder"
+  },
+  "templateMove": {
+    "title": "Move Template",
+    "currentLocation": "Current location",
+    "moveTo": "Move to",
+    "moveButton": "Move Template",
+    "moving": "Moving..."
   }
 }

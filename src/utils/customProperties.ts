@@ -124,20 +124,15 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
     }
   });
 
-  console.log(`Processing ${filePaths.length} files for DOCPROPERTY fields:`, filePaths);
-
   filePaths.forEach(fileName => {
     const file = zip.file(fileName);
     if (!file) return;
-
-    console.log(`Processing file: ${fileName}`);
 
     let xmlContent = file.asText();
     const originalLength = xmlContent.length;
 
     // For each custom property, update the cached field value
     Object.entries(properties).forEach(([propName, propValue]) => {
-      console.log(`Updating DOCPROPERTY field: ${propName} = ${propValue}`);
 
       // Pattern 1: Simple fields - just update the text value inside
       const simpleFieldPattern = new RegExp(
@@ -147,7 +142,6 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
       );
 
       xmlContent = xmlContent.replace(simpleFieldPattern, (_match, before, after) => {
-        console.log(`✓ Updated simple field for ${propName}`);
         return `${before}${escapeXml(propValue)}${after}`;
       });
 
@@ -162,7 +156,6 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
       );
 
       xmlContent = xmlContent.replace(complexFieldRegex, (_fullMatch, before, content, after) => {
-        console.log(`✓ Updated complex field for ${propName}`);
 
         // Replace all text content between separate and end with new value
         // Keep the structure but replace text
@@ -175,7 +168,6 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
     // Save changes - fileName is guaranteed to exist here
     const newLength = xmlContent.length;
     const bytesRemoved = originalLength - newLength;
-    console.log(`File ${fileName}: ${originalLength} -> ${newLength} bytes (${bytesRemoved} bytes removed from field codes)`);
     zip.file(fileName, xmlContent);
   });
 }

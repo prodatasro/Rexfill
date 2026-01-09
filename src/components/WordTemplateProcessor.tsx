@@ -47,7 +47,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
       // Read custom properties from the document
       const docCustomProperties = readCustomProperties(zip);
-      console.log('Found custom properties:', docCustomProperties);
       setCustomProperties(docCustomProperties);
 
       // Extract the document.xml file directly to get all text content
@@ -71,14 +70,10 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         reconstructedText += textNode.textContent || "";
       }
 
-      console.log('Reconstructed text:', reconstructedText);
-
       // Extract placeholders from reconstructed text
       const placeholderRegex = /\{\{([^}]+)\}\}/g;
       const matches = reconstructedText.match(placeholderRegex) || [];
       const uniquePlaceholders = [...new Set(matches.map(match => match.slice(2, -2).trim()))];
-
-      console.log('Found placeholders:', uniquePlaceholders);
 
       setPlaceholders(uniquePlaceholders);
 
@@ -139,9 +134,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
           placeholderData[key] = value;
         }
       });
-
-      console.log('Processing placeholders:', placeholderData);
-      console.log('Processing custom properties:', customPropsData);
 
       // Write custom properties to the document
       if (Object.keys(customPropsData).length > 0) {
@@ -242,7 +234,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
       console.error('Error processing document:', error);
       // Try fallback approach without preprocessing
       try {
-        console.log('Trying fallback approach without XML preprocessing...');
         let arrayBuffer: ArrayBuffer;
 
         if (file) {

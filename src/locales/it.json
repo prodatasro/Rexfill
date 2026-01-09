@@ -24,7 +24,17 @@
     "fileExists": "Esiste già un file con il nome \"{{filename}}\". Si prega di rinominare il file o sceglierne un altro.",
     "invalidFileType": "Si prega di selezionare un file .docx",
     "uploadSuccess": "Modello \"{{filename}}\" caricato con successo!",
-    "uploadFailed": "Caricamento fallito. Si prega di riprovare."
+    "uploadFailed": "Caricamento fallito. Si prega di riprovare.",
+    "uploadModeTitle": "Come vuoi usare questo file?",
+    "saveOnly": "Solo salva",
+    "saveOnlyDesc": "Salva il modello senza elaborare",
+    "saveAndProcess": "Salva ed elabora",
+    "saveAndProcessDesc": "Salva il modello in modo permanente ed elaboralo",
+    "oneTimeProcess": "Elaborazione una tantum",
+    "oneTimeProcessDesc": "Elabora una volta senza salvare nel database",
+    "cancelUpload": "Annulla",
+    "selectFolder": "Select folder",
+    "rootFolder": "Root (All Templates)"
   },
   "fileList": {
     "noTemplates": "Nessun modello ancora",
@@ -36,7 +46,12 @@
     "deleteConfirmTitle": "Elimina modello",
     "deleteConfirmMessage": "Sei sicuro di voler eliminare \"{{filename}}\"? Questa azione non può essere annullata.",
     "deleteSuccess": "Modello \"{{filename}}\" eliminato con successo",
-    "deleteFailed": "Impossibile eliminare il file. Si prega di riprovare."
+    "deleteFailed": "Impossibile eliminare il file. Si prega di riprovare.",
+    "noTemplatesInFolder": "No templates in this folder",
+    "moveToFolder": "Upload or move templates here",
+    "moveTemplate": "Move to folder",
+    "moveSuccess": "Template moved successfully",
+    "moveFailed": "Failed to move template"
   },
   "templateProcessor": {
     "title": "Elabora modello",
@@ -70,5 +85,45 @@
     "fr": "Français",
     "zh": "中文",
     "ja": "日本語"
+  },
+  "folders": {
+    "allTemplates": "All Templates",
+    "newFolder": "New Folder",
+    "noFolders": "No folders yet",
+    "createFirst": "Create your first folder to organize templates",
+    "createFolder": "Create Folder",
+    "createSubfolder": "Create Subfolder",
+    "renameFolder": "Rename Folder",
+    "deleteFolder": "Delete Folder",
+    "folderName": "Folder name",
+    "parentFolder": "Parent folder",
+    "enterFolderName": "Enter folder name...",
+    "folderCreated": "Folder \"{{name}}\" created successfully",
+    "folderRenamed": "Folder renamed to \"{{name}}\"",
+    "folderDeleted": "Folder \"{{name}}\" deleted",
+    "deleteFolderConfirm": "Delete \"{{name}}\" and all its contents?",
+    "deleteFolderDetail": "This will permanently delete {{count}} template(s).",
+    "cannotUndo": "This action cannot be undone.",
+    "maxDepthReached": "Maximum folder depth reached (2 levels)",
+    "invalidFolderName": "Invalid folder name",
+    "folderNameTooLong": "Folder name too long (max 50 characters)",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderExists": "A folder with this name already exists",
+    "noSpecialChars": "No special characters allowed: /\\:*?\"<>|",
+    "actions": "Folder actions",
+    "uploadToFolder": "Carica nella cartella",
+    "creating": "Creating...",
+    "renaming": "Renaming...",
+    "loadFailed": "Failed to load folders",
+    "createFailed": "Failed to create folder",
+    "renameFailed": "Failed to rename folder",
+    "deleteFailed": "Failed to delete folder"
+  },
+  "templateMove": {
+    "title": "Move Template",
+    "currentLocation": "Current location",
+    "moveTo": "Move to",
+    "moveButton": "Move Template",
+    "moving": "Moving..."
   }
 }

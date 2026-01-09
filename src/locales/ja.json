@@ -24,7 +24,17 @@
     "fileExists": "「{{filename}}」という名前のファイルがすでに存在します。ファイル名を変更するか、別のファイルを選択してください。",
     "invalidFileType": ".docxファイルを選択してください",
     "uploadSuccess": "テンプレート「{{filename}}」が正常にアップロードされました！",
-    "uploadFailed": "アップロードに失敗しました。もう一度お試しください。"
+    "uploadFailed": "アップロードに失敗しました。もう一度お試しください。",
+    "uploadModeTitle": "このファイルをどのように使用しますか？",
+    "saveOnly": "保存のみ",
+    "saveOnlyDesc": "処理せずにテンプレートを保存",
+    "saveAndProcess": "保存して処理",
+    "saveAndProcessDesc": "テンプレートを永続的に保存して処理",
+    "oneTimeProcess": "1回限りの処理",
+    "oneTimeProcessDesc": "データベースに保存せずに1回処理",
+    "cancelUpload": "キャンセル",
+    "selectFolder": "Select folder",
+    "rootFolder": "Root (All Templates)"
   },
   "fileList": {
     "noTemplates": "まだテンプレートがありません",
@@ -36,7 +46,12 @@
     "deleteConfirmTitle": "テンプレートを削除",
     "deleteConfirmMessage": "「{{filename}}」を削除してもよろしいですか？この操作は元に戻せません。",
     "deleteSuccess": "テンプレート「{{filename}}」が正常に削除されました",
-    "deleteFailed": "ファイルの削除に失敗しました。もう一度お試しください。"
+    "deleteFailed": "ファイルの削除に失敗しました。もう一度お試しください。",
+    "noTemplatesInFolder": "No templates in this folder",
+    "moveToFolder": "Upload or move templates here",
+    "moveTemplate": "Move to folder",
+    "moveSuccess": "Template moved successfully",
+    "moveFailed": "Failed to move template"
   },
   "templateProcessor": {
     "title": "テンプレートを処理",
@@ -70,5 +85,45 @@
     "fr": "Français",
     "zh": "中文",
     "ja": "日本語"
+  },
+  "folders": {
+    "allTemplates": "All Templates",
+    "newFolder": "New Folder",
+    "noFolders": "No folders yet",
+    "createFirst": "Create your first folder to organize templates",
+    "createFolder": "Create Folder",
+    "createSubfolder": "Create Subfolder",
+    "renameFolder": "Rename Folder",
+    "deleteFolder": "Delete Folder",
+    "folderName": "Folder name",
+    "parentFolder": "Parent folder",
+    "enterFolderName": "Enter folder name...",
+    "folderCreated": "Folder \"{{name}}\" created successfully",
+    "folderRenamed": "Folder renamed to \"{{name}}\"",
+    "folderDeleted": "Folder \"{{name}}\" deleted",
+    "deleteFolderConfirm": "Delete \"{{name}}\" and all its contents?",
+    "deleteFolderDetail": "This will permanently delete {{count}} template(s).",
+    "cannotUndo": "This action cannot be undone.",
+    "maxDepthReached": "Maximum folder depth reached (2 levels)",
+    "invalidFolderName": "Invalid folder name",
+    "folderNameTooLong": "Folder name too long (max 50 characters)",
+    "folderNameEmpty": "Folder name cannot be empty",
+    "folderExists": "A folder with this name already exists",
+    "noSpecialChars": "No special characters allowed: /\\:*?\"<>|",
+    "actions": "Folder actions",
+    "uploadToFolder": "フォルダにアップロード",
+    "creating": "Creating...",
+    "renaming": "Renaming...",
+    "loadFailed": "Failed to load folders",
+    "createFailed": "Failed to create folder",
+    "renameFailed": "Failed to rename folder",
+    "deleteFailed": "Failed to delete folder"
+  },
+  "templateMove": {
+    "title": "Move Template",
+    "currentLocation": "Current location",
+    "moveTo": "Move to",
+    "moveButton": "Move Template",
+    "moving": "Moving..."
   }
 }
