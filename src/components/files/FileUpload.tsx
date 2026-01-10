@@ -259,7 +259,19 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, se
       {/* Upload Mode Selection Dialog */}
       {uploadMode !== null && selectedFiles.length > 0 && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl p-6 sm:p-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl p-6 sm:p-8 relative">
+            {/* Upload in progress overlay */}
+            {uploading && (
+              <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400" />
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                    {t('fileUpload.uploading')}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-50 mb-4">
               {t('fileUpload.uploadModeTitle')}
             </h3>

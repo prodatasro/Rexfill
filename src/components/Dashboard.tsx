@@ -1,5 +1,5 @@
 import { FC, useState, useCallback, useRef, useMemo } from 'react';
-import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
+import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2 } from 'lucide-react';
 import { Doc, setDoc, deleteDoc, deleteAsset } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder } from '../types/folder';
@@ -38,6 +38,7 @@ const Dashboard: FC = () => {
 
   // Upload to folder state
   const [uploadToFolderId, setUploadToFolderId] = useState<string | null>(null);
+  const [isFolderUploading, setIsFolderUploading] = useState(false);
   const folderUploadInputRef = useRef<HTMLInputElement>(null);
 
   // Folder search state
@@ -264,6 +265,7 @@ const Dashboard: FC = () => {
     }
 
     // Upload the file
+    setIsFolderUploading(true);
     try {
       const { uploadFile, setDoc } = await import('@junobuild/core');
 
@@ -300,10 +302,14 @@ const Dashboard: FC = () => {
 
       showSuccessToast(t('fileUpload.uploadSuccess', { filename: file.name }));
       await refreshTemplates();
+
+      // Navigate to the folder where the file was uploaded
+      setSelectedFolderId(uploadToFolderId);
     } catch (error) {
       console.error('Upload failed:', error);
       showErrorToast(t('fileUpload.uploadFailed'));
     } finally {
+      setIsFolderUploading(false);
       if (folderUploadInputRef.current) {
         folderUploadInputRef.current.value = '';
       }
@@ -485,7 +491,19 @@ const Dashboard: FC = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 h-full">
+        <main className="flex-1 min-w-0 h-full relative">
+          {/* Upload in progress overlay */}
+          {isFolderUploading && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400" />
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                  {t('fileUpload.uploading')}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* File List */}
           <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
