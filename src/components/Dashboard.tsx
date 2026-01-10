@@ -13,7 +13,7 @@ import { useFolders } from '../hooks/useFolders';
 import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
-import { updateTemplatePathAfterRename } from '../utils/templatePathUtils';
+import { updateTemplatePathAfterRename, buildTemplatePath } from '../utils/templatePathUtils';
 import { useTranslation } from 'react-i18next';
 
 const Dashboard: FC = () => {
@@ -266,7 +266,6 @@ const Dashboard: FC = () => {
     // Upload the file
     try {
       const { uploadFile, setDoc } = await import('@junobuild/core');
-      const { buildTemplatePath } = await import('../utils/templatePathUtils');
 
       const folderData = getFolderById(uploadToFolderId);
       const folderPath = folderData?.data.path || '/';
