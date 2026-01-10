@@ -1,10 +1,12 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, lazy, Suspense } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { handleRedirectCallback } from '@junobuild/core';
 import Header from './Header';
 import LoginScreen from './auth/LoginScreen';
-import Dashboard from './Dashboard';
 import LoadingSpinner from './ui/LoadingSpinner';
+
+// Lazy load Dashboard to reduce initial bundle size
+const Dashboard = lazy(() => import('./Dashboard'));
 
 const Layout: FC = () => {
   const { user, loading } = useAuth();
@@ -49,7 +51,9 @@ const Layout: FC = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <Header onLogoClick={handleLogoClick} />
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <Dashboard key={dashboardKey} />
+        <Suspense fallback={<LoadingSpinner />}>
+          <Dashboard key={dashboardKey} />
+        </Suspense>
       </main>
     </div>
   );
