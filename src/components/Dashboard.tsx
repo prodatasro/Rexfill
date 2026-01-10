@@ -1,5 +1,5 @@
-import { FC, useState, useCallback, useRef } from 'react';
-import { Menu, X, FolderPlus, Folder as FolderIcon } from 'lucide-react';
+import { FC, useState, useCallback, useRef, useMemo } from 'react';
+import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
 import { Doc, setDoc, deleteDoc, deleteAsset } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder } from '../types/folder';
@@ -40,11 +40,61 @@ const Dashboard: FC = () => {
   const [uploadToFolderId, setUploadToFolderId] = useState<string | null>(null);
   const folderUploadInputRef = useRef<HTMLInputElement>(null);
 
+  // Folder search state
+  const [folderSearchQuery, setFolderSearchQuery] = useState('');
+
+  // Folder expansion triggers
+  const [expandAllTrigger, setExpandAllTrigger] = useState(0);
+  const [collapseAllTrigger, setCollapseAllTrigger] = useState(0);
+
+  // Folder sort state
+  const [folderSortOrder, setFolderSortOrder] = useState<'asc' | 'desc'>('asc');
+
   // Load templates by folder
   const { templates, allTemplates, loading: templatesLoading, refresh: refreshTemplates } = useTemplatesByFolder(selectedFolderId);
 
   // Load folders
   const { folderTree, loading: foldersLoading, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
+
+  // Filter folder tree based on search query
+  const filteredFolderTree = useMemo(() => {
+    // Only filter if search query has at least 3 characters
+    if (folderSearchQuery.length < 2) {
+      return folderTree;
+    }
+
+    const query = folderSearchQuery.toLowerCase();
+
+    // Helper function to check if a node or any of its children match the search
+    const nodeMatchesSearch = (node: typeof folderTree[0]): boolean => {
+      // Check if current folder name matches
+      if (node.folder.data.name.toLowerCase().includes(query)) {
+        return true;
+      }
+      // Check if any child matches
+      return node.children.some(child => nodeMatchesSearch(child));
+    };
+
+    // Helper function to filter tree while preserving parent-child relationships
+    const filterTree = (nodes: typeof folderTree): typeof folderTree => {
+      return nodes.reduce((acc, node) => {
+        const currentMatches = node.folder.data.name.toLowerCase().includes(query);
+        const filteredChildren = filterTree(node.children);
+
+        // Include node if it matches OR if it has matching children
+        if (currentMatches || filteredChildren.length > 0) {
+          acc.push({
+            ...node,
+            children: filteredChildren
+          });
+        }
+
+        return acc;
+      }, [] as typeof folderTree);
+    };
+
+    return filterTree(folderTree);
+  }, [folderTree, folderSearchQuery]);
 
   // Handle template selection for processing
   const handleTemplateSelect = (template: Doc<WordTemplateData>) => {
@@ -327,35 +377,84 @@ const Dashboard: FC = () => {
 
             <div className="flex-1 overflow-hidden">
               <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col">
-                <div className="p-3 border-b border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-sm">{t('folders.title')}</h3>
-                  <div className="flex gap-1">
-                    <FileUpload
-                      onUploadSuccess={async (uploadedToFolderId) => {
-                        await refreshTemplates();
-                        // Navigate to the folder where files were uploaded
-                        if (uploadedToFolderId !== undefined) {
-                          setSelectedFolderId(uploadedToFolderId);
-                        }
-                      }}
-                      onOneTimeProcess={handleOneTimeProcess}
-                      selectedFolderId={selectedFolderId}
-                      folderTree={folderTree}
-                      compact={true}
+                <div className="p-3 border-b border-slate-200 dark:border-slate-700 shrink-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-sm">{t('folders.title')}</h3>
+                    <div className="flex gap-1">
+                      <FileUpload
+                        onUploadSuccess={async (uploadedToFolderId) => {
+                          await refreshTemplates();
+                          // Navigate to the folder where files were uploaded
+                          if (uploadedToFolderId !== undefined) {
+                            setSelectedFolderId(uploadedToFolderId);
+                          }
+                        }}
+                        onOneTimeProcess={handleOneTimeProcess}
+                        selectedFolderId={selectedFolderId}
+                        folderTree={folderTree}
+                        compact={true}
+                      />
+                      <button
+                        onClick={() => handleCreateFolder(selectedFolderId)}
+                        className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                        title={t('folders.newFolder')}
+                        aria-label={t('folders.newFolder')}
+                      >
+                        <FolderPlus className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Folder search input */}
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={folderSearchQuery}
+                      onChange={(e) => setFolderSearchQuery(e.target.value)}
+                      placeholder={t('folders.searchPlaceholder')}
+                      className="w-full pl-8 pr-8 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
                     />
+                    {folderSearchQuery && (
+                      <button
+                        onClick={() => setFolderSearchQuery('')}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-0.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      </button>
+                    )}
+                  </div>
+                  {/* Expand/Collapse/Sort buttons */}
+                  <div className="flex gap-1 mt-2 justify-center">
                     <button
-                      onClick={() => handleCreateFolder(selectedFolderId)}
-                      className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                      title={t('folders.newFolder')}
-                      aria-label={t('folders.newFolder')}
+                      onClick={() => setExpandAllTrigger(prev => prev + 1)}
+                      className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                      title={t('folders.expandAll')}
+                      aria-label={t('folders.expandAll')}
                     >
-                      <FolderPlus className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                      <ChevronDown className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setCollapseAllTrigger(prev => prev + 1)}
+                      className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                      title={t('folders.collapseAll')}
+                      aria-label={t('folders.collapseAll')}
+                    >
+                      <ChevronUp className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setFolderSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                      title={folderSortOrder === 'asc' ? t('folders.sortAZ') : t('folders.sortZA')}
+                      aria-label={folderSortOrder === 'asc' ? t('folders.sortAZ') : t('folders.sortZA')}
+                    >
+                      <ArrowUpDown className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
                 <div className="flex-1 overflow-hidden p-2">
                   <FolderTree
-                    folders={folderTree}
+                    folders={filteredFolderTree}
                     loading={foldersLoading}
                     selectedFolderId={selectedFolderId}
                     onSelectFolder={(folderId) => {
@@ -367,6 +466,10 @@ const Dashboard: FC = () => {
                     onDeleteFolder={handleDeleteFolder}
                     onUploadToFolder={handleUploadToFolder}
                     totalTemplateCount={allTemplates.filter(t => !t.data.folderId).length}
+                    searchQuery={folderSearchQuery}
+                    expandAllTrigger={expandAllTrigger}
+                    collapseAllTrigger={collapseAllTrigger}
+                    sortOrder={folderSortOrder}
                   />
                 </div>
               </div>

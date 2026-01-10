@@ -1,4 +1,4 @@
-import { FC, useState, useCallback } from 'react';
+import { FC, useState, useCallback, useEffect, useMemo } from 'react';
 import { Folder as FolderIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { FolderTreeNode, Folder } from '../../types/folder';
@@ -15,7 +15,13 @@ interface FolderTreeProps {
   onDeleteFolder: (folder: Folder) => void;
   onUploadToFolder: (folderId: string) => void;
   totalTemplateCount?: number;
+  searchQuery?: string;
+  expandAllTrigger?: number; // Increment to trigger expand all
+  collapseAllTrigger?: number; // Increment to trigger collapse all
+  sortOrder?: 'asc' | 'desc'; // Sort order for first-level folders
 }
+
+const STORAGE_KEY = 'rexfill_folder_expansion_state';
 
 const FolderTree: FC<FolderTreeProps> = ({
   folders,
@@ -27,9 +33,88 @@ const FolderTree: FC<FolderTreeProps> = ({
   onDeleteFolder,
   onUploadToFolder,
   totalTemplateCount = 0,
+  searchQuery = '',
+  expandAllTrigger,
+  collapseAllTrigger,
+  sortOrder = 'asc',
 }) => {
   const { t } = useTranslation();
-  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
+
+  // Load initial state from localStorage
+  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        return new Set(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Failed to load folder expansion state:', error);
+    }
+    return new Set();
+  });
+
+  // Save to localStorage whenever expandedFolderIds changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(expandedFolderIds)));
+    } catch (error) {
+      console.error('Failed to save folder expansion state:', error);
+    }
+  }, [expandedFolderIds]);
+
+  // Auto-expand folders that have children ONLY when searching
+  useEffect(() => {
+    // Only auto-expand if there's an active search query (2+ chars)
+    if (searchQuery.length >= 2) {
+      const foldersWithChildren = new Set<string>();
+
+      const collectFoldersWithChildren = (nodes: FolderTreeNode[]) => {
+        nodes.forEach(node => {
+          if (node.children.length > 0) {
+            foldersWithChildren.add(node.folder.key);
+            collectFoldersWithChildren(node.children);
+          }
+        });
+      };
+
+      collectFoldersWithChildren(folders);
+      setExpandedFolderIds(foldersWithChildren);
+    }
+    // Note: When search is cleared, we don't reset - we keep the user's expansion state
+  }, [folders, searchQuery]);
+
+  // Auto-expand parent folders when a child folder is selected
+  useEffect(() => {
+    if (!selectedFolderId) return;
+
+    // Find the parent of the selected folder
+    const findParentId = (nodes: FolderTreeNode[], targetId: string): string | null => {
+      for (const node of nodes) {
+        // Check if target is a direct child
+        if (node.children.some(child => child.folder.key === targetId)) {
+          return node.folder.key;
+        }
+        // Recursively search in children
+        const parentId = findParentId(node.children, targetId);
+        if (parentId) return parentId;
+      }
+      return null;
+    };
+
+    const parentId = findParentId(folders, selectedFolderId);
+
+    // If we found a parent, ensure it's expanded
+    if (parentId) {
+      setExpandedFolderIds(prev => {
+        if (!prev.has(parentId)) {
+          const newSet = new Set(prev);
+          newSet.add(parentId);
+          return newSet;
+        }
+        return prev;
+      });
+    }
+  }, [selectedFolderId, folders]);
 
   const toggleExpand = useCallback((folderId: string) => {
     setExpandedFolderIds((prev) => {
@@ -42,6 +127,51 @@ const FolderTree: FC<FolderTreeProps> = ({
       return newSet;
     });
   }, []);
+
+  const expandAll = useCallback(() => {
+    const allFolderIds = new Set<string>();
+    const collectAllFolderIds = (nodes: FolderTreeNode[]) => {
+      nodes.forEach(node => {
+        if (node.children.length > 0) {
+          allFolderIds.add(node.folder.key);
+          collectAllFolderIds(node.children);
+        }
+      });
+    };
+    collectAllFolderIds(folders);
+    setExpandedFolderIds(allFolderIds);
+  }, [folders]);
+
+  const collapseAll = useCallback(() => {
+    setExpandedFolderIds(new Set());
+  }, []);
+
+  // Respond to expandAll trigger
+  useEffect(() => {
+    if (expandAllTrigger !== undefined && expandAllTrigger > 0) {
+      expandAll();
+    }
+  }, [expandAllTrigger, expandAll]);
+
+  // Respond to collapseAll trigger
+  useEffect(() => {
+    if (collapseAllTrigger !== undefined && collapseAllTrigger > 0) {
+      collapseAll();
+    }
+  }, [collapseAllTrigger, collapseAll]);
+
+  // Sort first-level folders by name
+  const sortedFolders = useMemo(() => {
+    return [...folders].sort((a, b) => {
+      const nameA = a.folder.data.name.toLowerCase();
+      const nameB = b.folder.data.name.toLowerCase();
+      if (sortOrder === 'asc') {
+        return nameA.localeCompare(nameB);
+      } else {
+        return nameB.localeCompare(nameA);
+      }
+    });
+  }, [folders, sortOrder]);
 
   const renderFolderItem = (node: FolderTreeNode, level: number = 0) => {
     const hasChildren = node.children.length > 0;
@@ -115,9 +245,9 @@ const FolderTree: FC<FolderTreeProps> = ({
       )}
 
       {/* Folder tree */}
-      {folders.length > 0 ? (
+      {sortedFolders.length > 0 ? (
         <div className="space-y-1">
-          {folders.map((node) => renderFolderItem(node, 0))}
+          {sortedFolders.map((node) => renderFolderItem(node, 0))}
         </div>
       ) : (
         <div className="text-center py-8 px-4">
