@@ -1,30 +1,46 @@
-import { Doc } from "@junobuild/core";
+import { Doc, uploadFile, setDoc, listDocs } from "@junobuild/core";
 import { FC, useEffect, useState } from "react";
-import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket } from 'lucide-react';
+import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus, FolderTree } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
+import { FolderTreeNode } from "../types/folder";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
+import { buildTemplatePath } from "../utils/templatePathUtils";
 
 interface WordTemplateProcessorProps {
   template?: Doc<WordTemplateData>;
   file?: File;
   onClose: () => void;
+  folderTree: FolderTreeNode[];
 }
 
 export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   template,
   file,
   onClose,
+  folderTree,
 }) => {
   const { t } = useTranslation();
   const [placeholders, setPlaceholders] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [initialFormData, setInitialFormData] = useState<Record<string, string>>({});
   const [customProperties, setCustomProperties] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Save As dialog state
+  const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
+  const [saveAsFilename, setSaveAsFilename] = useState('');
+  const [saveAsFolderId, setSaveAsFolderId] = useState<string | null>(null);
+  const [saveAsLoading, setSaveAsLoading] = useState(false);
+
+  // Unsaved changes dialog state
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
 
   useEffect(() => {
     extractPlaceholdersAndProperties();
@@ -91,6 +107,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         initialFormData[key] = value;
       });
 
+      setInitialFormData(initialFormData);
       setFormData(initialFormData);
     } catch (error) {
       console.error('Error extracting placeholders and properties:', error);
@@ -99,6 +116,14 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     }
   };
 
+  // Track changes to form data
+  useEffect(() => {
+    const changed = Object.keys(formData).some(
+      key => formData[key] !== (initialFormData[key] || '')
+    );
+    setHasChanges(changed);
+  }, [formData, initialFormData]);
+
   const handleInputChange = (placeholder: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -106,35 +131,39 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     }));
   };
 
-  const processDocument = async () => {
-    setProcessing(true);
-    try {
-      let arrayBuffer: ArrayBuffer;
+  // Shared function to generate processed blob - used by Save, Save As, and Generate
+  const generateProcessedBlob = async (): Promise<{ blob: Blob; fileName: string }> => {
+    let arrayBuffer: ArrayBuffer;
 
-      if (file) {
-        // One-time processing - read file directly
-        arrayBuffer = await file.arrayBuffer();
-      } else if (template?.data.url) {
-        // Saved template - fetch from URL
-        const response = await fetch(template.data.url);
-        arrayBuffer = await response.arrayBuffer();
+    if (file) {
+      // One-time processing - read file directly
+      arrayBuffer = await file.arrayBuffer();
+    } else if (template?.data.url) {
+      // Saved template - fetch from URL
+      const response = await fetch(template.data.url);
+      arrayBuffer = await response.arrayBuffer();
+    } else {
+      throw new Error("No file or template provided");
+    }
+
+    // Separate placeholders and custom properties
+    const placeholderData: Record<string, string> = {};
+    const customPropsData: Record<string, string> = {};
+
+    // Determine which fields are custom properties vs placeholders
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key in customProperties) {
+        customPropsData[key] = value;
       } else {
-        throw new Error("No file or template provided");
+        placeholderData[key] = value;
       }
+    });
+
+    const fileName = file ? file.name : template?.data.name || 'document.docx';
+
+    // Try with custom module first
+    try {
       const zip = new PizZip(arrayBuffer);
-
-      // Separate placeholders and custom properties
-      const placeholderData: Record<string, string> = {};
-      const customPropsData: Record<string, string> = {};
-
-      // Determine which fields are custom properties vs placeholders
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key in customProperties) {
-          customPropsData[key] = value;
-        } else {
-          placeholderData[key] = value;
-        }
-      });
 
       // Write custom properties to the document
       if (Object.keys(customPropsData).length > 0) {
@@ -216,15 +245,59 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         doc.render();
       }
 
-      const output = zip.generate({
+      const blob = zip.generate({
         type: "blob",
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
+      }) as Blob;
 
-      const url = window.URL.createObjectURL(output);
+      return { blob, fileName };
+    } catch (error) {
+      console.error('Primary processing failed, trying fallback...', error);
+
+      // Fallback: simpler approach without custom module
+      const zip = new PizZip(arrayBuffer);
+
+      // Write custom properties
+      if (Object.keys(customPropsData).length > 0) {
+        writeCustomProperties(zip, customPropsData);
+        updateDocumentFields(zip, customPropsData);
+      }
+
+      // Process placeholders if any
+      if (placeholders.length > 0) {
+        const doc = new Docxtemplater(zip, {
+          paragraphLoop: true,
+          linebreaks: true,
+          nullGetter: () => "",
+          delimiters: {
+            start: "{{",
+            end: "}}"
+          }
+        });
+
+        doc.setData(placeholderData);
+        doc.render();
+      }
+
+      const blob = zip.generate({
+        type: "blob",
+        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      }) as Blob;
+
+      return { blob, fileName };
+    }
+  };
+
+  const processDocument = async () => {
+    setProcessing(true);
+    try {
+      // Use shared blob generation logic
+      const { blob, fileName } = await generateProcessedBlob();
+
+      // Download the file
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const fileName = file ? file.name : template?.data.name || 'document.docx';
       a.download = `processed_${fileName}`;
       a.click();
       window.URL.revokeObjectURL(url);
@@ -305,6 +378,175 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     }
   };
 
+  // Save to original template
+  const handleSave = async () => {
+    if (!template) return; // Save only works for saved templates
+
+    setSaving(true);
+    try {
+      // 1. Generate processed blob
+      const { blob, fileName } = await generateProcessedBlob();
+
+      // 2. Upload to Juno Storage (overwrite)
+      const storagePath = template.data.fullPath?.startsWith('/')
+        ? template.data.fullPath.substring(1)
+        : template.data.fullPath || fileName;
+
+      // Convert blob to File for upload
+      const fileToUpload = new File([blob], fileName, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      const result = await uploadFile({
+        data: fileToUpload,
+        collection: 'templates',
+        filename: storagePath
+      });
+
+      // 3. Update metadata
+      await setDoc({
+        collection: 'templates_meta',
+        doc: {
+          ...template,
+          data: {
+            ...template.data,
+            url: result.downloadUrl,
+            size: blob.size,
+            uploadedAt: Date.now()
+          }
+        }
+      });
+
+      // 4. Success feedback
+      showSuccessToast(t('templateProcessor.saveSuccess'));
+      onClose(); // Close and refresh parent
+
+    } catch (error) {
+      console.error('Save failed:', error);
+      showErrorToast(t('templateProcessor.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Helper function to get folder path from folder tree
+  const getFolderPathById = (folderId: string | null, tree: FolderTreeNode[]): string => {
+    if (!folderId) return '';
+
+    for (const node of tree) {
+      if (node.folder.key === folderId) {
+        return node.folder.data.path;
+      }
+      if (node.children.length > 0) {
+        const childPath = getFolderPathById(folderId, node.children);
+        if (childPath) return childPath;
+      }
+    }
+    return '';
+  };
+
+  // Save as new template
+  const handleSaveAs = () => {
+    const currentName = file?.name || template?.data.name || 'document.docx';
+    const nameWithoutExt = currentName.replace(/\.docx$/i, '');
+    setSaveAsFilename(nameWithoutExt);
+
+    // Default folder: template's folder OR root for one-time files
+    setSaveAsFolderId(template?.data.folderId || null);
+    setShowSaveAsDialog(true);
+  };
+
+  const handleSaveAsConfirm = async () => {
+    setSaveAsLoading(true);
+    try {
+      // 1. Validate filename
+      const filename = saveAsFilename.trim();
+      if (!filename) {
+        showErrorToast(t('templateProcessor.saveAsInvalidFilename'));
+        return;
+      }
+
+      const finalFilename = filename.endsWith('.docx')
+        ? filename
+        : `${filename}.docx`;
+
+      // 2. Check if file exists in target folder
+      const existingDocs = await listDocs<WordTemplateData>({
+        collection: 'templates_meta',
+        filter: {}
+      });
+
+      const fileExists = existingDocs.items.some(doc =>
+        doc.data.name === finalFilename &&
+        (doc.data.folderId || null) === saveAsFolderId
+      );
+
+      if (fileExists) {
+        showErrorToast(t('templateProcessor.saveAsFileExists'));
+        return;
+      }
+
+      // 3. Generate processed blob
+      const { blob } = await generateProcessedBlob();
+
+      // 4. Build path using utility
+      const folderPath = getFolderPathById(saveAsFolderId, folderTree);
+      const fullPath = buildTemplatePath(folderPath, finalFilename);
+      const storagePath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
+
+      // 5. Upload to Juno
+      const fileToUpload = new File([blob], finalFilename, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      const result = await uploadFile({
+        data: fileToUpload,
+        collection: 'templates',
+        filename: storagePath
+      });
+
+      // 6. Create new metadata entry
+      const key = storagePath.replace(/\//g, '_').replace(/\./g, '_');
+      await setDoc({
+        collection: 'templates_meta',
+        doc: {
+          key,
+          data: {
+            name: finalFilename,
+            url: result.downloadUrl,
+            size: blob.size,
+            uploadedAt: Date.now(),
+            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            folderId: saveAsFolderId,
+            folderPath,
+            fullPath
+          }
+        }
+      });
+
+      // 7. Success feedback
+      showSuccessToast(t('templateProcessor.saveAsSuccess', { filename: finalFilename }));
+      setShowSaveAsDialog(false);
+      onClose();
+
+    } catch (error) {
+      console.error('Save As failed:', error);
+      showErrorToast(t('templateProcessor.saveAsFailed'));
+    } finally {
+      setSaveAsLoading(false);
+    }
+  };
+
+  // Enhanced cancel with change detection
+  const handleCancel = () => {
+    if (!hasChanges) {
+      onClose();
+      return;
+    }
+
+    setShowUnsavedChangesDialog(true);
+  };
+
   // Form is valid if all required fields have values
   // For now, we consider all fields optional (can be empty)
   const isFormValid = true;
@@ -312,8 +554,143 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   // Get all field names (both placeholders and custom properties)
   const allFields = [...placeholders, ...Object.keys(customProperties)];
 
+  // Save As Dialog Component
+  const SaveAsDialog = () => {
+    if (!showSaveAsDialog) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+            {t('templateProcessor.saveAsTitle')}
+          </h3>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                {t('templateProcessor.saveAsFilename')}
+              </label>
+              <input
+                type="text"
+                value={saveAsFilename}
+                onChange={(e) => setSaveAsFilename(e.target.value)}
+                className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t('templateProcessor.saveAsFilenamePlaceholder')}
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                {t('templateProcessor.saveAsSelectFolder')}
+              </label>
+              <select
+                value={saveAsFolderId || ''}
+                onChange={(e) => setSaveAsFolderId(e.target.value || null)}
+                className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">{t('folders.rootFolder')}</option>
+                {folderTree.map((node) => (
+                  <>
+                    <option key={node.folder.key} value={node.folder.key}>
+                      {node.folder.data.name}
+                    </option>
+                    {node.children.map((child) => (
+                      <option key={child.folder.key} value={child.folder.key}>
+                        └─ {child.folder.data.name}
+                      </option>
+                    ))}
+                  </>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleSaveAsConfirm}
+              disabled={!saveAsFilename.trim() || saveAsLoading}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+            >
+              {saveAsLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {t('templateProcessor.saving')}
+                </span>
+              ) : (
+                t('templateProcessor.saveAs')
+              )}
+            </button>
+            <button
+              onClick={() => setShowSaveAsDialog(false)}
+              disabled={saveAsLoading}
+              className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+            >
+              {t('templateProcessor.cancel')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Unsaved Changes Dialog Component
+  const UnsavedChangesDialog = () => {
+    if (!showUnsavedChangesDialog) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+            {t('templateProcessor.unsavedChangesTitle')}
+          </h3>
+
+          <p className="text-slate-600 dark:text-slate-300 mb-6">
+            {t('templateProcessor.unsavedChangesMessage')}
+          </p>
+
+          <div className="flex flex-col gap-3">
+            {template && (
+              <button
+                onClick={() => {
+                  setShowUnsavedChangesDialog(false);
+                  handleSave();
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Save className="w-5 h-5" />
+                {t('templateProcessor.unsavedChangesSave')}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setShowUnsavedChangesDialog(false);
+                handleSaveAs();
+              }}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+            >
+              <FilePlus className="w-5 h-5" />
+              {t('templateProcessor.unsavedChangesSaveAs')}
+            </button>
+            <button
+              onClick={() => {
+                setShowUnsavedChangesDialog(false);
+                onClose();
+              }}
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+            >
+              {t('templateProcessor.unsavedChangesDiscard')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
+      <SaveAsDialog />
+      <UnsavedChangesDialog />
       <div className="bg-linear-to-r from-blue-600 to-purple-600 p-4 sm:p-6 shadow-lg">
           <div className="flex justify-between items-center">
             <div className="min-w-0 flex-1 pr-2">
@@ -333,8 +710,9 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
             </button>
           </div>
         </div>
-        
-        <div className="p-4 sm:p-8 bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 min-h-screen">
+
+        <div className="flex-1 overflow-y-auto bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pb-32">
+        <div className="p-4 sm:p-8">
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 sm:py-16">
@@ -407,39 +785,83 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                       </div>
                     ))}
                   </div>
-                  
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                      <button
-                        onClick={processDocument}
-                        disabled={!isFormValid || processing}
-                        className="flex-1 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-3 sm:py-4 px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
-                      >
-                        {processing ? (
-                          <span className="flex items-center justify-center gap-2 sm:gap-3">
-                            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
-                            <span className="text-base sm:text-lg">{t('templateProcessor.processing')}</span>
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center gap-2 sm:gap-3">
-                            <Rocket className="w-5 h-5 sm:w-6 sm:h-6" />
-                            <span className="text-base sm:text-lg">{t('templateProcessor.generateDocument')}</span>
-                          </span>
-                        )}
-                      </button>
-                      <button
-                        onClick={onClose}
-                        className="flex-1 sm:flex-none sm:px-8 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
-                      >
-                        {t('templateProcessor.cancel')}
-                      </button>
-                    </div>
-                  </div>
                 </>
               )}
             </div>
           )}
         </div>
+        </div>
+
+        {/* Sticky buttons at bottom */}
+        {!loading && allFields.length > 0 && (
+          <div className="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none">
+            <div className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pointer-events-auto">
+
+                {/* Save button - only for saved templates */}
+                {template && (
+                  <button
+                    onClick={handleSave}
+                    disabled={!isFormValid || saving || processing}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none whitespace-nowrap"
+                  >
+                    {saving ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-sm sm:text-base">{t('templateProcessor.saving')}</span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Save className="w-5 h-5" />
+                        <span className="text-sm sm:text-base">{t('templateProcessor.save')}</span>
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {/* Save As button - always shown */}
+                <button
+                  onClick={handleSaveAs}
+                  disabled={!isFormValid || saving || processing}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none whitespace-nowrap"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <FilePlus className="w-5 h-5" />
+                    <span className="text-sm sm:text-base">{t('templateProcessor.saveAs')}</span>
+                  </span>
+                </button>
+
+                {/* Generate (Download) button */}
+                <button
+                  onClick={processDocument}
+                  disabled={!isFormValid || saving || processing}
+                  className="bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none whitespace-nowrap"
+                >
+                  {processing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="text-sm sm:text-base">{t('templateProcessor.processing')}</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Rocket className="w-5 h-5" />
+                      <span className="text-sm sm:text-base">{t('templateProcessor.generateDocument')}</span>
+                    </span>
+                  )}
+                </button>
+
+                {/* Cancel button */}
+                <button
+                  onClick={handleCancel}
+                  disabled={saving || processing}
+                  className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 disabled:bg-slate-400 text-white font-semibold py-2.5 sm:py-3 px-6 sm:px-8 rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl whitespace-nowrap"
+                >
+                  {t('templateProcessor.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };

@@ -57,10 +57,12 @@ const Dashboard: FC = () => {
     setSelectedTemplate(null);
   };
 
-  const handleCloseProcessor = () => {
+  const handleCloseProcessor = useCallback(async () => {
     setSelectedTemplate(null);
     setSelectedFile(null);
-  };
+    // Refresh templates list to show any newly saved files
+    await refreshTemplates();
+  }, [refreshTemplates]);
 
   // Folder operations
   const handleCreateFolder = useCallback((parentId: string | null) => {
@@ -267,6 +269,7 @@ const Dashboard: FC = () => {
         template={selectedTemplate || undefined}
         file={selectedFile || undefined}
         onClose={handleCloseProcessor}
+        folderTree={folderTree}
       />
     );
   }
