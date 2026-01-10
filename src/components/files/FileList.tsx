@@ -1,5 +1,5 @@
 import { FC, useState, useMemo } from 'react';
-import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { setDoc, deleteDoc, deleteAsset, Doc, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
@@ -44,6 +44,39 @@ const FileList: FC<FileListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleDownload = async (template: Doc<WordTemplateData>) => {
+    try {
+      if (!template.data.url) {
+        showErrorToast(t('fileList.downloadFailed'));
+        return;
+      }
+
+      // Fetch the file from the URL
+      const response = await fetch(template.data.url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch file');
+      }
+
+      // Get the blob and create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = template.data.name;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      showSuccessToast(t('fileList.downloadSuccess', { filename: template.data.name }));
+    } catch (error) {
+      console.error('Download failed:', error);
+      showErrorToast(t('fileList.downloadFailed'));
+    }
+  };
 
   const handleDelete = async (template: Doc<WordTemplateData>) => {
     const confirmed = await confirm({
@@ -385,6 +418,16 @@ const FileList: FC<FileListProps> = ({
 
                   {/* Action Buttons */}
                   <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => handleDownload(template)}
+                      disabled={isDeleting}
+                      className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={t('fileList.downloadTemplate')}
+                      aria-label={t('fileList.downloadTemplate')}
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+
                     <button
                       onClick={() => setTemplateToMove(template)}
                       disabled={isDeleting}
