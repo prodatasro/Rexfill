@@ -1,6 +1,6 @@
 import { Doc, uploadFile, setDoc, listDocs } from "@junobuild/core";
 import { FC, useEffect, useState } from "react";
-import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus, FolderTree } from 'lucide-react';
+import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
 import Docxtemplater from "docxtemplater";
