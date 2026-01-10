@@ -5,7 +5,11 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 
-const Header: FC = () => {
+interface HeaderProps {
+  onLogoClick?: () => void;
+}
+
+const Header: FC<HeaderProps> = ({ onLogoClick }) => {
   const { logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
@@ -17,10 +21,11 @@ const Header: FC = () => {
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
-        <img 
-          src={isDarkMode ? '/logo-dark.svg' : '/logo-light.svg'} 
-          alt="Rexfill" 
-          className="h-8 sm:h-10"
+        <img
+          src={isDarkMode ? '/logo-dark.svg' : '/logo-light.svg'}
+          alt="Rexfill"
+          className="h-8 sm:h-10 cursor-pointer"
+          onClick={onLogoClick}
         />
         
         <div className="flex items-center gap-2 sm:gap-4">

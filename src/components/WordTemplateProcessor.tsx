@@ -722,7 +722,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
               </p>
             </div>
           ) : (
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-4">
               {allFields.length === 0 ? (
                 <div className="text-center py-12 sm:py-16">
                   <ClipboardList className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 text-slate-400 dark:text-slate-600" />
@@ -735,52 +735,44 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 </div>
               ) : (
                 <>
-                  <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-xl p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 dark:text-blue-400" />
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50">
+                  <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
                         {t('templateProcessor.customizationTitle')}
                       </h3>
                     </div>
-                    <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: allFields.length }) }}>
+                    <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: allFields.length }) }}>
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-6 sm:gap-8">
+                  <div className="grid grid-cols-1 gap-3">
                     {allFields.map((fieldName) => (
-                      <div key={fieldName} className="space-y-2 sm:space-y-3">
-                        <label className="block text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 uppercase tracking-wider">
-                          <span className="inline-flex items-center gap-2">
+                      <div key={fieldName} className="space-y-1">
+                        <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
+                          <span className="inline-flex items-center gap-1.5">
                             {fieldName in customProperties ? (
-                              <FileText className="w-4 h-4" />
+                              <FileText className="w-3.5 h-3.5" />
                             ) : (
-                              <Tag className="w-4 h-4" />
+                              <Tag className="w-3.5 h-3.5" />
                             )}
                             {fieldName}
                           </span>
                         </label>
-                        <div className="space-y-2">
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={formData[fieldName] || ''}
-                              onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                              className="w-full px-4 py-4 sm:px-6 sm:py-5 pr-12 sm:pr-24 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-base sm:text-lg rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
-                              placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
-                              autoComplete="off"
-                            />
-                            {formData[fieldName]?.trim() && (
-                              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                                <Check className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
-                              </div>
-                            )}
-                            <div className="hidden sm:block absolute bottom-2 right-4 text-xs text-slate-400">
-                              {formData[fieldName]?.length || 0} {t('templateProcessor.chars')}
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={formData[fieldName] || ''}
+                            onChange={(e) => handleInputChange(fieldName, e.target.value)}
+                            className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
+                            placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
+                            autoComplete="off"
+                          />
+                          {formData[fieldName]?.trim() && (
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                              <Check className="w-4 h-4 text-green-500" />
                             </div>
-                          </div>
-                          <div className="sm:hidden text-xs text-slate-400 px-1">
-                            {formData[fieldName]?.length || 0} {t('templateProcessor.chars')}
-                          </div>
+                          )}
                         </div>
                       </div>
                     ))}

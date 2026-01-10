@@ -22,10 +22,10 @@ const App: FC = () => {
         <ConfirmProvider>
           <Layout />
           <Toaster
-            position="bottom-center"
+            position="bottom-right"
             richColors
             closeButton
-            duration={6000}
+            duration={5000}
           />
         </ConfirmProvider>
       </AuthProvider>

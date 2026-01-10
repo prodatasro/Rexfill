@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { handleRedirectCallback } from '@junobuild/core';
 import Header from './Header';
@@ -8,6 +8,7 @@ import LoadingSpinner from './ui/LoadingSpinner';
 
 const Layout: FC = () => {
   const { user, loading } = useAuth();
+  const [dashboardKey, setDashboardKey] = useState(0);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -27,6 +28,11 @@ const Layout: FC = () => {
     handleAuthCallback();
   }, []);
 
+  const handleLogoClick = () => {
+    // Force remount of Dashboard by changing its key
+    setDashboardKey(prev => prev + 1);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
@@ -41,9 +47,9 @@ const Layout: FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <Header />
+      <Header onLogoClick={handleLogoClick} />
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <Dashboard />
+        <Dashboard key={dashboardKey} />
       </main>
     </div>
   );

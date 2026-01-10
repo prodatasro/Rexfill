@@ -10,7 +10,9 @@
       "Bash(npx tsc:*)",
       "Bash(timeout 30 npx tsc:*)",
       "Bash(echo:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(tasklist:*)",
+      "Bash(netstat:*)"
     ]
   }
 }
