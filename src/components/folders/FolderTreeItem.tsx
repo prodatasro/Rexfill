@@ -31,6 +31,13 @@ const FolderTreeItem: FC<FolderTreeItemProps> = ({
   const hasChildren = node.children.length > 0;
   const indent = level * 16; // 16px per level
 
+  // Handle double-click to expand/collapse first-level folders
+  const handleDoubleClick = () => {
+    if (level === 0 && hasChildren) {
+      onToggleExpand();
+    }
+  };
+
   return (
     <div>
       <div
@@ -44,6 +51,7 @@ const FolderTreeItem: FC<FolderTreeItemProps> = ({
         `}
         style={{ paddingLeft: `${indent + 12}px` }}
         onClick={onSelect}
+        onDoubleClick={handleDoubleClick}
       >
         {/* Expand/collapse button */}
         {hasChildren && (
