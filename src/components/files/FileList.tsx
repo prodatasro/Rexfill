@@ -35,7 +35,6 @@ const FileList: FC<FileListProps> = ({
 }) => {
   const { t } = useTranslation();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-  const [movingId, setMovingId] = useState<string | null>(null);
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
   const { confirm } = useConfirm();
 
@@ -132,7 +131,6 @@ const FileList: FC<FileListProps> = ({
   const handleMove = async (targetFolderId: string | null) => {
     if (!templateToMove) return;
 
-    setMovingId(templateToMove.key);
     try {
       // Check for duplicate in target folder
       const checkDuplicate = async (): Promise<boolean> => {
@@ -196,8 +194,6 @@ const FileList: FC<FileListProps> = ({
     } catch (error) {
       console.error('Move failed:', error);
       showErrorToast(t('fileList.moveFailed'));
-    } finally {
-      setMovingId(null);
     }
   };
 

@@ -431,6 +431,7 @@ export const useWordTemplateProcessor = ({
     folderId: string | null,
     newFolderData?: { name: string; parentId: string | null }
   ) => {
+    setSaving(true);
     try {
       let targetFolderId = folderId;
       let createdFolderPath = '';
@@ -535,6 +536,8 @@ export const useWordTemplateProcessor = ({
       console.error('Save As failed:', error);
       showErrorToast(t('templateProcessor.saveAsFailed'));
       return false;
+    } finally {
+      setSaving(false);
     }
   };
 
