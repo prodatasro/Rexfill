@@ -421,9 +421,13 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         }
       });
 
-      // 4. Success feedback
+      // 4. Reset change tracking - treat current state as the new baseline
+      setInitialFormData({ ...formData });
+      setHasChanges(false);
+      setHasUnsavedChanges(false);
+
+      // 5. Success feedback - document remains open
       showSuccessToast(t('templateProcessor.saveSuccess'));
-      onClose(); // Close and refresh parent
 
     } catch (error) {
       console.error('Save failed:', error);
