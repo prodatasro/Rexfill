@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 
 interface HeaderProps {
-  onLogoClick?: () => void;
+  onLogoClick?: () => void | Promise<void>;
 }
 
 const Header: FC<HeaderProps> = ({ onLogoClick }) => {

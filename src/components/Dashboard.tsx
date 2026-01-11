@@ -1,17 +1,18 @@
 import { FC, useState, useCallback, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2 } from 'lucide-react';
 import { Doc, setDoc, deleteDoc, deleteAsset } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder } from '../types/folder';
 import FileUpload from './files/FileUpload';
 import FileList from './files/FileList';
-import { WordTemplateProcessor } from './WordTemplateProcessor';
 import FolderTree from './folders/FolderTree';
 import FolderDialog from './folders/FolderDialog';
 import Breadcrumbs from './Breadcrumbs';
 import { useFolders } from '../hooks/useFolders';
 import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { useFileProcessing } from '../contexts/FileProcessingContext';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { updateTemplatePathAfterRename, buildTemplatePath } from '../utils/templatePathUtils';
 import { useTranslation } from 'react-i18next';
@@ -19,10 +20,8 @@ import { useTranslation } from 'react-i18next';
 const Dashboard: FC = () => {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
-
-  // Template selection state
-  const [selectedTemplate, setSelectedTemplate] = useState<Doc<WordTemplateData> | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const navigate = useNavigate();
+  const { setOneTimeFile } = useFileProcessing();
 
   // Folder state
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -99,21 +98,15 @@ const Dashboard: FC = () => {
 
   // Handle template selection for processing
   const handleTemplateSelect = (template: Doc<WordTemplateData>) => {
-    setSelectedTemplate(template);
-    setSelectedFile(null);
+    // Navigate to processor page with template ID
+    navigate(`/process?id=${template.key}`);
   };
 
   const handleOneTimeProcess = (file: File) => {
-    setSelectedFile(file);
-    setSelectedTemplate(null);
+    // Store file in context and navigate to processor
+    setOneTimeFile(file);
+    navigate('/process');
   };
-
-  const handleCloseProcessor = useCallback(async () => {
-    setSelectedTemplate(null);
-    setSelectedFile(null);
-    // Refresh templates list to show any newly saved files
-    await refreshTemplates();
-  }, [refreshTemplates]);
 
   // Folder operations
   const handleCreateFolder = useCallback((parentId: string | null) => {
@@ -316,18 +309,6 @@ const Dashboard: FC = () => {
       setUploadToFolderId(null);
     }
   };
-
-  // If processing a template, show the processor
-  if (selectedTemplate || selectedFile) {
-    return (
-      <WordTemplateProcessor
-        template={selectedTemplate || undefined}
-        file={selectedFile || undefined}
-        onClose={handleCloseProcessor}
-        folderTree={folderTree}
-      />
-    );
-  }
 
   return (
     <>

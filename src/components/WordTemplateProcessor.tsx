@@ -1,5 +1,5 @@
 import { Doc, uploadFile, setDoc, listDocs } from "@junobuild/core";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useState, useCallback } from "react";
 import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
@@ -7,6 +7,7 @@ import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
+import { useProcessor } from "../contexts/ProcessorContext";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
 import { buildTemplatePath } from "../utils/templatePathUtils";
 
@@ -24,6 +25,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   folderTree,
 }) => {
   const { t } = useTranslation();
+  const { setHasUnsavedChanges, setRequestNavigation } = useProcessor();
   const [placeholders, setPlaceholders] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [initialFormData, setInitialFormData] = useState<Record<string, string>>({});
@@ -121,8 +123,10 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     const changed = Object.keys(formData).some(
       key => formData[key] !== (initialFormData[key] || '')
     );
+    console.log('Change detection:', { formData, initialFormData, changed });
     setHasChanges(changed);
-  }, [formData, initialFormData]);
+    setHasUnsavedChanges(changed);
+  }, [formData, initialFormData, setHasUnsavedChanges]);
 
   const handleInputChange = (placeholder: string, value: string) => {
     setFormData(prev => ({
@@ -538,14 +542,32 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   };
 
   // Enhanced cancel with change detection
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
+    console.log('handleCancel called, hasChanges:', hasChanges);
     if (!hasChanges) {
+      console.log('No changes, calling onClose');
       onClose();
       return;
     }
 
+    console.log('Has changes, showing dialog');
     setShowUnsavedChangesDialog(true);
-  };
+  }, [hasChanges, onClose]);
+
+  // Set up navigation request handler for logo clicks
+  useEffect(() => {
+    // Pass handleCancel directly - the context wrapper handles it properly
+    // handleCancel is memoized with useCallback, so it updates when hasChanges changes
+    setRequestNavigation(handleCancel);
+  }, [setRequestNavigation, handleCancel]);
+
+  // Separate cleanup effect that only runs on unmount
+  useEffect(() => {
+    return () => {
+      setRequestNavigation(null);
+      setHasUnsavedChanges(false);
+    };
+  }, [setRequestNavigation, setHasUnsavedChanges]);
 
   // Form is valid if all required fields have values
   // For now, we consider all fields optional (can be empty)
@@ -688,10 +710,10 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col">
       <SaveAsDialog />
       <UnsavedChangesDialog />
-      <div className="bg-linear-to-r from-blue-600 to-purple-600 p-4 sm:p-6 shadow-lg">
+      <div className="bg-linear-to-r from-blue-600 to-purple-600 p-4 sm:p-6 shadow-lg rounded-t-lg">
           <div className="flex justify-between items-center">
             <div className="min-w-0 flex-1 pr-2">
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 flex items-center gap-2">
@@ -702,7 +724,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleCancel}
               className="text-white hover:text-red-200 transition-colors p-2 rounded-full hover:bg-white/10 shrink-0"
               aria-label="Close"
             >
@@ -711,7 +733,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pb-32">
+        <div className="bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pb-32 rounded-b-lg">
         <div className="p-4 sm:p-8">
 
           {loading ? (
@@ -784,11 +806,10 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         </div>
         </div>
 
-        {/* Sticky buttons at bottom */}
+        {/* Action buttons at bottom */}
         {!loading && allFields.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none">
-            <div className="p-3 sm:p-4">
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pointer-events-auto">
+          <div className="sticky bottom-0 flex justify-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700 py-4 rounded-b-lg">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
 
                 {/* Save button - only for saved templates */}
                 {template && (
@@ -851,7 +872,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                   {t('templateProcessor.cancel')}
                 </button>
               </div>
-            </div>
           </div>
         )}
     </div>
