@@ -16,6 +16,7 @@ interface WordTemplateProcessorProps {
   file?: File;
   onClose: () => void;
   folderTree: FolderTreeNode[];
+  onTemplateChange?: (newTemplate: Doc<WordTemplateData>) => void;
 }
 
 export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
@@ -23,6 +24,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   file,
   onClose,
   folderTree,
+  onTemplateChange,
 }) => {
   const { t } = useTranslation();
   const { setHasUnsavedChanges, setRequestNavigation } = useProcessor();
@@ -515,27 +517,38 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
       // 6. Create new metadata entry
       const key = storagePath.replace(/\//g, '_').replace(/\./g, '_');
+      const newTemplateDoc: Doc<WordTemplateData> = {
+        key,
+        data: {
+          name: finalFilename,
+          url: result.downloadUrl,
+          size: blob.size,
+          uploadedAt: Date.now(),
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          folderId: saveAsFolderId,
+          folderPath,
+          fullPath
+        }
+      };
+
       await setDoc({
         collection: 'templates_meta',
-        doc: {
-          key,
-          data: {
-            name: finalFilename,
-            url: result.downloadUrl,
-            size: blob.size,
-            uploadedAt: Date.now(),
-            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            folderId: saveAsFolderId,
-            folderPath,
-            fullPath
-          }
-        }
+        doc: newTemplateDoc
       });
 
-      // 7. Success feedback
+      // 7. Notify parent to switch to the new template
+      if (onTemplateChange) {
+        onTemplateChange(newTemplateDoc);
+      }
+
+      // 8. Reset change tracking - treat current state as the new baseline
+      setInitialFormData({ ...formData });
+      setHasChanges(false);
+      setHasUnsavedChanges(false);
+
+      // 9. Success feedback - document remains open
       showSuccessToast(t('templateProcessor.saveAsSuccess', { filename: finalFilename }));
       setShowSaveAsDialog(false);
-      onClose();
 
     } catch (error) {
       console.error('Save As failed:', error);

@@ -84,6 +84,16 @@ const ProcessorPage: FC = () => {
     setCurrentFolderId(null);
   };
 
+  const handleTemplateChange = (newTemplate: Doc<WordTemplateData>) => {
+    // Switch to the new template
+    setTemplate(newTemplate);
+    setFile(null); // Clear file if it was a one-time file
+    // Update the URL to reflect the new template
+    navigate(`/process?id=${newTemplate.key}`, { replace: true });
+    // Update context with new folder
+    setCurrentFolderId(newTemplate.data.folderId || null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
@@ -102,6 +112,7 @@ const ProcessorPage: FC = () => {
       file={file || undefined}
       onClose={handleClose}
       folderTree={folderTree}
+      onTemplateChange={handleTemplateChange}
     />
   );
 };
