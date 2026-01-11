@@ -1,8 +1,8 @@
 import { Doc, uploadFile, setDoc, listDocs } from "@junobuild/core";
 import { FC, useEffect, useState, useCallback } from "react";
-import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus } from 'lucide-react';
+import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus, FolderPlus } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
-import { FolderTreeNode } from "../types/folder";
+import { FolderTreeNode, FolderData } from "../types/folder";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useProcessor } from "../contexts/ProcessorContext";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
 import { buildTemplatePath } from "../utils/templatePathUtils";
+import { validateFolderName, buildFolderPath } from "../utils/folderUtils";
 
 interface WordTemplateProcessorProps {
   template?: Doc<WordTemplateData>;
@@ -42,6 +43,9 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const [saveAsFilename, setSaveAsFilename] = useState('');
   const [saveAsFolderId, setSaveAsFolderId] = useState<string | null>(null);
   const [saveAsLoading, setSaveAsLoading] = useState(false);
+  const [showNewFolderForm, setShowNewFolderForm] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
 
   // Unsaved changes dialog state
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
@@ -439,22 +443,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     }
   };
 
-  // Helper function to get folder path from folder tree
-  const getFolderPathById = (folderId: string | null, tree: FolderTreeNode[]): string => {
-    if (!folderId) return '';
-
-    for (const node of tree) {
-      if (node.folder.key === folderId) {
-        return node.folder.data.path;
-      }
-      if (node.children.length > 0) {
-        const childPath = getFolderPathById(folderId, node.children);
-        if (childPath) return childPath;
-      }
-    }
-    return '';
-  };
-
   // Save as new template
   const handleSaveAs = () => {
     const currentName = file?.name || template?.data.name || 'document.docx';
@@ -469,10 +457,35 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const handleSaveAsConfirm = async () => {
     setSaveAsLoading(true);
     try {
-      // 1. Validate filename
+      // 1. Create new folder if needed and get its path
+      let targetFolderId = saveAsFolderId;
+      let createdFolderPath = '';
+
+      if (showNewFolderForm) {
+        const newFolderId = await handleCreateNewFolder();
+        if (!newFolderId) {
+          setSaveAsLoading(false);
+          return; // Folder creation failed, error already shown
+        }
+        targetFolderId = newFolderId;
+
+        // Build the path for the newly created folder
+        const parentFolder = newFolderParentId
+          ? folderTree.find(n => n.folder.key === newFolderParentId)?.folder
+          : null;
+        createdFolderPath = buildFolderPath(newFolderName.trim(), parentFolder?.data.path || null);
+
+        // Close the new folder form and update folder selection
+        setShowNewFolderForm(false);
+        setNewFolderName('');
+        setNewFolderParentId(null);
+      }
+
+      // 2. Validate filename
       const filename = saveAsFilename.trim();
       if (!filename) {
         showErrorToast(t('templateProcessor.saveAsInvalidFilename'));
+        setSaveAsLoading(false);
         return;
       }
 
@@ -480,7 +493,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         ? filename
         : `${filename}.docx`;
 
-      // 2. Check if file exists in target folder
+      // 3. Check if file exists in target folder
       const existingDocs = await listDocs<WordTemplateData>({
         collection: 'templates_meta',
         filter: {}
@@ -488,19 +501,35 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
       const fileExists = existingDocs.items.some(doc =>
         doc.data.name === finalFilename &&
-        (doc.data.folderId || null) === saveAsFolderId
+        (doc.data.folderId || null) === targetFolderId
       );
 
       if (fileExists) {
         showErrorToast(t('templateProcessor.saveAsFileExists'));
+        setSaveAsLoading(false);
         return;
       }
 
-      // 3. Generate processed blob
+      // 4. Generate processed blob
       const { blob } = await generateProcessedBlob();
 
-      // 4. Build path using utility
-      const folderPath = getFolderPathById(saveAsFolderId, folderTree);
+      // 5. Get folder path
+      let folderPath = createdFolderPath; // Use the path from newly created folder if applicable
+      if (!folderPath && targetFolderId) {
+        // If selecting existing folder, get path from folderTree or fetch from Juno
+        const existingFolder = folderTree.find(n => n.folder.key === targetFolderId)?.folder;
+        if (existingFolder) {
+          folderPath = existingFolder.data.path;
+        } else {
+          // Fallback: fetch from Juno if not in tree
+          const result = await listDocs({ collection: 'folders' });
+          const targetFolder = result.items.find((f) => f.key === targetFolderId);
+          if (targetFolder && targetFolder.data && typeof targetFolder.data === 'object' && 'path' in targetFolder.data) {
+            folderPath = (targetFolder.data as { path: string }).path;
+          }
+        }
+      }
+
       const fullPath = buildTemplatePath(folderPath, finalFilename);
       const storagePath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
 
@@ -525,7 +554,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
           size: blob.size,
           uploadedAt: Date.now(),
           mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          folderId: saveAsFolderId,
+          folderId: targetFolderId,
           folderPath,
           fullPath
         }
@@ -593,84 +622,64 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   // Get all field names (both placeholders and custom properties)
   const allFields = [...placeholders, ...Object.keys(customProperties)];
 
-  // Save As Dialog Component
-  const SaveAsDialog = () => {
-    if (!showSaveAsDialog) return null;
+  // Helper function to create a new folder and return its ID
+  const handleCreateNewFolder = async (): Promise<string | null> => {
+    const folderName = newFolderName.trim();
+    if (!folderName) {
+      showErrorToast(t('folders.enterFolderName') || 'Please enter a folder name');
+      return null;
+    }
 
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-4">
-            {t('templateProcessor.saveAsTitle')}
-          </h3>
+    // Validate folder name
+    const validationError = await validateFolderName(folderName, newFolderParentId);
+    if (validationError) {
+      showErrorToast(validationError);
+      return null;
+    }
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                {t('templateProcessor.saveAsFilename')}
-              </label>
-              <input
-                type="text"
-                value={saveAsFilename}
-                onChange={(e) => setSaveAsFilename(e.target.value)}
-                className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={t('templateProcessor.saveAsFilenamePlaceholder')}
-                autoFocus
-              />
-            </div>
+    // Check if parent folder allows subfolders (2-level limit)
+    let parentFolder = null;
+    if (newFolderParentId) {
+      parentFolder = folderTree.find(n => n.folder.key === newFolderParentId)?.folder;
+      if (parentFolder && parentFolder.data.level >= 1) {
+        showErrorToast(t('folders.maxDepthReached') || 'Maximum folder depth reached');
+        return null;
+      }
+    }
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                {t('templateProcessor.saveAsSelectFolder')}
-              </label>
-              <select
-                value={saveAsFolderId || ''}
-                onChange={(e) => setSaveAsFolderId(e.target.value || null)}
-                className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">{t('folders.rootFolder')}</option>
-                {folderTree.map((node) => (
-                  <>
-                    <option key={node.folder.key} value={node.folder.key}>
-                      {node.folder.data.name}
-                    </option>
-                    {node.children.map((child) => (
-                      <option key={child.folder.key} value={child.folder.key}>
-                        └─ {child.folder.data.name}
-                      </option>
-                    ))}
-                  </>
-                ))}
-              </select>
-            </div>
-          </div>
+    // Build path
+    const level = parentFolder ? parentFolder.data.level + 1 : 0;
+    const path = buildFolderPath(folderName, parentFolder?.data.path || null);
 
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={handleSaveAsConfirm}
-              disabled={!saveAsFilename.trim() || saveAsLoading}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-all"
-            >
-              {saveAsLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  {t('templateProcessor.saving')}
-                </span>
-              ) : (
-                t('templateProcessor.saveAs')
-              )}
-            </button>
-            <button
-              onClick={() => setShowSaveAsDialog(false)}
-              disabled={saveAsLoading}
-              className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-all"
-            >
-              {t('templateProcessor.cancel')}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    try {
+      // Create folder with generated key
+      const key = `folder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      await setDoc({
+        collection: 'folders',
+        doc: {
+          key,
+          data: {
+            name: folderName,
+            parentId: newFolderParentId,
+            path,
+            level,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            order: 0,
+          } as FolderData,
+        },
+      });
+
+      showSuccessToast(t('folders.folderCreated', { name: folderName }) || `Folder "${folderName}" created`);
+
+      // Return the new folder key
+      return key;
+    } catch (err) {
+      console.error('Failed to create folder:', err);
+      showErrorToast(t('folders.createFailed') || 'Failed to create folder');
+      return null;
+    }
   };
 
   // Unsaved Changes Dialog Component
@@ -728,7 +737,138 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
   return (
     <div className="flex flex-col">
-      <SaveAsDialog />
+      {/* Save As Dialog */}
+      {showSaveAsDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+              {t('templateProcessor.saveAsTitle')}
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  {t('templateProcessor.saveAsFilename')}
+                </label>
+                <input
+                  type="text"
+                  value={saveAsFilename}
+                  onChange={(e) => setSaveAsFilename(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={t('templateProcessor.saveAsFilenamePlaceholder')}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    {t('templateProcessor.saveAsSelectFolder')}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewFolderForm(!showNewFolderForm);
+                      setNewFolderName('');
+                      setNewFolderParentId(null);
+                    }}
+                    disabled={saveAsLoading}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FolderPlus className="w-3.5 h-3.5" />
+                    {showNewFolderForm ? t('folders.cancelNewFolder') : t('folders.createNewFolder')}
+                  </button>
+                </div>
+
+                {showNewFolderForm ? (
+                  <div className="space-y-3 p-3 bg-blue-50 dark:bg-slate-700 rounded-lg border-2 border-blue-200 dark:border-blue-700">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        {t('folders.folderName')}
+                      </label>
+                      <input
+                        type="text"
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder={t('folders.enterFolderName')}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        {t('folders.parentFolder')}
+                      </label>
+                      <select
+                        value={newFolderParentId || ''}
+                        onChange={(e) => setNewFolderParentId(e.target.value || null)}
+                        className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">{t('folders.rootFolder')}</option>
+                        {folderTree.map((node) => (
+                          <option key={node.folder.key} value={node.folder.key}>
+                            {node.folder.data.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <select
+                    value={saveAsFolderId || ''}
+                    onChange={(e) => setSaveAsFolderId(e.target.value || null)}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">{t('folders.rootFolder')}</option>
+                    {folderTree.map((node) => (
+                      <>
+                        <option key={node.folder.key} value={node.folder.key}>
+                          {node.folder.data.name}
+                        </option>
+                        {node.children.map((child) => (
+                          <option key={child.folder.key} value={child.folder.key}>
+                            └─ {child.folder.data.name}
+                          </option>
+                        ))}
+                      </>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={handleSaveAsConfirm}
+                disabled={!saveAsFilename.trim() || saveAsLoading}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+              >
+                {saveAsLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {t('templateProcessor.saving')}
+                  </span>
+                ) : (
+                  t('templateProcessor.saveAs')
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSaveAsDialog(false);
+                  setShowNewFolderForm(false);
+                  setNewFolderName('');
+                  setNewFolderParentId(null);
+                }}
+                disabled={saveAsLoading}
+                className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-400 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+              >
+                {t('templateProcessor.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <UnsavedChangesDialog />
       <div className="bg-linear-to-r from-blue-600 to-purple-600 p-4 sm:p-6 shadow-lg rounded-t-lg">
           <div className="flex justify-between items-center">
@@ -826,24 +966,24 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         {/* Action buttons at bottom */}
         {!loading && allFields.length > 0 && (
           <div className="sticky bottom-0 flex justify-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700 py-4 rounded-b-lg">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3 w-full sm:w-auto px-4 sm:px-0">
 
                 {/* Save button - only for saved templates */}
                 {template && (
                   <button
                     onClick={handleSave}
                     disabled={!isFormValid || saving || processing}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none whitespace-nowrap"
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
                   >
                     {saving ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="text-sm sm:text-base">{t('templateProcessor.saving')}</span>
+                      <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                        <span className="text-xs sm:text-base">{t('templateProcessor.saving')}</span>
                       </span>
                     ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        <Save className="w-5 h-5" />
-                        <span className="text-sm sm:text-base">{t('templateProcessor.save')}</span>
+                      <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                        <Save className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-xs sm:text-base">{t('templateProcessor.save')}</span>
                       </span>
                     )}
                   </button>
@@ -853,11 +993,11 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 <button
                   onClick={handleSaveAs}
                   disabled={!isFormValid || saving || processing}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none whitespace-nowrap"
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
                 >
-                  <span className="flex items-center justify-center gap-2">
-                    <FilePlus className="w-5 h-5" />
-                    <span className="text-sm sm:text-base">{t('templateProcessor.saveAs')}</span>
+                  <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                    <FilePlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-xs sm:text-base">{t('templateProcessor.saveAs')}</span>
                   </span>
                 </button>
 
@@ -865,17 +1005,17 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 <button
                   onClick={processDocument}
                   disabled={!isFormValid || saving || processing}
-                  className="bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-2.5 sm:py-3 px-5 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none whitespace-nowrap"
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
                 >
                   {processing ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="text-sm sm:text-base">{t('templateProcessor.processing')}</span>
+                    <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                      <span className="text-xs sm:text-base">{t('templateProcessor.processing')}</span>
                     </span>
                   ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <Rocket className="w-5 h-5" />
-                      <span className="text-sm sm:text-base">{t('templateProcessor.generateDocument')}</span>
+                    <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                      <Rocket className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-xs sm:text-base">{t('templateProcessor.generateDocument')}</span>
                     </span>
                   )}
                 </button>
@@ -884,9 +1024,12 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 <button
                   onClick={handleCancel}
                   disabled={saving || processing}
-                  className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 disabled:bg-slate-400 text-white font-semibold py-2.5 sm:py-3 px-6 sm:px-8 rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl whitespace-nowrap"
+                  className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 disabled:bg-slate-400 text-white font-semibold py-3 px-3 sm:px-8 rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl"
                 >
-                  {t('templateProcessor.cancel')}
+                  <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-xs sm:text-base">{t('templateProcessor.cancel')}</span>
+                  </span>
                 </button>
               </div>
           </div>
