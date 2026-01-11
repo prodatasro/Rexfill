@@ -154,12 +154,13 @@
     "uploadToFolder": "フォルダにアップロード",
     "sortAZ": "並び替え A-Z",
     "sortZA": "並び替え Z-A",
-    "creating": "Creating...",
-    "renaming": "Renaming...",
-    "loadFailed": "Failed to load folders",
-    "createFailed": "Failed to create folder",
-    "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "creating": "作成中...",
+    "renaming": "名前変更中...",
+    "deleting": "削除中...",
+    "loadFailed": "フォルダの読み込みに失敗しました",
+    "createFailed": "フォルダの作成に失敗しました",
+    "renameFailed": "フォルダの名前変更に失敗しました",
+    "deleteFailed": "フォルダの削除に失敗しました"
   },
   "templateMove": {
     "title": "Move Template",

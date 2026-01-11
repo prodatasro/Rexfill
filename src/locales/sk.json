@@ -167,6 +167,7 @@
     "sortZA": "Zoradiť Z-A",
     "creating": "Vytváram...",
     "renaming": "Premenovávam...",
+    "deleting": "Mažem...",
     "loadFailed": "Nepodarilo sa načítať priečinky",
     "createFailed": "Nepodarilo sa vytvoriť priečinok",
     "renameFailed": "Nepodarilo sa premenovať priečinok",

@@ -154,12 +154,13 @@
     "uploadToFolder": "Feltöltés mappába",
     "sortAZ": "Rendezés A-Z",
     "sortZA": "Rendezés Z-A",
-    "creating": "Creating...",
-    "renaming": "Renaming...",
-    "loadFailed": "Failed to load folders",
-    "createFailed": "Failed to create folder",
-    "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "creating": "Létrehozás...",
+    "renaming": "Átnevezés...",
+    "deleting": "Törlés...",
+    "loadFailed": "A mappák betöltése sikertelen",
+    "createFailed": "A mappa létrehozása sikertelen",
+    "renameFailed": "A mappa átnevezése sikertelen",
+    "deleteFailed": "A mappa törlése sikertelen"
   },
   "templateMove": {
     "title": "Move Template",

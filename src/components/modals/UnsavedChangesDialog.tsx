@@ -1,10 +1,11 @@
 import { FC } from 'react';
-import { Save, FilePlus } from 'lucide-react';
+import { Save, FilePlus, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface UnsavedChangesDialogProps {
   isOpen: boolean;
   hasTemplate: boolean;
+  isLoading?: boolean;
   onSave: () => void;
   onSaveAs: () => void;
   onDiscard: () => void;
@@ -14,6 +15,7 @@ interface UnsavedChangesDialogProps {
 export const UnsavedChangesDialog: FC<UnsavedChangesDialogProps> = ({
   isOpen,
   hasTemplate,
+  isLoading = false,
   onSave,
   onSaveAs,
   onDiscard,
@@ -41,10 +43,20 @@ export const UnsavedChangesDialog: FC<UnsavedChangesDialogProps> = ({
                 onClose();
                 onSave();
               }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
             >
-              <Save className="w-5 h-5" />
-              {t('templateProcessor.unsavedChangesSave')}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {t('templateProcessor.saving')}
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  {t('templateProcessor.unsavedChangesSave')}
+                </>
+              )}
             </button>
           )}
           <button
@@ -52,7 +64,8 @@ export const UnsavedChangesDialog: FC<UnsavedChangesDialogProps> = ({
               onClose();
               onSaveAs();
             }}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+            disabled={isLoading}
+            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
           >
             <FilePlus className="w-5 h-5" />
             {t('templateProcessor.unsavedChangesSaveAs')}
@@ -62,7 +75,8 @@ export const UnsavedChangesDialog: FC<UnsavedChangesDialogProps> = ({
               onClose();
               onDiscard();
             }}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+            disabled={isLoading}
+            className="w-full bg-red-500 hover:bg-red-600 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition-all"
           >
             {t('templateProcessor.unsavedChangesDiscard')}
           </button>

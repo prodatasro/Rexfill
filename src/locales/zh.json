@@ -154,12 +154,13 @@
     "uploadToFolder": "上传到文件夹",
     "sortAZ": "排序 A-Z",
     "sortZA": "排序 Z-A",
-    "creating": "Creating...",
-    "renaming": "Renaming...",
-    "loadFailed": "Failed to load folders",
-    "createFailed": "Failed to create folder",
-    "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "creating": "创建中...",
+    "renaming": "重命名中...",
+    "deleting": "删除中...",
+    "loadFailed": "加载文件夹失败",
+    "createFailed": "创建文件夹失败",
+    "renameFailed": "重命名文件夹失败",
+    "deleteFailed": "删除文件夹失败"
   },
   "templateMove": {
     "title": "Move Template",

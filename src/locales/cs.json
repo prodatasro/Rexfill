@@ -154,12 +154,13 @@
     "uploadToFolder": "Nahrát do složky",
     "sortAZ": "Řadit A-Z",
     "sortZA": "Řadit Z-A",
-    "creating": "Creating...",
-    "renaming": "Renaming...",
-    "loadFailed": "Failed to load folders",
-    "createFailed": "Failed to create folder",
-    "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "creating": "Vytvářím...",
+    "renaming": "Přejmenovávám...",
+    "deleting": "Mažu...",
+    "loadFailed": "Nepodařilo se načíst složky",
+    "createFailed": "Nepodařilo se vytvořit složku",
+    "renameFailed": "Nepodařilo se přejmenovat složku",
+    "deleteFailed": "Nepodařilo se smazat složku"
   },
   "templateMove": {
     "title": "Move Template",

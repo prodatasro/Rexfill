@@ -53,7 +53,19 @@ export const SaveAsDialog: FC<SaveAsDialogProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400" />
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                {t('templateProcessor.saving')}
+              </p>
+            </div>
+          </div>
+        )}
+
         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-4">
           {t('templateProcessor.saveAsTitle')}
         </h3>
@@ -67,7 +79,8 @@ export const SaveAsDialog: FC<SaveAsDialogProps> = ({
               type="text"
               value={filename}
               onChange={(e) => setFilename(e.target.value)}
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder={t('templateProcessor.saveAsFilenamePlaceholder')}
             />
           </div>
@@ -102,7 +115,8 @@ export const SaveAsDialog: FC<SaveAsDialogProps> = ({
                     type="text"
                     value={newFolderName}
                     onChange={(e) => setNewFolderName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isLoading}
+                    className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder={t('folders.enterFolderName')}
                   />
                 </div>
@@ -113,7 +127,8 @@ export const SaveAsDialog: FC<SaveAsDialogProps> = ({
                   <select
                     value={newFolderParentId || ''}
                     onChange={(e) => setNewFolderParentId(e.target.value || null)}
-                    className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isLoading}
+                    className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">{t('folders.rootFolder')}</option>
                     {folderTree.map((node) => (
@@ -128,7 +143,8 @@ export const SaveAsDialog: FC<SaveAsDialogProps> = ({
               <select
                 value={folderId || ''}
                 onChange={(e) => setFolderId(e.target.value || null)}
-                className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isLoading}
+                className="w-full px-4 py-2 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">{t('folders.rootFolder')}</option>
                 {folderTree.map((node) => (

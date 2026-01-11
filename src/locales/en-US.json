@@ -165,6 +165,7 @@
     "sortZA": "Sort Z-A",
     "creating": "Creating...",
     "renaming": "Renaming...",
+    "deleting": "Deleting...",
     "loadFailed": "Failed to load folders",
     "createFailed": "Failed to create folder",
     "renameFailed": "Failed to rename folder",

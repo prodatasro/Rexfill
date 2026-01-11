@@ -154,12 +154,13 @@
     "uploadToFolder": "Télécharger dans le dossier",
     "sortAZ": "Trier A-Z",
     "sortZA": "Trier Z-A",
-    "creating": "Creating...",
-    "renaming": "Renaming...",
-    "loadFailed": "Failed to load folders",
-    "createFailed": "Failed to create folder",
-    "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "creating": "Création...",
+    "renaming": "Renommage...",
+    "deleting": "Suppression...",
+    "loadFailed": "Échec du chargement des dossiers",
+    "createFailed": "Échec de la création du dossier",
+    "renameFailed": "Échec du renommage du dossier",
+    "deleteFailed": "Échec de la suppression du dossier"
   },
   "templateMove": {
     "title": "Move Template",

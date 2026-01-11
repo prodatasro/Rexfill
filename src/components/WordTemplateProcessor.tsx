@@ -121,6 +121,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
       <UnsavedChangesDialog
         isOpen={showUnsavedChangesDialog}
         hasTemplate={!!template}
+        isLoading={saving}
         onSave={handleSave}
         onSaveAs={openSaveAsDialog}
         onDiscard={onClose}

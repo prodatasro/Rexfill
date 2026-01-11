@@ -64,7 +64,7 @@ const Dashboard: FC = () => {
   const { templates, allTemplates, loading: templatesLoading, refresh: refreshTemplates } = useTemplatesByFolder(selectedFolderId);
 
   // Load folders
-  const { folderTree, loading: foldersLoading, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
+  const { folderTree, loading: foldersLoading, deleting: folderDeleting, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
 
   // Filter folder tree based on search query
   const filteredFolderTree = useMemo(() => {
@@ -490,6 +490,18 @@ const Dashboard: FC = () => {
                 <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400" />
                 <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {t('fileUpload.uploading')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Folder delete in progress overlay */}
+          {folderDeleting && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-12 h-12 animate-spin text-red-600 dark:text-red-400" />
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                  {t('folders.deleting')}
                 </p>
               </div>
             </div>

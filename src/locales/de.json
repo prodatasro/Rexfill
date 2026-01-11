@@ -154,12 +154,13 @@
     "uploadToFolder": "In Ordner hochladen",
     "sortAZ": "Sortieren A-Z",
     "sortZA": "Sortieren Z-A",
-    "creating": "Creating...",
-    "renaming": "Renaming...",
-    "loadFailed": "Failed to load folders",
-    "createFailed": "Failed to create folder",
-    "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "creating": "Erstelle...",
+    "renaming": "Umbenennen...",
+    "deleting": "Lösche...",
+    "loadFailed": "Ordner konnten nicht geladen werden",
+    "createFailed": "Ordner konnte nicht erstellt werden",
+    "renameFailed": "Ordner konnte nicht umbenannt werden",
+    "deleteFailed": "Ordner konnte nicht gelöscht werden"
   },
   "templateMove": {
     "title": "Move Template",

@@ -4,7 +4,7 @@ export default defineConfig({
   satellite: {
     ids: {
       // Add your satellite IDs here
-      development: "a5dhi-k7777-77775-aaabq-cai",
+      development: "apfqr-gp777-77775-aaacq-cai",
       production: "ufqml-byaaa-aaaas-amtia-cai"
     },
     source: "dist",

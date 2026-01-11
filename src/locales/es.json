@@ -154,12 +154,13 @@
     "uploadToFolder": "Subir a la carpeta",
     "sortAZ": "Ordenar A-Z",
     "sortZA": "Ordenar Z-A",
-    "creating": "Creating...",
-    "renaming": "Renaming...",
-    "loadFailed": "Failed to load folders",
-    "createFailed": "Failed to create folder",
-    "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "creating": "Creando...",
+    "renaming": "Renombrando...",
+    "deleting": "Eliminando...",
+    "loadFailed": "Error al cargar carpetas",
+    "createFailed": "Error al crear carpeta",
+    "renameFailed": "Error al renombrar carpeta",
+    "deleteFailed": "Error al eliminar carpeta"
   },
   "templateMove": {
     "title": "Move Template",

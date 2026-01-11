@@ -12,6 +12,9 @@ export const useFolders = (templates: Doc<any>[] = []) => {
   const [folderTree, setFolderTree] = useState<FolderTreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load all folders from Juno
   const loadFolders = useCallback(async () => {
@@ -64,6 +67,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
       const level = parentFolder ? parentFolder.data.level + 1 : 0;
       const path = buildFolderPath(name, parentFolder?.data.path || null);
 
+      setCreating(true);
       try {
         // Create folder with generated key
         const key = `folder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -91,6 +95,8 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         console.error('Failed to create folder:', err);
         showErrorToast(t('folders.createFailed') || 'Failed to create folder');
         return false;
+      } finally {
+        setCreating(false);
       }
     },
     [folders, loadFolders, t]
@@ -122,6 +128,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         : null;
       const newPath = buildFolderPath(newName, parentFolder?.data.path || null);
 
+      setRenaming(true);
       try {
         // Update folder
         await setDoc({
@@ -164,6 +171,8 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         console.error('Failed to rename folder:', err);
         showErrorToast(t('folders.renameFailed') || 'Failed to rename folder');
         return false;
+      } finally {
+        setRenaming(false);
       }
     },
     [folders, loadFolders, t]
@@ -178,6 +187,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         return false;
       }
 
+      setDeleting(true);
       try {
         // Get all subfolders
         const subfolders = folders.filter((f) => f.data.parentId === folderId);
@@ -206,6 +216,8 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         console.error('Failed to delete folder:', err);
         showErrorToast(t('folders.deleteFailed') || 'Failed to delete folder');
         return false;
+      } finally {
+        setDeleting(false);
       }
     },
     [folders, loadFolders, t]
@@ -225,6 +237,9 @@ export const useFolders = (templates: Doc<any>[] = []) => {
     folderTree,
     loading,
     error,
+    creating,
+    renaming,
+    deleting,
     loadFolders,
     createFolder,
     renameFolder,
