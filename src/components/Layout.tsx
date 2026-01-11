@@ -15,7 +15,7 @@ const Layout: FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasUnsavedChanges, requestNavigation } = useProcessor();
+  const { hasUnsavedChanges, requestNavigation, currentFolderId } = useProcessor();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -45,9 +45,14 @@ const Layout: FC = () => {
       console.log('Calling requestNavigation');
       requestNavigation();
     } else {
-      // Navigate directly to dashboard
-      console.log('Navigating to /');
-      navigate('/');
+      // Navigate directly to dashboard, preserving folder context if on processor page
+      if (isProcessorPage && currentFolderId) {
+        console.log('Navigating to / with folder:', currentFolderId);
+        navigate(`/?folder=${currentFolderId}`);
+      } else {
+        console.log('Navigating to /');
+        navigate('/');
+      }
     }
   };
 

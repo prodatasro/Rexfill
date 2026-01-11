@@ -1,5 +1,5 @@
-import { FC, useState, useCallback, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { FC, useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2 } from 'lucide-react';
 import { Doc, setDoc, deleteDoc, deleteAsset } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
@@ -21,10 +21,20 @@ const Dashboard: FC = () => {
   const { t } = useTranslation();
   const { confirm } = useConfirm();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { setOneTimeFile } = useFileProcessing();
 
-  // Folder state
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  // Initialize selectedFolderId from URL params BEFORE any hook calls
+  const folderIdFromParams = searchParams.get('folder');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(folderIdFromParams);
+
+  // Clean up URL params after reading them
+  useEffect(() => {
+    if (folderIdFromParams) {
+      setSearchParams({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
   const [folderDialogState, setFolderDialogState] = useState<{
     isOpen: boolean;
     mode: 'create' | 'rename';

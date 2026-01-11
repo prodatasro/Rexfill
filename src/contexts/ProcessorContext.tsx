@@ -5,12 +5,15 @@ interface ProcessorContextType {
   setHasUnsavedChanges: (value: boolean) => void;
   requestNavigation: () => void;
   setRequestNavigation: (callback: (() => void) | null) => void;
+  currentFolderId: string | null;
+  setCurrentFolderId: (folderId: string | null) => void;
 }
 
 const ProcessorContext = createContext<ProcessorContextType | undefined>(undefined);
 
 export const ProcessorProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [hasUnsavedChanges, setHasUnsavedChangesState] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   // Use a ref to store the callback to avoid infinite loops
   const requestNavigationRef = useRef<(() => void) | null>(null);
 
@@ -32,13 +35,15 @@ export const ProcessorProvider: FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
-  // Memoize the context value - only re-create when hasUnsavedChanges changes
+  // Memoize the context value - only re-create when dependencies change
   const contextValue = useMemo(() => ({
     hasUnsavedChanges,
     setHasUnsavedChanges,
     requestNavigation,
-    setRequestNavigation
-  }), [hasUnsavedChanges, requestNavigation, setRequestNavigation]);
+    setRequestNavigation,
+    currentFolderId,
+    setCurrentFolderId
+  }), [hasUnsavedChanges, requestNavigation, setRequestNavigation, currentFolderId]);
 
   return (
     <ProcessorContext.Provider value={contextValue}>

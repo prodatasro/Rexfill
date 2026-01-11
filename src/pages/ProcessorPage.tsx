@@ -6,6 +6,7 @@ import { WordTemplateProcessor } from '../components/WordTemplateProcessor';
 import { useFolders } from '../hooks/useFolders';
 import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
 import { useFileProcessing } from '../contexts/FileProcessingContext';
+import { useProcessor } from '../contexts/ProcessorContext';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const ProcessorPage: FC = () => {
@@ -15,6 +16,7 @@ const ProcessorPage: FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const { oneTimeFile, setOneTimeFile } = useFileProcessing();
+  const { setCurrentFolderId } = useProcessor();
 
   // Load all templates to build folder tree
   const { allTemplates } = useTemplatesByFolder(null);
@@ -48,6 +50,8 @@ const ProcessorPage: FC = () => {
 
         if (foundTemplate) {
           setTemplate(foundTemplate);
+          // Store the folder ID in context for navigation
+          setCurrentFolderId(foundTemplate.data.folderId || null);
         } else {
           // Template not found, redirect to dashboard
           navigate('/');
@@ -61,14 +65,23 @@ const ProcessorPage: FC = () => {
     };
 
     loadData();
-  }, [searchParams, navigate, oneTimeFile]);
+  }, [searchParams, navigate, oneTimeFile, setCurrentFolderId]);
 
   const handleClose = () => {
     // Clear one-time file from context
     if (oneTimeFile) {
       setOneTimeFile(null);
     }
-    navigate('/');
+
+    // Navigate back to dashboard, preserving the folder context if available
+    if (template?.data.folderId) {
+      navigate(`/?folder=${template.data.folderId}`);
+    } else {
+      navigate('/');
+    }
+
+    // Clear folder ID from context after navigation
+    setCurrentFolderId(null);
   };
 
   if (loading) {
