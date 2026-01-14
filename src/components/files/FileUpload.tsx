@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;
   onOneTimeProcess: (file: File) => void;
+  onSaveAndProcess: (templateKey: string) => void;
   selectedFolderId: string | null;
   folderTree: FolderTreeNode[];
   compact?: boolean;
@@ -19,7 +20,7 @@ interface FileUploadProps {
 
 type UploadMode = 'save' | 'oneTime' | null;
 
-const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, selectedFolderId, folderTree, compact = false }) => {
+const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, onSaveAndProcess, selectedFolderId, folderTree, compact = false }) => {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<UploadMode>(null);
@@ -85,6 +86,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, se
     setUploading(true);
     let successCount = 0;
     let failedFiles: string[] = [];
+    let savedTemplateKey: string | null = null;
 
     try {
       // Get folder info once
@@ -150,6 +152,8 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, se
             }
           });
 
+          // Track the template key for saveAndProcess mode
+          savedTemplateKey = result.name;
           successCount++;
         } catch (error) {
           console.error(`Upload failed for ${file.name}:`, error);
@@ -181,8 +185,8 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, se
       onUploadSuccess(uploadFolderId);
 
       // Open processor if mode is 'saveAndProcess' (only single file allowed)
-      if (mode === 'saveAndProcess') {
-        onOneTimeProcess(selectedFiles[0]);
+      if (mode === 'saveAndProcess' && savedTemplateKey) {
+        onSaveAndProcess(savedTemplateKey);
       }
     } catch (error) {
       console.error('Upload failed:', error);
@@ -324,7 +328,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, se
                 className="w-full text-left p-4 rounded-xl border-2 border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex flex-col gap-1 shrink-0">
                     <Save className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     <Settings className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>

@@ -19,7 +19,6 @@ export const ProcessorProvider: FC<{ children: ReactNode }> = ({ children }) => 
 
   // Wrapper to log when unsaved changes are set
   const setHasUnsavedChanges = useCallback((value: boolean) => {
-    console.log('ProcessorContext: setHasUnsavedChanges called with:', value);
     setHasUnsavedChangesState(value);
   }, []);
 

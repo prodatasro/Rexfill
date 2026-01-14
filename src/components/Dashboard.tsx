@@ -118,6 +118,11 @@ const Dashboard: FC = () => {
     navigate('/process');
   };
 
+  const handleSaveAndProcess = (templateKey: string) => {
+    // Navigate to processor page with template ID (for Save & Process mode)
+    navigate(`/process?id=${templateKey}`);
+  };
+
   // Folder operations
   const handleCreateFolder = useCallback((parentId: string | null) => {
     const parentFolder = parentId ? getFolderById(parentId) : null;
@@ -386,6 +391,7 @@ const Dashboard: FC = () => {
                           }
                         }}
                         onOneTimeProcess={handleOneTimeProcess}
+                        onSaveAndProcess={handleSaveAndProcess}
                         selectedFolderId={selectedFolderId}
                         folderTree={folderTree}
                         compact={true}
