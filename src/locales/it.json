@@ -97,7 +97,15 @@
     "processing": "Elaborazione...",
     "cancel": "Annulla",
     "processSuccess": "Documento elaborato e scaricato con successo!",
-    "processError": "Errore nell'elaborazione del documento. Il file Word potrebbe avere una formattazione complessa che impedisce la sostituzione dei segnaposto. Prova a ricreare il documento con una formattazione più semplice."
+    "processError": "Errore nell'elaborazione del documento. Il file Word potrebbe avere una formattazione complessa che impedisce la sostituzione dei segnaposto. Prova a ricreare il documento con una formattazione più semplice.",
+    "progress": {
+      "loading": "Caricamento documento...",
+      "parsing": "Analisi documento...",
+      "fixing_placeholders": "Preparazione segnaposto...",
+      "updating_fields": "Aggiornamento campi documento...",
+      "rendering": "Rendering template...",
+      "generating": "Generazione documento..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Conferma azione",

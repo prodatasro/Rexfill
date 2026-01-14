@@ -97,7 +97,15 @@
     "processing": "Traitement...",
     "cancel": "Annuler",
     "processSuccess": "Document traité et téléchargé avec succès !",
-    "processError": "Erreur lors du traitement du document. Le fichier Word peut avoir un formatage complexe qui empêche le remplacement des espaces réservés. Essayez de recréer le document avec un formatage plus simple."
+    "processError": "Erreur lors du traitement du document. Le fichier Word peut avoir un formatage complexe qui empêche le remplacement des espaces réservés. Essayez de recréer le document avec un formatage plus simple.",
+    "progress": {
+      "loading": "Chargement du document...",
+      "parsing": "Analyse du document...",
+      "fixing_placeholders": "Préparation des espaces réservés...",
+      "updating_fields": "Mise à jour des champs du document...",
+      "rendering": "Rendu du modèle...",
+      "generating": "Génération du document..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Confirmer l'action",

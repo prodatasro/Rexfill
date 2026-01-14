@@ -192,9 +192,11 @@ const Dashboard: FC = () => {
   const handleFolderDialogConfirm = useCallback(async (name: string) => {
     if (folderDialogState.mode === 'create') {
       const parentId = folderDialogState.parentFolder?.key ?? null;
-      const success = await createFolder(name, parentId);
-      if (success) {
+      const newFolderKey = await createFolder(name, parentId);
+      if (newFolderKey) {
         setFolderDialogState({ isOpen: false, mode: 'create' });
+        // Select the newly created folder
+        setSelectedFolderId(newFolderKey);
       }
     } else if (folderDialogState.mode === 'rename' && folderDialogState.existingFolder) {
       const folder = folderDialogState.existingFolder;

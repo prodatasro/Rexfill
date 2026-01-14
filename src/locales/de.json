@@ -97,7 +97,15 @@
     "processing": "Wird verarbeitet...",
     "cancel": "Abbrechen",
     "processSuccess": "Dokument erfolgreich verarbeitet und heruntergeladen!",
-    "processError": "Fehler beim Verarbeiten des Dokuments. Die Word-Datei kann eine komplexe Formatierung aufweisen, die das Ersetzen der Platzhalter verhindert. Versuchen Sie, das Dokument mit einfacherer Formatierung neu zu erstellen."
+    "processError": "Fehler beim Verarbeiten des Dokuments. Die Word-Datei kann eine komplexe Formatierung aufweisen, die das Ersetzen der Platzhalter verhindert. Versuchen Sie, das Dokument mit einfacherer Formatierung neu zu erstellen.",
+    "progress": {
+      "loading": "Dokument wird geladen...",
+      "parsing": "Dokument wird analysiert...",
+      "fixing_placeholders": "Platzhalter werden vorbereitet...",
+      "updating_fields": "Dokumentfelder werden aktualisiert...",
+      "rendering": "Vorlage wird gerendert...",
+      "generating": "Dokument wird generiert..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Aktion bestätigen",

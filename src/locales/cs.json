@@ -97,7 +97,15 @@
     "processing": "Zpracovávám...",
     "cancel": "Zrušit",
     "processSuccess": "Dokument byl úspěšně zpracován a stažen!",
-    "processError": "Chyba při zpracování dokumentu. Word soubor může mít komplexní formátování, které brání nahrazení proměnných. Zkuste znovu vytvořit dokument s jednodušším formátováním."
+    "processError": "Chyba při zpracování dokumentu. Word soubor může mít komplexní formátování, které brání nahrazení proměnných. Zkuste znovu vytvořit dokument s jednodušším formátováním.",
+    "progress": {
+      "loading": "Načítám dokument...",
+      "parsing": "Analyzuji dokument...",
+      "fixing_placeholders": "Připravuji proměnné...",
+      "updating_fields": "Aktualizuji pole dokumentu...",
+      "rendering": "Vykresluji šablonu...",
+      "generating": "Generuji dokument..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Potvrdit akci",

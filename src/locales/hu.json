@@ -97,7 +97,15 @@
     "processing": "Feldolgozás...",
     "cancel": "Mégse",
     "processSuccess": "A dokumentum sikeresen feldolgozva és letöltve!",
-    "processError": "Hiba a dokumentum feldolgozása során. A Word fájl összetett formázást tartalmazhat, amely megakadályozza a helyőrzők cseréjét. Próbálja meg újra létrehozni a dokumentumot egyszerűbb formázással."
+    "processError": "Hiba a dokumentum feldolgozása során. A Word fájl összetett formázást tartalmazhat, amely megakadályozza a helyőrzők cseréjét. Próbálja meg újra létrehozni a dokumentumot egyszerűbb formázással.",
+    "progress": {
+      "loading": "Dokumentum betöltése...",
+      "parsing": "Dokumentum elemzése...",
+      "fixing_placeholders": "Helyőrzők előkészítése...",
+      "updating_fields": "Dokumentum mezők frissítése...",
+      "rendering": "Sablon renderelése...",
+      "generating": "Dokumentum generálása..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Művelet megerősítése",

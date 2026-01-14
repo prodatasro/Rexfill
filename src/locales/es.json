@@ -97,7 +97,15 @@
     "processing": "Procesando...",
     "cancel": "Cancelar",
     "processSuccess": "¡Documento procesado y descargado exitosamente!",
-    "processError": "Error al procesar el documento. El archivo de Word puede tener un formato complejo que impide el reemplazo de marcadores. Intente recrear el documento con un formato más simple."
+    "processError": "Error al procesar el documento. El archivo de Word puede tener un formato complejo que impide el reemplazo de marcadores. Intente recrear el documento con un formato más simple.",
+    "progress": {
+      "loading": "Cargando documento...",
+      "parsing": "Analizando documento...",
+      "fixing_placeholders": "Preparando marcadores...",
+      "updating_fields": "Actualizando campos del documento...",
+      "rendering": "Renderizando plantilla...",
+      "generating": "Generando documento..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Confirmar acción",

@@ -9,6 +9,7 @@ import { buildTemplatePath } from "../utils/templatePathUtils";
 import { validateFolderName, buildFolderPath } from "../utils/folderUtils";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
+import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
 
 interface UseWordTemplateProcessorProps {
   template?: Doc<WordTemplateData>;
@@ -24,6 +25,7 @@ export const useWordTemplateProcessor = ({
   onTemplateChange,
 }: UseWordTemplateProcessorProps) => {
   const { t } = useTranslation();
+  const { processDocument: workerProcessDocument, extractPlaceholders: workerExtractPlaceholders, progress: workerProgress, isWorkerReady } = useDocumentWorker();
 
   const [placeholders, setPlaceholders] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -33,6 +35,12 @@ export const useWordTemplateProcessor = ({
   const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState<ProcessingProgress | null>(null);
+
+  // Sync worker progress to local state
+  useEffect(() => {
+    setProcessingProgress(workerProgress);
+  }, [workerProgress]);
 
   useEffect(() => {
     extractPlaceholdersAndProperties();
@@ -51,6 +59,40 @@ export const useWordTemplateProcessor = ({
       } else {
         throw new Error("No file or template provided");
       }
+
+      // Try to use worker if available, otherwise fall back to synchronous
+      if (isWorkerReady) {
+        try {
+          const { placeholders: extractedPlaceholders, customProperties: docCustomProperties } =
+            await workerExtractPlaceholders(arrayBuffer);
+
+          setCustomProperties(docCustomProperties);
+          setPlaceholders(extractedPlaceholders);
+
+          const initialData: Record<string, string> = {};
+          extractedPlaceholders.forEach(placeholder => {
+            initialData[placeholder] = '';
+          });
+          Object.entries(docCustomProperties).forEach(([key, value]) => {
+            initialData[key] = value;
+          });
+
+          setInitialFormData(initialData);
+          setFormData(initialData);
+          return;
+        } catch (workerError) {
+          console.warn('Worker extraction failed, falling back to synchronous:', workerError);
+          // Re-read the arrayBuffer as it was transferred to the worker and is now detached
+          if (file) {
+            arrayBuffer = await file.arrayBuffer();
+          } else if (template?.data.url) {
+            const response = await fetch(template.data.url);
+            arrayBuffer = await response.arrayBuffer();
+          }
+        }
+      }
+
+      // Fallback: synchronous extraction
       const zip = new PizZip(arrayBuffer);
 
       const docCustomProperties = readCustomProperties(zip);
@@ -137,6 +179,29 @@ export const useWordTemplateProcessor = ({
 
     const fileName = file ? file.name : template?.data.name || 'document.docx';
 
+    // Try to use worker if available
+    if (isWorkerReady) {
+      try {
+        const blob = await workerProcessDocument(
+          arrayBuffer,
+          placeholderData,
+          customPropsData,
+          placeholders
+        );
+        return { blob, fileName };
+      } catch (workerError) {
+        console.warn('Worker processing failed, falling back to synchronous:', workerError);
+        // Need to re-read the arrayBuffer as it was transferred to the worker
+        if (file) {
+          arrayBuffer = await file.arrayBuffer();
+        } else if (template?.data.url) {
+          const response = await fetch(template.data.url);
+          arrayBuffer = await response.arrayBuffer();
+        }
+      }
+    }
+
+    // Fallback: synchronous processing
     try {
       const zip = new PizZip(arrayBuffer);
 
@@ -553,6 +618,7 @@ export const useWordTemplateProcessor = ({
     saving,
     hasChanges,
     allFields,
+    processingProgress,
 
     // Handlers
     handleInputChange,

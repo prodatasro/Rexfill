@@ -106,7 +106,15 @@
     "processing": "Processing...",
     "cancel": "Cancel",
     "processSuccess": "Document processed and downloaded successfully!",
-    "processError": "Error processing document. The Word file may have complex formatting that prevents placeholder replacement. Try recreating the document with simpler formatting."
+    "processError": "Error processing document. The Word file may have complex formatting that prevents placeholder replacement. Try recreating the document with simpler formatting.",
+    "progress": {
+      "loading": "Loading document...",
+      "parsing": "Parsing document...",
+      "fixing_placeholders": "Preparing placeholders...",
+      "updating_fields": "Updating document fields...",
+      "rendering": "Rendering template...",
+      "generating": "Generating document..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Confirm Action",

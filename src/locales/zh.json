@@ -97,7 +97,15 @@
     "processing": "处理中...",
     "cancel": "取消",
     "processSuccess": "文档已成功处理并下载！",
-    "processError": "处理文档时出错。Word 文件可能具有复杂的格式，导致无法替换占位符。尝试使用更简单的格式重新创建文档。"
+    "processError": "处理文档时出错。Word 文件可能具有复杂的格式，导致无法替换占位符。尝试使用更简单的格式重新创建文档。",
+    "progress": {
+      "loading": "正在加载文档...",
+      "parsing": "正在解析文档...",
+      "fixing_placeholders": "正在准备占位符...",
+      "updating_fields": "正在更新文档字段...",
+      "rendering": "正在渲染模板...",
+      "generating": "正在生成文档..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "确认操作",

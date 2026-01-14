@@ -108,7 +108,15 @@
     "processing": "Spracúvam...",
     "cancel": "Zrušiť",
     "processSuccess": "Dokument bol úspešne spracovaný a stiahnutý!",
-    "processError": "Chyba pri spracovaní dokumentu. Word súbor môže mať komplexné formátovanie, ktoré bráni nahradeniu premenných. Skúste znova vytvoriť dokument s jednoduchším formátovaním."
+    "processError": "Chyba pri spracovaní dokumentu. Word súbor môže mať komplexné formátovanie, ktoré bráni nahradeniu premenných. Skúste znova vytvoriť dokument s jednoduchším formátovaním.",
+    "progress": {
+      "loading": "Načítavam dokument...",
+      "parsing": "Analyzujem dokument...",
+      "fixing_placeholders": "Pripravujem premenné...",
+      "updating_fields": "Aktualizujem polia dokumentu...",
+      "rendering": "Vykresľujem šablónu...",
+      "generating": "Generujem dokument..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Potvrdiť akciu",

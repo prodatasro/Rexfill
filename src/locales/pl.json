@@ -97,7 +97,15 @@
     "processing": "Przetwarzanie...",
     "cancel": "Anuluj",
     "processSuccess": "Dokument został pomyślnie przetworzony i pobrany!",
-    "processError": "Błąd podczas przetwarzania dokumentu. Plik Word może mieć złożone formatowanie, które uniemożliwia zastąpienie zmiennych. Spróbuj odtworzyć dokument z prostszym formatowaniem."
+    "processError": "Błąd podczas przetwarzania dokumentu. Plik Word może mieć złożone formatowanie, które uniemożliwia zastąpienie zmiennych. Spróbuj odtworzyć dokument z prostszym formatowaniem.",
+    "progress": {
+      "loading": "Ładowanie dokumentu...",
+      "parsing": "Analizowanie dokumentu...",
+      "fixing_placeholders": "Przygotowywanie zmiennych...",
+      "updating_fields": "Aktualizowanie pól dokumentu...",
+      "rendering": "Renderowanie szablonu...",
+      "generating": "Generowanie dokumentu..."
+    }
   },
   "confirmDialog": {
     "confirmAction": "Potwierdź akcję",

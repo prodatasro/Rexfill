@@ -42,14 +42,14 @@ export const useFolders = (templates: Doc<any>[] = []) => {
     loadFolders();
   }, [loadFolders]);
 
-  // Create a new folder
+  // Create a new folder - returns the created folder's key on success, null on failure
   const createFolder = useCallback(
-    async (name: string, parentId: string | null): Promise<boolean> => {
+    async (name: string, parentId: string | null): Promise<string | null> => {
       // Validate name
       const validationError = await validateFolderName(name, parentId);
       if (validationError) {
         showErrorToast(validationError);
-        return false;
+        return null;
       }
 
       // Get parent folder if creating subfolder
@@ -60,7 +60,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
       // Check depth limit (max 2 levels: 0 and 1)
       if (parentFolder && parentFolder.data.level >= 1) {
         showErrorToast(t('folders.maxDepthReached') || 'Maximum folder depth reached');
-        return false;
+        return null;
       }
 
       // Build path
@@ -90,11 +90,11 @@ export const useFolders = (templates: Doc<any>[] = []) => {
 
         showSuccessToast(t('folders.folderCreated', { name }) || `Folder "${name}" created`);
         await loadFolders();
-        return true;
+        return key;
       } catch (err) {
         console.error('Failed to create folder:', err);
         showErrorToast(t('folders.createFailed') || 'Failed to create folder');
-        return false;
+        return null;
       } finally {
         setCreating(false);
       }
