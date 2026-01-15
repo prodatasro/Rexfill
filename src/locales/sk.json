@@ -73,10 +73,18 @@
     "file": "súbor",
     "files": "súbory",
     "previous": "Predchádzajúca",
-    "next": "Ďalšia"
+    "next": "Ďalšia",
+    "selectedCount": "{{count}} vybraných",
+    "clearSelection": "Zrušiť výber",
+    "selectAll": "Vybrať všetko",
+    "processSelected": "Spracovať ({{count}})"
   },
   "templateProcessor": {
     "title": "Spracovať šablónu",
+    "multiFileTitle": "Spracovať {{count}} šablón",
+    "multiFileDesc": "Spracovanie {{fileCount}} súborov s {{fieldCount}} poliami celkom",
+    "sharedFields": "Zdieľané polia",
+    "uniqueFields": "jedinečných polí",
     "analyzing": "Analyzujem šablónu...",
     "noPlaceholders": "Neboli nájdené žiadne premenné",
     "noPlaceholdersDesc": "Táto šablóna neobsahuje žiadne premenné na vyplnenie.",
@@ -105,17 +113,21 @@
     "unsavedChangesSaveAs": "Uložiť ako...",
     "unsavedChangesDiscard": "Zahodiť zmeny",
     "generateDocument": "Generovať",
+    "generateAllDocuments": "Generovať všetko ({{count}})",
     "processing": "Spracúvam...",
     "cancel": "Zrušiť",
     "processSuccess": "Dokument bol úspešne spracovaný a stiahnutý!",
+    "multiProcessSuccess": "{{count}} dokumentov bolo úspešne spracovaných a stiahnutých!",
     "processError": "Chyba pri spracovaní dokumentu. Word súbor môže mať komplexné formátovanie, ktoré bráni nahradeniu premenných. Skúste znova vytvoriť dokument s jednoduchším formátovaním.",
+    "processErrorFile": "Chyba pri spracovaní \"{{filename}}\"",
     "progress": {
       "loading": "Načítavam dokument...",
       "parsing": "Analyzujem dokument...",
       "fixing_placeholders": "Pripravujem premenné...",
       "updating_fields": "Aktualizujem polia dokumentu...",
       "rendering": "Vykresľujem šablónu...",
-      "generating": "Generujem dokument..."
+      "generating": "Generujem dokument...",
+      "processing": "Spracúvam súbory..."
     }
   },
   "confirmDialog": {

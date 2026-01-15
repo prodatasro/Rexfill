@@ -123,6 +123,12 @@ const Dashboard: FC = () => {
     navigate(`/process?id=${templateKey}`);
   };
 
+  const handleMultiTemplateSelect = (templates: Doc<WordTemplateData>[]) => {
+    // Navigate to processor page with multiple template IDs
+    const ids = templates.map(t => t.key).join(',');
+    navigate(`/process?ids=${ids}`);
+  };
+
   // Folder operations
   const handleCreateFolder = useCallback((parentId: string | null) => {
     const parentFolder = parentId ? getFolderById(parentId) : null;
@@ -530,6 +536,7 @@ const Dashboard: FC = () => {
                 allTemplates={allTemplates}
                 loading={templatesLoading}
                 onTemplateSelect={handleTemplateSelect}
+                onMultiTemplateSelect={handleMultiTemplateSelect}
                 onFileDeleted={refreshTemplates}
                 onFolderSelect={setSelectedFolderId}
                 selectedFolderId={selectedFolderId}

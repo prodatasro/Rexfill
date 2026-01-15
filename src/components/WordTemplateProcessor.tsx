@@ -1,18 +1,23 @@
 import { Doc } from "@junobuild/core";
-import { FC, useEffect, useCallback } from "react";
-import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus } from 'lucide-react';
+import { FC, useEffect, useCallback, useState } from "react";
+import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus, ChevronDown, ChevronRight, Files } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
 import { useTranslation } from "react-i18next";
 import { useProcessor } from "../contexts/ProcessorContext";
 import { useWordTemplateProcessor } from "../hooks/useWordTemplateProcessor";
+import { useMultiFileProcessor } from "../hooks/useMultiFileProcessor";
 import { UnsavedChangesDialog } from "./modals/UnsavedChangesDialog";
 import { SaveAsDialog } from "./modals/SaveAsDialog";
-import { useState } from "react";
 
 interface WordTemplateProcessorProps {
+  // Single file mode
   template?: Doc<WordTemplateData>;
   file?: File;
+  // Multi-file mode
+  templates?: Doc<WordTemplateData>[];
+  files?: File[];
+  // Common props
   onClose: () => void;
   folderTree: FolderTreeNode[];
   onTemplateChange?: (newTemplate: Doc<WordTemplateData>) => void;
@@ -21,6 +26,8 @@ interface WordTemplateProcessorProps {
 export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   template,
   file,
+  templates = [],
+  files = [],
   onClose,
   folderTree,
   onTemplateChange,
@@ -28,30 +35,69 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const { t } = useTranslation();
   const { setHasUnsavedChanges, setRequestNavigation } = useProcessor();
 
-  // Use the custom hook for business logic
-  const {
-    formData,
-    customProperties,
-    loading,
-    processing,
-    saving,
-    hasChanges,
-    allFields,
-    processingProgress,
-    handleInputChange,
-    processDocument,
-    handleSave,
-    handleSaveAs,
-  } = useWordTemplateProcessor({
+  // Determine if we're in multi-file mode
+  const isMultiFileMode = templates.length > 1 || files.length > 1;
+
+  // Use the appropriate hook based on mode
+  const singleFileHook = useWordTemplateProcessor({
     template,
     file,
     folderTree,
     onTemplateChange,
   });
 
+  const multiFileHook = useMultiFileProcessor({
+    templates: templates,
+    files: files,
+  });
+
+  // Select the active hook based on mode
+  const {
+    formData,
+    loading,
+    processing,
+    hasChanges,
+    allFields,
+    processingProgress,
+    handleInputChange,
+  } = isMultiFileMode ? multiFileHook : singleFileHook;
+
+  // Single-file specific properties
+  const customProperties = isMultiFileMode ? multiFileHook.fieldData.isCustomProperty : singleFileHook.customProperties;
+  const saving = isMultiFileMode ? false : singleFileHook.saving;
+  const handleSave = singleFileHook.handleSave;
+  const handleSaveAs = singleFileHook.handleSaveAs;
+  const processDocument = isMultiFileMode ? multiFileHook.processAllDocuments : singleFileHook.processDocument;
+
+  // Multi-file specific properties
+  const { fieldData, processingTemplates } = multiFileHook;
+
+  // Expanded state for file sections in multi-file mode
+  const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
+
   // Modal states
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+
+  // Initialize all files as expanded (only when IDs change)
+  const processingTemplateIds = processingTemplates.map(pt => pt.id).join(',');
+  useEffect(() => {
+    if (isMultiFileMode && processingTemplateIds) {
+      setExpandedFiles(new Set(processingTemplateIds.split(',')));
+    }
+  }, [isMultiFileMode, processingTemplateIds]);
+
+  const toggleFileExpanded = (fileId: string) => {
+    setExpandedFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fileId)) {
+        newSet.delete(fileId);
+      } else {
+        newSet.add(fileId);
+      }
+      return newSet;
+    });
+  };
 
   // Track changes in context
   useEffect(() => {
@@ -134,10 +180,21 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         <div className="flex justify-between items-center">
           <div className="min-w-0 flex-1 pr-2">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 flex items-center gap-2">
-              <FileText className="w-6 h-6" /> {t('templateProcessor.title')}
+              {isMultiFileMode ? (
+                <>
+                  <Files className="w-6 h-6" /> {t('templateProcessor.multiFileTitle', { count: processingTemplates.length })}
+                </>
+              ) : (
+                <>
+                  <FileText className="w-6 h-6" /> {t('templateProcessor.title')}
+                </>
+              )}
             </h2>
             <p className="text-blue-100 text-xs sm:text-sm truncate">
-              {file ? file.name : template?.data.name}
+              {isMultiFileMode
+                ? processingTemplates.map(pt => pt.fileName).join(', ')
+                : (file ? file.name : template?.data.name)
+              }
             </p>
           </div>
           <button
@@ -172,7 +229,125 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     {t('templateProcessor.noPlaceholdersDesc')}
                   </p>
                 </div>
+              ) : isMultiFileMode ? (
+                /* Multi-file mode: Show shared fields first, then per-file unique fields */
+                <>
+                  <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Files className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
+                        {t('templateProcessor.multiFileDesc', { fileCount: processingTemplates.length, fieldCount: allFields.length })}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Shared Fields Section */}
+                  {fieldData.sharedFields.length > 0 && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <h4 className="text-sm font-bold text-green-800 dark:text-green-300 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        {t('templateProcessor.sharedFields')} ({fieldData.sharedFields.length})
+                      </h4>
+                      <div className="grid grid-cols-1 gap-3">
+                        {fieldData.sharedFields.map((fieldName) => (
+                          <div key={fieldName} className="space-y-1">
+                            <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
+                              <span className="inline-flex items-center gap-1.5">
+                                {fieldData.isCustomProperty[fieldName] ? (
+                                  <FileText className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Tag className="w-3.5 h-3.5" />
+                                )}
+                                {fieldName}
+                              </span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={formData[fieldName] || ''}
+                                onChange={(e) => handleInputChange(fieldName, e.target.value)}
+                                className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
+                                placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
+                                autoComplete="off"
+                              />
+                              {formData[fieldName]?.trim() && (
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                  <Check className="w-4 h-4 text-green-500" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Per-file Unique Fields Sections */}
+                  {Array.from(fieldData.fileFields.entries()).map(([fileId, fileInfo]) => {
+                    if (fileInfo.fields.length === 0) return null;
+                    const isExpanded = expandedFiles.has(fileId);
+
+                    return (
+                      <div key={fileId} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => toggleFileExpanded(fileId)}
+                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                        >
+                          <span className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-slate-500" />
+                            {fileInfo.fileName}
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              ({fileInfo.fields.length} {t('templateProcessor.uniqueFields')})
+                            </span>
+                          </span>
+                          {isExpanded ? (
+                            <ChevronDown className="w-5 h-5 text-slate-500" />
+                          ) : (
+                            <ChevronRight className="w-5 h-5 text-slate-500" />
+                          )}
+                        </button>
+
+                        {isExpanded && (
+                          <div className="px-4 pb-4 border-t border-slate-200 dark:border-slate-700">
+                            <div className="grid grid-cols-1 gap-3 pt-3">
+                              {fileInfo.fields.map((fieldName) => (
+                                <div key={fieldName} className="space-y-1">
+                                  <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
+                                    <span className="inline-flex items-center gap-1.5">
+                                      {fieldData.isCustomProperty[fieldName] ? (
+                                        <FileText className="w-3.5 h-3.5" />
+                                      ) : (
+                                        <Tag className="w-3.5 h-3.5" />
+                                      )}
+                                      {fieldName}
+                                    </span>
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      value={formData[fieldName] || ''}
+                                      onChange={(e) => handleInputChange(fieldName, e.target.value)}
+                                      className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
+                                      placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
+                                      autoComplete="off"
+                                    />
+                                    {formData[fieldName]?.trim() && (
+                                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                        <Check className="w-4 h-4 text-green-500" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
               ) : (
+                /* Single file mode: Original flat list */
                 <>
                   <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -255,8 +430,8 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
           {/* Button container */}
           <div className="flex justify-center py-4">
             <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3 w-full sm:w-auto px-4 sm:px-0">
-              {/* Save button - only for saved templates */}
-              {template && (
+              {/* Save button - only for saved templates in single-file mode */}
+              {!isMultiFileMode && template && (
                 <button
                   onClick={handleSave}
                   disabled={!isFormValid || saving || processing}
@@ -269,17 +444,19 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 </button>
               )}
 
-              {/* Save As button - always shown */}
-              <button
-                onClick={openSaveAsDialog}
-                disabled={!isFormValid || saving || processing}
-                className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
-              >
-                <span className="flex items-center justify-center gap-1.5 sm:gap-2">
-                  <FilePlus className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="text-xs sm:text-base">{t('templateProcessor.saveAs')}</span>
-                </span>
-              </button>
+              {/* Save As button - only shown in single-file mode */}
+              {!isMultiFileMode && (
+                <button
+                  onClick={openSaveAsDialog}
+                  disabled={!isFormValid || saving || processing}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
+                >
+                  <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                    <FilePlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-xs sm:text-base">{t('templateProcessor.saveAs')}</span>
+                  </span>
+                </button>
+              )}
 
               {/* Generate (Download) button */}
               <button
@@ -289,7 +466,12 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
               >
                 <span className="flex items-center justify-center gap-1.5 sm:gap-2">
                   <Rocket className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="text-xs sm:text-base">{t('templateProcessor.generateDocument')}</span>
+                  <span className="text-xs sm:text-base">
+                    {isMultiFileMode
+                      ? t('templateProcessor.generateAllDocuments', { count: processingTemplates.length })
+                      : t('templateProcessor.generateDocument')
+                    }
+                  </span>
                 </span>
               </button>
 

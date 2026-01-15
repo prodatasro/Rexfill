@@ -145,17 +145,17 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
       });
 
       // Pattern 2: Complex fields - update the text between separate and end markers
+      // Note: Property names can be quoted with " or &quot; or unquoted
       const complexFieldRegex = new RegExp(
-        `(<w:fldChar w:fldCharType="begin"[^>]*/>` +
-        `[\\s\\S]*?<w:instrText[^>]*>\\s*DOCPROPERTY\\s+(?:&quot;)?\\s*${escapeRegex(propName)}\\s*(?:&quot;)?\\s*[^<]*</w:instrText>` +
-        `[\\s\\S]*?<w:fldChar w:fldCharType="separate"[^>]*/>)` +
+        `(<w:fldChar w:fldCharType="begin"[^/]*/>` +
+        `[\\s\\S]*?<w:instrText[^>]*>[^<]*DOCPROPERTY\\s+(?:"|&quot;)?\\s*${escapeRegex(propName)}\\s*(?:"|&quot;)?\\s*[^<]*</w:instrText>` +
+        `[\\s\\S]*?<w:fldChar w:fldCharType="separate"[^/]*/>)` +
         `([\\s\\S]*?)` +
-        `(<w:fldChar w:fldCharType="end"[^>]*/>)`,
+        `(<w:fldChar w:fldCharType="end"[^/]*/>)`,
         'gi'
       );
 
       xmlContent = xmlContent.replace(complexFieldRegex, (_fullMatch, before, content, after) => {
-
         // Replace all text content between separate and end with new value
         // Keep the structure but replace text
         const newContent = content.replace(/(<w:t[^>]*>)[^<]*(<\/w:t>)/g, `$1${escapeXml(propValue)}$2`);
@@ -164,7 +164,7 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
       });
     });
 
-    // Save changes - fileName is guaranteed to exist here
+    // Save changes
     zip.file(fileName, xmlContent);
   });
 }

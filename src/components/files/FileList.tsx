@@ -1,5 +1,5 @@
-import { FC, useState, useMemo } from 'react';
-import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { FC, useState, useMemo, useRef, useCallback } from 'react';
+import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X } from 'lucide-react';
 import { setDoc, deleteDoc, deleteAsset, Doc, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
@@ -18,6 +18,7 @@ interface FileListProps {
   allTemplates: Doc<WordTemplateData>[];
   loading: boolean;
   onTemplateSelect: (template: Doc<WordTemplateData>) => void;
+  onMultiTemplateSelect?: (templates: Doc<WordTemplateData>[]) => void;
   onFileDeleted: () => void;
   onFolderSelect?: (folderId: string | null) => void;
   selectedFolderId: string | null;
@@ -28,6 +29,7 @@ const FileList: FC<FileListProps> = ({
   templates,
   loading,
   onTemplateSelect,
+  onMultiTemplateSelect,
   onFileDeleted,
   onFolderSelect,
   selectedFolderId,
@@ -37,6 +39,10 @@ const FileList: FC<FileListProps> = ({
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
   const { confirm } = useConfirm();
+
+  // Multi-select state
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<Set<string>>(new Set());
+  const lastSelectedIndexRef = useRef<number | null>(null);
 
   // Search, sort, and pagination state
   const [searchQuery, setSearchQuery] = useState('');
@@ -276,6 +282,79 @@ const FileList: FC<FileListProps> = ({
     setCurrentPage(1);
   };
 
+  // Multi-select handlers
+  const handleCheckboxChange = useCallback((template: Doc<WordTemplateData>, checked: boolean) => {
+    setSelectedTemplateIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(template.key);
+      } else {
+        newSet.delete(template.key);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleRowClick = useCallback((template: Doc<WordTemplateData>, index: number, event: React.MouseEvent) => {
+    const isDeleting = deletingIds.has(template.key);
+    if (isDeleting) return;
+
+    // Check for modifier keys for multi-select
+    if (event.ctrlKey || event.metaKey) {
+      // Ctrl/Cmd + click: Toggle selection
+      setSelectedTemplateIds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(template.key)) {
+          newSet.delete(template.key);
+        } else {
+          newSet.add(template.key);
+        }
+        return newSet;
+      });
+      lastSelectedIndexRef.current = index;
+    } else if (event.shiftKey && lastSelectedIndexRef.current !== null) {
+      // Shift + click: Range selection
+      const start = Math.min(lastSelectedIndexRef.current, index);
+      const end = Math.max(lastSelectedIndexRef.current, index);
+      setSelectedTemplateIds(prev => {
+        const newSet = new Set(prev);
+        for (let i = start; i <= end; i++) {
+          if (paginatedTemplates[i]) {
+            newSet.add(paginatedTemplates[i].key);
+          }
+        }
+        return newSet;
+      });
+    } else {
+      // Normal click: Process single template
+      onTemplateSelect(template);
+    }
+  }, [deletingIds, paginatedTemplates, onTemplateSelect]);
+
+  const handleProcessSelected = useCallback(() => {
+    if (selectedTemplateIds.size === 0) return;
+
+    const selectedTemplates = templates.filter(t => selectedTemplateIds.has(t.key));
+
+    if (selectedTemplates.length === 1) {
+      // Single selection: use existing flow
+      onTemplateSelect(selectedTemplates[0]);
+    } else if (onMultiTemplateSelect) {
+      // Multiple selection: use multi-template flow
+      onMultiTemplateSelect(selectedTemplates);
+    }
+  }, [selectedTemplateIds, templates, onTemplateSelect, onMultiTemplateSelect]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedTemplateIds(new Set());
+    lastSelectedIndexRef.current = null;
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    const allKeys = paginatedTemplates.map(t => t.key);
+    setSelectedTemplateIds(new Set(allKeys));
+  }, [paginatedTemplates]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -375,6 +454,59 @@ const FileList: FC<FileListProps> = ({
             }
           </div>
         )}
+
+        {/* Selection Action Bar - Always visible to prevent layout shift */}
+        <div className={`flex items-center justify-between rounded-lg px-3 py-2 border transition-colors ${
+          selectedTemplateIds.size > 0
+            ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800'
+            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+        }`}>
+          <div className="flex items-center gap-2">
+            {/* Select All / Deselect All checkbox */}
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                if (selectedTemplateIds.size === paginatedTemplates.length) {
+                  handleClearSelection();
+                } else {
+                  handleSelectAll();
+                }
+              }}
+            >
+              {selectedTemplateIds.size === paginatedTemplates.length && paginatedTemplates.length > 0 ? (
+                <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              ) : (
+                <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
+              )}
+            </div>
+            <span className="text-sm text-slate-600 dark:text-slate-400">
+              {selectedTemplateIds.size > 0
+                ? t('fileList.selectedCount', { count: selectedTemplateIds.size })
+                : t('fileList.selectAll')
+              }
+            </span>
+            {selectedTemplateIds.size > 0 && (
+              <button
+                onClick={handleClearSelection}
+                className="p-1 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800 rounded transition-colors"
+                title={t('fileList.clearSelection')}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleProcessSelected}
+            disabled={selectedTemplateIds.size === 0}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              selectedTemplateIds.size > 0
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-transparent text-transparent cursor-default'
+            }`}
+          >
+            {t('fileList.processSelected', { count: selectedTemplateIds.size || 1 })}
+          </button>
+        </div>
       </div>
 
       {/* File List - Scrollable */}
@@ -391,15 +523,34 @@ const FileList: FC<FileListProps> = ({
           </div>
         ) : (
           <div className="space-y-1 pb-4">
-            {paginatedTemplates.map((template) => {
+            {paginatedTemplates.map((template, index) => {
               const isDeleting = deletingIds.has(template.key);
+              const isSelected = selectedTemplateIds.has(template.key);
 
               return (
                 <div
                   key={template.key}
-                  className="flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-sm transition-all duration-200 cursor-pointer"
-                  onClick={() => !isDeleting && onTemplateSelect(template)}
+                  className={`flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-sm transition-all duration-200 cursor-pointer ${
+                    isSelected ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800' : ''
+                  }`}
+                  onClick={(e) => handleRowClick(template, index, e)}
                 >
+                  {/* Checkbox */}
+                  <div
+                    className="shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCheckboxChange(template, !isSelected);
+                      lastSelectedIndexRef.current = index;
+                    }}
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    ) : (
+                      <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
+                    )}
+                  </div>
+
                   {/* File Icon */}
                   <FileText className="w-5 h-5 shrink-0 text-slate-400 dark:text-slate-600" />
 

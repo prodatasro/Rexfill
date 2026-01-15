@@ -12,19 +12,26 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 const ProcessorPage: FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  // Single template mode (backward compatible)
   const [template, setTemplate] = useState<Doc<WordTemplateData> | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  // Multi-template mode
+  const [templates, setTemplates] = useState<Doc<WordTemplateData>[]>([]);
   const [loading, setLoading] = useState(true);
-  const { oneTimeFile, setOneTimeFile } = useFileProcessing();
+  const { oneTimeFile, clearProcessingData } = useFileProcessing();
   const { setCurrentFolderId } = useProcessor();
 
   // Load all templates to build folder tree
   const { allTemplates } = useTemplatesByFolder(null);
   const { folderTree } = useFolders(allTemplates);
 
+  // Determine if we're in multi-file mode
+  const isMultiFileMode = templates.length > 1;
+
   useEffect(() => {
     const loadData = async () => {
       const templateId = searchParams.get('id');
+      const templateIds = searchParams.get('ids');
 
       // Check if we have a one-time file in context
       if (oneTimeFile) {
@@ -33,14 +40,56 @@ const ProcessorPage: FC = () => {
         return;
       }
 
+      // Multi-template mode: ids param contains comma-separated template keys
+      if (templateIds) {
+        try {
+          const ids = templateIds.split(',').filter(id => id.trim());
+          if (ids.length === 0) {
+            navigate('/');
+            return;
+          }
+
+          // Fetch all templates
+          const docs = await listDocs<WordTemplateData>({
+            collection: 'templates_meta',
+            filter: {}
+          });
+
+          const foundTemplates = ids
+            .map(id => docs.items.find(doc => doc.key === id))
+            .filter((t): t is Doc<WordTemplateData> => t !== undefined);
+
+          if (foundTemplates.length === 0) {
+            navigate('/');
+            return;
+          }
+
+          if (foundTemplates.length === 1) {
+            // Single template found, use single mode
+            setTemplate(foundTemplates[0]);
+            setCurrentFolderId(foundTemplates[0].data.folderId || null);
+          } else {
+            // Multiple templates found
+            setTemplates(foundTemplates);
+            // Use the folder of the first template for navigation
+            setCurrentFolderId(foundTemplates[0].data.folderId || null);
+          }
+        } catch (error) {
+          console.error('Failed to load templates:', error);
+          navigate('/');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Single template mode (backward compatible)
       if (!templateId) {
-        // No template ID and no file, redirect to dashboard
         navigate('/');
         return;
       }
 
       try {
-        // Fetch the template by ID
         const docs = await listDocs<WordTemplateData>({
           collection: 'templates_meta',
           filter: {}
@@ -50,10 +99,8 @@ const ProcessorPage: FC = () => {
 
         if (foundTemplate) {
           setTemplate(foundTemplate);
-          // Store the folder ID in context for navigation
           setCurrentFolderId(foundTemplate.data.folderId || null);
         } else {
-          // Template not found, redirect to dashboard
           navigate('/');
         }
       } catch (error) {
@@ -68,14 +115,13 @@ const ProcessorPage: FC = () => {
   }, [searchParams, navigate, oneTimeFile, setCurrentFolderId]);
 
   const handleClose = () => {
-    // Clear one-time file from context
-    if (oneTimeFile) {
-      setOneTimeFile(null);
-    }
+    // Clear all processing data from context
+    clearProcessingData();
 
     // Navigate back to dashboard, preserving the folder context if available
-    if (template?.data.folderId) {
-      navigate(`/?folder=${template.data.folderId}`);
+    const folderId = template?.data.folderId || templates[0]?.data.folderId;
+    if (folderId) {
+      navigate(`/?folder=${folderId}`);
     } else {
       navigate('/');
     }
@@ -85,8 +131,9 @@ const ProcessorPage: FC = () => {
   };
 
   const handleTemplateChange = (newTemplate: Doc<WordTemplateData>) => {
-    // Switch to the new template
+    // Switch to the new template (only for single template mode)
     setTemplate(newTemplate);
+    setTemplates([]); // Clear multi-template mode
     setFile(null); // Clear file if it was a one-time file
     // Update the URL to reflect the new template
     navigate(`/process?id=${newTemplate.key}`, { replace: true });
@@ -102,6 +149,18 @@ const ProcessorPage: FC = () => {
     );
   }
 
+  // Multi-file mode
+  if (isMultiFileMode) {
+    return (
+      <WordTemplateProcessor
+        templates={templates}
+        onClose={handleClose}
+        folderTree={folderTree}
+      />
+    );
+  }
+
+  // Single file mode
   if (!template && !file) {
     return null;
   }

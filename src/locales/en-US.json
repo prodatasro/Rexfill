@@ -73,10 +73,18 @@
     "file": "file",
     "files": "files",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "selectedCount": "{{count}} selected",
+    "clearSelection": "Clear selection",
+    "selectAll": "Select all",
+    "processSelected": "Process ({{count}})"
   },
   "templateProcessor": {
     "title": "Process Template",
+    "multiFileTitle": "Process {{count}} Templates",
+    "multiFileDesc": "Processing {{fileCount}} files with {{fieldCount}} total fields",
+    "sharedFields": "Shared Fields",
+    "uniqueFields": "unique fields",
     "analyzing": "Analyzing template...",
     "noPlaceholders": "No placeholders found",
     "noPlaceholdersDesc": "This template doesn't contain any placeholders to fill.",
@@ -103,17 +111,21 @@
     "unsavedChangesSaveAs": "Save As...",
     "unsavedChangesDiscard": "Discard Changes",
     "generateDocument": "Generate Document",
+    "generateAllDocuments": "Generate All ({{count}})",
     "processing": "Processing...",
     "cancel": "Cancel",
     "processSuccess": "Document processed and downloaded successfully!",
+    "multiProcessSuccess": "{{count}} documents processed and downloaded successfully!",
     "processError": "Error processing document. The Word file may have complex formatting that prevents placeholder replacement. Try recreating the document with simpler formatting.",
+    "processErrorFile": "Error processing \"{{filename}}\"",
     "progress": {
       "loading": "Loading document...",
       "parsing": "Parsing document...",
       "fixing_placeholders": "Preparing placeholders...",
       "updating_fields": "Updating document fields...",
       "rendering": "Rendering template...",
-      "generating": "Generating document..."
+      "generating": "Generating document...",
+      "processing": "Processing files..."
     }
   },
   "confirmDialog": {

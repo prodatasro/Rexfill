@@ -43,6 +43,11 @@ export const useWordTemplateProcessor = ({
   }, [workerProgress]);
 
   useEffect(() => {
+    // Skip extraction if neither template nor file is provided (e.g., in multi-file mode)
+    if (!template && !file) {
+      setLoading(false);
+      return;
+    }
     extractPlaceholdersAndProperties();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, file]);
