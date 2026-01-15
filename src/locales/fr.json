@@ -98,6 +98,11 @@
     "cancel": "Annuler",
     "processSuccess": "Document traité et téléchargé avec succès !",
     "processError": "Erreur lors du traitement du document. Le fichier Word peut avoir un formatage complexe qui empêche le remplacement des espaces réservés. Essayez de recréer le document avec un formatage plus simple.",
+    "processErrorFile": "Erreur lors du traitement de \"{{filename}}\"",
+    "saveAll": "Tout enregistrer ({{count}})",
+    "multiSaveSuccess": "{{count}} modèles enregistrés avec succès !",
+    "saveErrorFile": "Erreur lors de l'enregistrement de \"{{filename}}\"",
+    "noTemplatesToSave": "Aucun modèle à enregistrer",
     "progress": {
       "loading": "Chargement du document...",
       "parsing": "Analyse du document...",

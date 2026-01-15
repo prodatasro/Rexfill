@@ -118,6 +118,10 @@
     "multiProcessSuccess": "{{count}} documents processed and downloaded successfully!",
     "processError": "Error processing document. The Word file may have complex formatting that prevents placeholder replacement. Try recreating the document with simpler formatting.",
     "processErrorFile": "Error processing \"{{filename}}\"",
+    "saveAll": "Save All ({{count}})",
+    "multiSaveSuccess": "{{count}} templates saved successfully!",
+    "saveErrorFile": "Error saving \"{{filename}}\"",
+    "noTemplatesToSave": "No templates to save",
     "progress": {
       "loading": "Loading document...",
       "parsing": "Parsing document...",

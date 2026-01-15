@@ -98,6 +98,11 @@
     "cancel": "キャンセル",
     "processSuccess": "文書が正常に処理され、ダウンロードされました！",
     "processError": "文書の処理中にエラーが発生しました。Wordファイルに複雑な書式が含まれているため、プレースホルダーの置換ができない可能性があります。より簡単な書式で文書を再作成してみてください。",
+    "processErrorFile": "「{{filename}}」の処理中にエラーが発生しました",
+    "saveAll": "すべて保存 ({{count}})",
+    "multiSaveSuccess": "{{count}} 個のテンプレートが正常に保存されました！",
+    "saveErrorFile": "「{{filename}}」の保存中にエラーが発生しました",
+    "noTemplatesToSave": "保存するテンプレートがありません",
     "progress": {
       "loading": "文書を読み込み中...",
       "parsing": "文書を解析中...",

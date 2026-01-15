@@ -98,6 +98,11 @@
     "cancel": "Zrušit",
     "processSuccess": "Dokument byl úspěšně zpracován a stažen!",
     "processError": "Chyba při zpracování dokumentu. Word soubor může mít komplexní formátování, které brání nahrazení proměnných. Zkuste znovu vytvořit dokument s jednodušším formátováním.",
+    "processErrorFile": "Chyba při zpracování \"{{filename}}\"",
+    "saveAll": "Uložit vše ({{count}})",
+    "multiSaveSuccess": "{{count}} šablon bylo úspěšně uloženo!",
+    "saveErrorFile": "Chyba při ukládání \"{{filename}}\"",
+    "noTemplatesToSave": "Žádné šablony k uložení",
     "progress": {
       "loading": "Načítám dokument...",
       "parsing": "Analyzuji dokument...",

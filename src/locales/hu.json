@@ -98,6 +98,11 @@
     "cancel": "Mégse",
     "processSuccess": "A dokumentum sikeresen feldolgozva és letöltve!",
     "processError": "Hiba a dokumentum feldolgozása során. A Word fájl összetett formázást tartalmazhat, amely megakadályozza a helyőrzők cseréjét. Próbálja meg újra létrehozni a dokumentumot egyszerűbb formázással.",
+    "processErrorFile": "Hiba a \"{{filename}}\" feldolgozása során",
+    "saveAll": "Összes mentése ({{count}})",
+    "multiSaveSuccess": "{{count}} sablon sikeresen mentve!",
+    "saveErrorFile": "Hiba a \"{{filename}}\" mentése során",
+    "noTemplatesToSave": "Nincs mentendő sablon",
     "progress": {
       "loading": "Dokumentum betöltése...",
       "parsing": "Dokumentum elemzése...",

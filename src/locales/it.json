@@ -98,6 +98,11 @@
     "cancel": "Annulla",
     "processSuccess": "Documento elaborato e scaricato con successo!",
     "processError": "Errore nell'elaborazione del documento. Il file Word potrebbe avere una formattazione complessa che impedisce la sostituzione dei segnaposto. Prova a ricreare il documento con una formattazione più semplice.",
+    "processErrorFile": "Errore nell'elaborazione di \"{{filename}}\"",
+    "saveAll": "Salva tutto ({{count}})",
+    "multiSaveSuccess": "{{count}} modelli salvati con successo!",
+    "saveErrorFile": "Errore nel salvataggio di \"{{filename}}\"",
+    "noTemplatesToSave": "Nessun modello da salvare",
     "progress": {
       "loading": "Caricamento documento...",
       "parsing": "Analisi documento...",

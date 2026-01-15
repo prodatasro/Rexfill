@@ -120,6 +120,10 @@
     "multiProcessSuccess": "{{count}} dokumentov bolo úspešne spracovaných a stiahnutých!",
     "processError": "Chyba pri spracovaní dokumentu. Word súbor môže mať komplexné formátovanie, ktoré bráni nahradeniu premenných. Skúste znova vytvoriť dokument s jednoduchším formátovaním.",
     "processErrorFile": "Chyba pri spracovaní \"{{filename}}\"",
+    "saveAll": "Uložiť všetko ({{count}})",
+    "multiSaveSuccess": "{{count}} šablón bolo úspešne uložených!",
+    "saveErrorFile": "Chyba pri ukladaní \"{{filename}}\"",
+    "noTemplatesToSave": "Žiadne šablóny na uloženie",
     "progress": {
       "loading": "Načítavam dokument...",
       "parsing": "Analyzujem dokument...",

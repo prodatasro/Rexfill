@@ -98,6 +98,11 @@
     "cancel": "取消",
     "processSuccess": "文档已成功处理并下载！",
     "processError": "处理文档时出错。Word 文件可能具有复杂的格式，导致无法替换占位符。尝试使用更简单的格式重新创建文档。",
+    "processErrorFile": "处理 \"{{filename}}\" 时出错",
+    "saveAll": "全部保存 ({{count}})",
+    "multiSaveSuccess": "{{count}} 个模板已成功保存！",
+    "saveErrorFile": "保存 \"{{filename}}\" 时出错",
+    "noTemplatesToSave": "没有要保存的模板",
     "progress": {
       "loading": "正在加载文档...",
       "parsing": "正在解析文档...",

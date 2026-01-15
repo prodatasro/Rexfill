@@ -64,13 +64,13 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
   // Single-file specific properties
   const customProperties = isMultiFileMode ? multiFileHook.fieldData.isCustomProperty : singleFileHook.customProperties;
-  const saving = isMultiFileMode ? false : singleFileHook.saving;
-  const handleSave = singleFileHook.handleSave;
+  const saving = isMultiFileMode ? multiFileHook.saving : singleFileHook.saving;
+  const handleSave = isMultiFileMode ? multiFileHook.saveAllDocuments : singleFileHook.handleSave;
   const handleSaveAs = singleFileHook.handleSaveAs;
   const processDocument = isMultiFileMode ? multiFileHook.processAllDocuments : singleFileHook.processDocument;
 
   // Multi-file specific properties
-  const { fieldData, processingTemplates } = multiFileHook;
+  const { fieldData, processingTemplates, savableTemplates } = multiFileHook;
 
   // Expanded state for file sections in multi-file mode
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
@@ -430,8 +430,8 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
           {/* Button container */}
           <div className="flex justify-center py-4">
             <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3 w-full sm:w-auto px-4 sm:px-0">
-              {/* Save button - only for saved templates in single-file mode */}
-              {!isMultiFileMode && template && (
+              {/* Save button - for saved templates (single-file or multi-file mode) */}
+              {((!isMultiFileMode && template) || (isMultiFileMode && savableTemplates.length > 0)) && (
                 <button
                   onClick={handleSave}
                   disabled={!isFormValid || saving || processing}
@@ -439,7 +439,12 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 >
                   <span className="flex items-center justify-center gap-1.5 sm:gap-2">
                     <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="text-xs sm:text-base">{t('templateProcessor.save')}</span>
+                    <span className="text-xs sm:text-base">
+                      {isMultiFileMode
+                        ? t('templateProcessor.saveAll', { count: savableTemplates.length })
+                        : t('templateProcessor.save')
+                      }
+                    </span>
                   </span>
                 </button>
               )}

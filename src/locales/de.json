@@ -98,6 +98,11 @@
     "cancel": "Abbrechen",
     "processSuccess": "Dokument erfolgreich verarbeitet und heruntergeladen!",
     "processError": "Fehler beim Verarbeiten des Dokuments. Die Word-Datei kann eine komplexe Formatierung aufweisen, die das Ersetzen der Platzhalter verhindert. Versuchen Sie, das Dokument mit einfacherer Formatierung neu zu erstellen.",
+    "processErrorFile": "Fehler beim Verarbeiten von \"{{filename}}\"",
+    "saveAll": "Alle speichern ({{count}})",
+    "multiSaveSuccess": "{{count}} Vorlagen erfolgreich gespeichert!",
+    "saveErrorFile": "Fehler beim Speichern von \"{{filename}}\"",
+    "noTemplatesToSave": "Keine Vorlagen zum Speichern",
     "progress": {
       "loading": "Dokument wird geladen...",
       "parsing": "Dokument wird analysiert...",

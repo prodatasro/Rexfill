@@ -98,6 +98,11 @@
     "cancel": "Cancelar",
     "processSuccess": "¡Documento procesado y descargado exitosamente!",
     "processError": "Error al procesar el documento. El archivo de Word puede tener un formato complejo que impide el reemplazo de marcadores. Intente recrear el documento con un formato más simple.",
+    "processErrorFile": "Error al procesar \"{{filename}}\"",
+    "saveAll": "Guardar todo ({{count}})",
+    "multiSaveSuccess": "¡{{count}} plantillas guardadas exitosamente!",
+    "saveErrorFile": "Error al guardar \"{{filename}}\"",
+    "noTemplatesToSave": "No hay plantillas para guardar",
     "progress": {
       "loading": "Cargando documento...",
       "parsing": "Analizando documento...",

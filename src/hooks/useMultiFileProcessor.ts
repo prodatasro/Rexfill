@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Doc } from "@junobuild/core";
+import { Doc, uploadFile, setDoc, getDoc } from "@junobuild/core";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word_template";
@@ -33,6 +33,7 @@ export const useMultiFileProcessor = ({
 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [processingProgress, setProcessingProgress] = useState<ProcessingProgress | null>(null);
 
@@ -378,6 +379,83 @@ export const useMultiFileProcessor = ({
     }
   };
 
+  // Get templates that can be saved (those with template data, not one-time files)
+  const savableTemplates = processingTemplates.filter(pt => pt.template);
+
+  const saveAllDocuments = async (): Promise<boolean> => {
+    if (savableTemplates.length === 0) {
+      showErrorToast(t('templateProcessor.noTemplatesToSave'));
+      return false;
+    }
+
+    setSaving(true);
+    let savedCount = 0;
+
+    try {
+      for (let i = 0; i < savableTemplates.length; i++) {
+        const pt = savableTemplates[i];
+        if (!pt.template) continue;
+
+        setProcessingProgress({
+          stage: 'generating',
+          progress: Math.round(((i + 1) / savableTemplates.length) * 100),
+        });
+
+        try {
+          const blob = await generateProcessedBlob(pt, formData);
+
+          const storagePath = pt.template.data.fullPath?.startsWith('/')
+            ? pt.template.data.fullPath.substring(1)
+            : pt.template.data.fullPath || pt.fileName;
+
+          const fileToUpload = new File([blob], pt.fileName, {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          });
+
+          const result = await uploadFile({
+            data: fileToUpload,
+            collection: 'templates',
+            filename: storagePath
+          });
+
+          await setDoc({
+            collection: 'templates_meta',
+            doc: {
+              ...pt.template,
+              data: {
+                ...pt.template.data,
+                url: result.downloadUrl,
+                size: blob.size,
+                uploadedAt: Date.now()
+              }
+            }
+          });
+
+          savedCount++;
+        } catch (error) {
+          console.error(`Failed to save ${pt.fileName}:`, error);
+          showErrorToast(t('templateProcessor.saveErrorFile', { filename: pt.fileName }));
+        }
+      }
+
+      if (savedCount > 0) {
+        // Update initial form data to reflect saved state
+        setInitialFormData({ ...formData });
+        setHasChanges(false);
+        showSuccessToast(t('templateProcessor.multiSaveSuccess', { count: savedCount }));
+      }
+
+      return savedCount === savableTemplates.length;
+    } catch (error) {
+      console.error('Error saving documents:', error);
+      showErrorToast(t('templateProcessor.saveFailed'));
+      return false;
+    } finally {
+      setSaving(false);
+      setProcessingProgress(null);
+    }
+  };
+
   // Get all fields for display
   const allFields = [
     ...fieldData.sharedFields,
@@ -391,12 +469,15 @@ export const useMultiFileProcessor = ({
     formData,
     loading,
     processing,
+    saving,
     hasChanges,
     allFields,
     processingProgress,
+    savableTemplates,
 
     // Handlers
     handleInputChange,
     processAllDocuments,
+    saveAllDocuments,
   };
 };
