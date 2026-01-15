@@ -694,10 +694,9 @@ const FileList: FC<FileListProps> = ({
               return (
                 <div
                   key={template.key}
-                  className={`flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-sm transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-sm transition-all duration-200 ${
                     isSelected ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800' : ''
                   }`}
-                  onClick={(e) => handleRowClick(template, index, e)}
                 >
                   {/* Checkbox */}
                   <div
@@ -720,8 +719,14 @@ const FileList: FC<FileListProps> = ({
 
                   {/* File Name */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-slate-900 dark:text-slate-50 truncate" title={template.data.name}>
-                      {template.data.name}
+                    <h3 className="font-medium text-sm text-slate-900 dark:text-slate-50 truncate">
+                      <span
+                        className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                        title={template.data.name}
+                        onClick={(e) => handleRowClick(template, index, e)}
+                      >
+                        {template.data.name}
+                      </span>
                     </h3>
                   </div>
 
