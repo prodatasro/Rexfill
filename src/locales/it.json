@@ -33,8 +33,11 @@
     "oneTimeProcess": "Elaborazione una tantum",
     "oneTimeProcessDesc": "Elabora una volta senza salvare nel database",
     "cancelUpload": "Annulla",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "Seleziona cartella",
+    "rootFolder": "Radice (Tutti i modelli)",
+    "dropFilesHere": "Rilascia i file qui",
+    "dropFilesHint": "Rilascia per caricare file .docx",
+    "uploadToFolder": "Carica nella cartella"
   },
   "fileList": {
     "title": "Templates",

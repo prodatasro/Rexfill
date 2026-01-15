@@ -33,8 +33,11 @@
     "oneTimeProcess": "一次性处理",
     "oneTimeProcessDesc": "处理一次而不保存到数据库",
     "cancelUpload": "取消",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "选择文件夹",
+    "rootFolder": "根目录（所有模板）",
+    "dropFilesHere": "将文件拖放到此处",
+    "dropFilesHint": "释放以上传 .docx 文件",
+    "uploadToFolder": "上传到文件夹"
   },
   "fileList": {
     "title": "Templates",

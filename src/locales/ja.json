@@ -33,8 +33,11 @@
     "oneTimeProcess": "1回限りの処理",
     "oneTimeProcessDesc": "データベースに保存せずに1回処理",
     "cancelUpload": "キャンセル",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "フォルダを選択",
+    "rootFolder": "ルート（すべてのテンプレート）",
+    "dropFilesHere": "ここにファイルをドロップ",
+    "dropFilesHint": ".docxファイルをアップロードするにはリリースしてください",
+    "uploadToFolder": "フォルダにアップロード"
   },
   "fileList": {
     "title": "Templates",

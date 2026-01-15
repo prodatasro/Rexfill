@@ -39,7 +39,10 @@
     "selectedFiles": "Selected file(s): {{count}}",
     "cancelUpload": "Cancel",
     "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "rootFolder": "Root (All Templates)",
+    "dropFilesHere": "Drop files here",
+    "dropFilesHint": "Release to upload .docx files",
+    "uploadToFolder": "Upload to folder"
   },
   "fileList": {
     "title": "Templates",

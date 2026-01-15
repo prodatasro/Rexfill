@@ -39,7 +39,10 @@
     "selectedFiles": "Vybraný súbor (súborov): {{count}}",
     "cancelUpload": "Zrušiť",
     "selectFolder": "Vybrať priečinok",
-    "rootFolder": "Koreň (Všetky šablóny)"
+    "rootFolder": "Koreň (Všetky šablóny)",
+    "dropFilesHere": "Sem presuňte súbory",
+    "dropFilesHint": "Pustite pre nahratie .docx súborov",
+    "uploadToFolder": "Nahrať do priečinka"
   },
   "fileList": {
     "title": "Šablóny",

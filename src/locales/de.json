@@ -33,8 +33,11 @@
     "oneTimeProcess": "Einmalige Verarbeitung",
     "oneTimeProcessDesc": "Einmal verarbeiten ohne in Datenbank zu speichern",
     "cancelUpload": "Abbrechen",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "Ordner auswählen",
+    "rootFolder": "Stammverzeichnis (Alle Vorlagen)",
+    "dropFilesHere": "Dateien hier ablegen",
+    "dropFilesHint": "Loslassen zum Hochladen von .docx-Dateien",
+    "uploadToFolder": "In Ordner hochladen"
   },
   "fileList": {
     "title": "Templates",

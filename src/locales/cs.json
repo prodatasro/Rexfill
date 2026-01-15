@@ -33,8 +33,11 @@
     "oneTimeProcess": "Jednorázové zpracování",
     "oneTimeProcessDesc": "Zpracovat jednou bez uložení do databáze",
     "cancelUpload": "Zrušit",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "Vybrat složku",
+    "rootFolder": "Kořen (Všechny šablony)",
+    "dropFilesHere": "Sem přetáhněte soubory",
+    "dropFilesHint": "Uvolněte pro nahrání .docx souborů",
+    "uploadToFolder": "Nahrát do složky"
   },
   "fileList": {
     "title": "Templates",

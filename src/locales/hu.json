@@ -33,8 +33,11 @@
     "oneTimeProcess": "Egyszeri feldolgozás",
     "oneTimeProcessDesc": "Egyszeri feldolgozás adatbázisba mentés nélkül",
     "cancelUpload": "Mégse",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "Mappa kiválasztása",
+    "rootFolder": "Gyökér (Összes sablon)",
+    "dropFilesHere": "Húzza ide a fájlokat",
+    "dropFilesHint": "Engedje el a .docx fájlok feltöltéséhez",
+    "uploadToFolder": "Feltöltés mappába"
   },
   "fileList": {
     "title": "Templates",

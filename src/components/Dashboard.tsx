@@ -1,6 +1,6 @@
-import { FC, useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload } from 'lucide-react';
 import { Doc, setDoc, deleteDoc, deleteAsset, listAssets } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder, FolderTreeNode } from '../types/folder';
@@ -52,6 +52,12 @@ const Dashboard: FC = () => {
 
   // Folder deletion state (includes asset deletion)
   const [isDeletingFolder, setIsDeletingFolder] = useState(false);
+
+  // Drag and drop state
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [draggedFiles, setDraggedFiles] = useState<File[]>([]);
+  const [showDropModeDialog, setShowDropModeDialog] = useState(false);
+  const dragCounterRef = useRef(0);
 
   // Folder search state
   const [folderSearchQuery, setFolderSearchQuery] = useState('');
@@ -355,6 +361,169 @@ const Dashboard: FC = () => {
     folderUploadInputRef.current?.click();
   }, []);
 
+  // Drag and drop handlers
+  const handleDragEnter = useCallback((e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    dragCounterRef.current = 0;
+
+    const files = Array.from(e.dataTransfer.files);
+    const validFiles = files.filter(file => file.name.endsWith('.docx'));
+
+    if (validFiles.length === 0) {
+      showErrorToast(t('fileUpload.invalidFileType'));
+      return;
+    }
+
+    if (validFiles.length < files.length) {
+      import('../utils/toast').then(({ showWarningToast }) => {
+        showWarningToast(t('fileUpload.someFilesInvalid'));
+      });
+    }
+
+    setDraggedFiles(validFiles);
+    setShowDropModeDialog(true);
+  }, [t]);
+
+  const handleDropModeSelection = async (mode: 'save' | 'saveAndProcess' | 'oneTime') => {
+    if (draggedFiles.length === 0) return;
+
+    if (mode === 'oneTime') {
+      setShowDropModeDialog(false);
+      const fileToProcess = draggedFiles[0];
+      setDraggedFiles([]);
+      setOneTimeFile(fileToProcess);
+      navigate('/process');
+      return;
+    }
+
+    // Save or Save and Process mode
+    setIsFolderUploading(true);
+    setShowDropModeDialog(false);
+    let successCount = 0;
+    const failedFiles: string[] = [];
+    let savedTemplateKey: string | null = null;
+
+    try {
+      const { uploadFile, setDoc: setDocJuno, listDocs } = await import('@junobuild/core');
+
+      // Get existing files to check for duplicates
+      const docs = await listDocs({ collection: 'templates_meta' });
+      const existingFiles = new Set(
+        docs.items
+          .filter(doc => {
+            const data = doc.data as WordTemplateData;
+            return (data.folderId ?? null) === selectedFolderId;
+          })
+          .map(doc => (doc.data as WordTemplateData).name)
+      );
+
+      const folderData = selectedFolderId ? getFolderById(selectedFolderId) : null;
+      const folderPath = folderData?.data.path || '/';
+
+      for (const file of draggedFiles) {
+        if (existingFiles.has(file.name)) {
+          const { showWarningToast } = await import('../utils/toast');
+          showWarningToast(t('fileUpload.fileExists', { filename: file.name }));
+          failedFiles.push(file.name);
+          continue;
+        }
+
+        try {
+          const fullPath = buildTemplatePath(folderPath, file.name);
+
+          const templateData: WordTemplateData = {
+            name: file.name,
+            size: file.size,
+            uploadedAt: Date.now(),
+            mimeType: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            folderId: selectedFolderId,
+            folderPath: folderPath,
+            fullPath: fullPath
+          };
+
+          const result = await uploadFile({
+            data: file,
+            collection: 'templates',
+            filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
+          });
+
+          await setDocJuno({
+            collection: 'templates_meta',
+            doc: {
+              key: result.name,
+              data: {
+                ...templateData,
+                url: result.downloadUrl
+              }
+            }
+          });
+
+          savedTemplateKey = result.name;
+          successCount++;
+        } catch (error) {
+          console.error(`Upload failed for ${file.name}:`, error);
+          failedFiles.push(file.name);
+        }
+      }
+
+      if (successCount > 0) {
+        if (successCount === 1) {
+          showSuccessToast(t('fileUpload.uploadSuccess', { filename: draggedFiles[0].name }));
+        } else {
+          showSuccessToast(t('fileUpload.uploadMultipleSuccess', { count: successCount }));
+        }
+        await refreshTemplates();
+      }
+
+      if (failedFiles.length > 0) {
+        showErrorToast(t('fileUpload.uploadMultipleFailed', { count: failedFiles.length }));
+      }
+
+      setDraggedFiles([]);
+
+      if (mode === 'saveAndProcess' && savedTemplateKey) {
+        navigate(`/process?id=${savedTemplateKey}`);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      showErrorToast(t('fileUpload.uploadFailed'));
+    } finally {
+      setIsFolderUploading(false);
+    }
+  };
+
+  const handleDropDialogCancel = useCallback(() => {
+    setShowDropModeDialog(false);
+    setDraggedFiles([]);
+  }, []);
+
   const handleFolderFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0 || !uploadToFolderId) return;
@@ -376,7 +545,7 @@ const Dashboard: FC = () => {
     // Upload the files
     setIsFolderUploading(true);
     let successCount = 0;
-    let failedFiles: string[] = [];
+    const failedFiles: string[] = [];
 
     try {
       const { uploadFile, setDoc, listDocs } = await import('@junobuild/core');
@@ -633,7 +802,13 @@ const Dashboard: FC = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 h-full relative">
+        <main
+          className="flex-1 min-w-0 h-full relative"
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           {/* Upload in progress overlay */}
           {isFolderUploading && (
             <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
@@ -653,6 +828,21 @@ const Dashboard: FC = () => {
                 <Loader2 className="w-12 h-12 animate-spin text-red-600 dark:text-red-400" />
                 <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {t('folders.deleting')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Drag and drop overlay */}
+          {isDragOver && (
+            <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-400/20 backdrop-blur-sm rounded-lg flex items-center justify-center z-50 border-4 border-dashed border-blue-500 dark:border-blue-400 pointer-events-none">
+              <div className="flex flex-col items-center gap-3 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+                <Upload className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                  {t('fileUpload.dropFilesHere')}
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {t('fileUpload.dropFilesHint')}
                 </p>
               </div>
             </div>
@@ -693,6 +883,123 @@ const Dashboard: FC = () => {
         onConfirm={handleFolderDialogConfirm}
         onCancel={handleFolderDialogCancel}
       />
+
+      {/* Drop Mode Selection Dialog */}
+      {showDropModeDialog && draggedFiles.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl p-6 sm:p-8 relative">
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+              {t('fileUpload.uploadModeTitle')}
+            </h3>
+
+            {/* Show dropped files */}
+            <div className="mb-4 p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+              <div className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                {t('fileUpload.selectedFiles', { count: draggedFiles.length })}
+              </div>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {draggedFiles.map((file, index) => (
+                  <div key={index} className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                    • {file.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Current folder info */}
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <div className="text-sm text-slate-700 dark:text-slate-300">
+                {t('fileUpload.uploadToFolder')}: <span className="font-semibold">{selectedFolderId ? getFolderById(selectedFolderId)?.data.name : t('fileUpload.rootFolder')}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={() => handleDropModeSelection('save')}
+                className="w-full text-left p-4 rounded-xl border-2 border-purple-300 dark:border-purple-600 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-slate-700 transition-all"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 shrink-0 text-purple-600 dark:text-purple-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-bold text-slate-900 dark:text-slate-50 mb-1">
+                      {t('fileUpload.saveOnly')}
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-300">
+                      {t('fileUpload.saveOnlyDesc')}
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleDropModeSelection('saveAndProcess')}
+                disabled={draggedFiles.length > 1}
+                className="w-full text-left p-4 rounded-xl border-2 border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 shrink-0 text-blue-600 dark:text-blue-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-bold text-slate-900 dark:text-slate-50 mb-1">
+                      {t('fileUpload.saveAndProcess')}
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-300">
+                      {t('fileUpload.saveAndProcessDesc')}
+                    </div>
+                    {draggedFiles.length > 1 && (
+                      <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                        {t('fileUpload.singleFileOnly')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleDropModeSelection('oneTime')}
+                disabled={draggedFiles.length > 1}
+                className="w-full text-left p-4 rounded-xl border-2 border-green-300 dark:border-green-600 hover:border-green-500 dark:hover:border-green-400 hover:bg-green-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 shrink-0 text-green-600 dark:text-green-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-bold text-slate-900 dark:text-slate-50 mb-1">
+                      {t('fileUpload.oneTimeProcess')}
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-300">
+                      {t('fileUpload.oneTimeProcessDesc')}
+                    </div>
+                    {draggedFiles.length > 1 && (
+                      <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                        {t('fileUpload.singleFileOnly')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={handleDropDialogCancel}
+              className="w-full py-3 px-4 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition-all"
+            >
+              {t('fileUpload.cancelUpload')}
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

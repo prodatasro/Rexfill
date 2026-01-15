@@ -33,8 +33,11 @@
     "oneTimeProcess": "Traitement unique",
     "oneTimeProcessDesc": "Traiter une fois sans sauvegarder dans la base de données",
     "cancelUpload": "Annuler",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "Sélectionner un dossier",
+    "rootFolder": "Racine (Tous les modèles)",
+    "dropFilesHere": "Déposez les fichiers ici",
+    "dropFilesHint": "Relâchez pour télécharger des fichiers .docx",
+    "uploadToFolder": "Télécharger dans le dossier"
   },
   "fileList": {
     "title": "Templates",

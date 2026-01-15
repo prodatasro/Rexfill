@@ -33,8 +33,11 @@
     "oneTimeProcess": "Jednorazowe przetwarzanie",
     "oneTimeProcessDesc": "Przetwórz raz bez zapisywania w bazie danych",
     "cancelUpload": "Anuluj",
-    "selectFolder": "Select folder",
-    "rootFolder": "Root (All Templates)"
+    "selectFolder": "Wybierz folder",
+    "rootFolder": "Główny (Wszystkie szablony)",
+    "dropFilesHere": "Upuść pliki tutaj",
+    "dropFilesHint": "Puść, aby przesłać pliki .docx",
+    "uploadToFolder": "Prześlij do folderu"
   },
   "fileList": {
     "title": "Templates",
