@@ -1,5 +1,5 @@
 import { FC, useState, useRef, useEffect } from 'react';
-import { MoreVertical, FolderPlus, Upload, Edit, Trash2 } from 'lucide-react';
+import { MoreVertical, FolderPlus, Upload, Edit, Trash2, FileX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Folder } from '../../types/folder';
 import { canCreateSubfolder } from '../../utils/folderUtils';
@@ -9,6 +9,7 @@ interface FolderActionsMenuProps {
   onCreateSubfolder: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onDeleteFiles: () => void;
   onUploadToFolder: () => void;
 }
 
@@ -17,6 +18,7 @@ const FolderActionsMenu: FC<FolderActionsMenuProps> = ({
   onCreateSubfolder,
   onRename,
   onDelete,
+  onDeleteFiles,
   onUploadToFolder,
 }) => {
   const { t } = useTranslation();
@@ -97,6 +99,14 @@ const FolderActionsMenu: FC<FolderActionsMenuProps> = ({
           </button>
 
           <div className="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+
+          <button
+            onClick={() => handleAction(onDeleteFiles)}
+            className="w-full text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center gap-2"
+          >
+            <FileX className="w-4 h-4" />
+            {t('folders.deleteFiles')}
+          </button>
 
           <button
             onClick={() => handleAction(onDelete)}

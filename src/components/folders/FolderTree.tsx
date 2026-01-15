@@ -13,6 +13,7 @@ interface FolderTreeProps {
   onCreateFolder: (parentId: string | null) => void;
   onRenameFolder: (folder: Folder) => void;
   onDeleteFolder: (folder: Folder) => void;
+  onDeleteFolderFiles: (folder: Folder) => void;
   onUploadToFolder: (folderId: string) => void;
   totalTemplateCount?: number;
   searchQuery?: string;
@@ -31,6 +32,7 @@ const FolderTree: FC<FolderTreeProps> = ({
   onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
+  onDeleteFolderFiles,
   onUploadToFolder,
   totalTemplateCount = 0,
   searchQuery = '',
@@ -189,6 +191,7 @@ const FolderTree: FC<FolderTreeProps> = ({
           onCreateSubfolder={() => onCreateFolder(node.folder.key)}
           onRename={() => onRenameFolder(node.folder)}
           onDelete={() => onDeleteFolder(node.folder)}
+          onDeleteFiles={() => onDeleteFolderFiles(node.folder)}
           onUploadToFolder={() => onUploadToFolder(node.folder.key)}
         />
         {/* Render children recursively */}

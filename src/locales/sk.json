@@ -80,7 +80,13 @@
     "selectedCount": "{{count}} vybraných",
     "clearSelection": "Zrušiť výber",
     "selectAll": "Vybrať všetko",
-    "processSelected": "Spracovať ({{count}})"
+    "processSelected": "Spracovať ({{count}})",
+    "deleteSelected": "Zmazať ({{count}})",
+    "deleteSelectedConfirmTitle": "Zmazať vybrané šablóny",
+    "deleteSelectedConfirmMessage": "Naozaj chcete zmazať {{count}} šablón(y)? Túto akciu nie je možné vrátiť späť.",
+    "deleteSelectedSuccess": "{{count}} šablón(y) bolo úspešne zmazaných",
+    "deleteSelectedFailed": "Nepodarilo sa zmazať {{count}} šablón(y)",
+    "deleting": "Mazanie..."
   },
   "templateProcessor": {
     "title": "Spracovať šablónu",
@@ -182,6 +188,12 @@
     "createSubfolder": "Vytvoriť podpriečinok",
     "renameFolder": "Premenovať priečinok",
     "deleteFolder": "Zmazať priečinok",
+    "deleteFiles": "Zmazať súbory",
+    "deleteFilesConfirm": "Zmazať súbory z \"{{name}}\"?",
+    "deleteFilesDetail": "Toto natrvalo zmaže {{count}} šablón(y), ale priečinok zostane zachovaný.",
+    "filesDeleted": "{{count}} súbor(ov) bolo úspešne zmazaných",
+    "noFilesToDelete": "V tomto priečinku nie sú žiadne súbory na zmazanie",
+    "deleteFilesFailed": "Nepodarilo sa zmazať súbory",
     "folderName": "Názov priečinka",
     "parentFolder": "Nadradený priečinok",
     "enterFolderName": "Zadajte názov priečinka...",

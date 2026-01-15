@@ -303,6 +303,145 @@ const Dashboard: FC = () => {
     }
   }, [allTemplates, confirm, deleteFolder, folderTree, refreshTemplates, selectedFolderId, t]);
 
+  const handleDeleteFolderFiles = useCallback(async (folder: Folder) => {
+    // Helper to get all subfolder IDs recursively
+    const getAllSubfolderIds = (folderId: string): string[] => {
+      const findInTree = (nodes: FolderTreeNode[]): string[] => {
+        for (const node of nodes) {
+          if (node.folder.key === folderId) {
+            // Found the folder, collect all descendant IDs
+            const collectIds = (n: FolderTreeNode): string[] => {
+              const ids = [n.folder.key];
+              for (const child of n.children) {
+                ids.push(...collectIds(child));
+              }
+              return ids;
+            };
+            return collectIds(node);
+          }
+          const found = findInTree(node.children);
+          if (found.length > 0) return found;
+        }
+        return [];
+      };
+      return findInTree(folderTree);
+    };
+
+    // Get all folder IDs (folder + all subfolders)
+    const folderIdsToCheck = new Set(getAllSubfolderIds(folder.key));
+
+    // Count templates in this folder and all subfolders
+    const templatesInFolders = allTemplates.filter(t =>
+      t.data.folderId && folderIdsToCheck.has(t.data.folderId)
+    );
+
+    if (templatesInFolders.length === 0) {
+      showErrorToast(t('folders.noFilesToDelete'));
+      return;
+    }
+
+    // Confirm deletion
+    const confirmed = await confirm({
+      title: t('folders.deleteFilesConfirm', { name: folder.data.name }),
+      message: `${t('folders.deleteFilesDetail', { count: templatesInFolders.length })}\n\n${t('folders.cannotUndo')}`,
+      confirmLabel: t('confirmDialog.ok'),
+      cancelLabel: t('confirmDialog.cancel'),
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
+    // Show loading spinner
+    setIsDeletingFolder(true);
+
+    try {
+      // Get all assets from storage to find actual paths
+      const storageAssets = await listAssets({
+        collection: 'templates',
+        filter: {}
+      });
+
+      // Create a map to look up storage assets by various keys
+      const storageAssetMap = new Map<string, typeof storageAssets.items[0]>();
+      for (const asset of storageAssets.items) {
+        const junoFullPath = asset.fullPath;
+
+        // Map by full Juno path
+        storageAssetMap.set(junoFullPath, asset);
+
+        // Map by path without collection prefix
+        const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
+        storageAssetMap.set(pathWithoutCollection, asset);
+
+        // Map by path without leading slash
+        const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
+          ? pathWithoutCollection.substring(1)
+          : pathWithoutCollection;
+        storageAssetMap.set(pathNoLeadingSlash, asset);
+
+        // Map by just the filename (for fallback)
+        const filename = junoFullPath.split('/').pop() || '';
+        if (filename && !storageAssetMap.has(filename)) {
+          storageAssetMap.set(filename, asset);
+        }
+      }
+
+      // Delete all templates in this folder and subfolders
+      for (const template of templatesInFolders) {
+        // Try to find the asset in storage using various path strategies
+        const possibleKeys = [
+          template.key,
+          `/${template.key}`,
+          template.data.fullPath,
+          `/templates/${template.key}`,
+          template.data.name,
+        ].filter(Boolean);
+
+        let assetDeleted = false;
+        for (const key of possibleKeys) {
+          if (!key) continue;
+
+          const storageAsset = storageAssetMap.get(key);
+
+          if (storageAsset) {
+            try {
+              await deleteAsset({
+                collection: 'templates',
+                fullPath: storageAsset.fullPath
+              });
+              assetDeleted = true;
+              console.log(`Deleted asset: ${storageAsset.fullPath}`);
+              break;
+            } catch (assetError) {
+              console.warn(`Failed to delete asset with path ${storageAsset.fullPath}:`, assetError);
+              continue;
+            }
+          }
+        }
+
+        if (!assetDeleted) {
+          console.warn(`Could not delete asset for ${template.data.name} from storage, deleting metadata only`);
+        }
+
+        // Delete metadata
+        await deleteDoc({
+          collection: 'templates_meta',
+          doc: template
+        });
+      }
+
+      // Refresh templates
+      await refreshTemplates();
+
+      showSuccessToast(t('folders.filesDeleted', { count: templatesInFolders.length }));
+    } catch (error) {
+      console.error('Failed to delete files:', error);
+      showErrorToast(t('folders.deleteFilesFailed'));
+    } finally {
+      setIsDeletingFolder(false);
+    }
+  }, [allTemplates, confirm, folderTree, refreshTemplates, t]);
+
   const handleFolderDialogConfirm = useCallback(async (name: string) => {
     if (folderDialogState.mode === 'create') {
       const parentId = folderDialogState.parentFolder?.key ?? null;
@@ -780,6 +919,7 @@ const Dashboard: FC = () => {
                     onCreateFolder={handleCreateFolder}
                     onRenameFolder={handleRenameFolder}
                     onDeleteFolder={handleDeleteFolder}
+                    onDeleteFolderFiles={handleDeleteFolderFiles}
                     onUploadToFolder={handleUploadToFolder}
                     totalTemplateCount={allTemplates.filter(t => !t.data.folderId).length}
                     searchQuery={folderSearchQuery}

@@ -13,6 +13,7 @@ interface FolderTreeItemProps {
   onCreateSubfolder: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onDeleteFiles: () => void;
   onUploadToFolder: () => void;
 }
 
@@ -26,6 +27,7 @@ const FolderTreeItem: FC<FolderTreeItemProps> = ({
   onCreateSubfolder,
   onRename,
   onDelete,
+  onDeleteFiles,
   onUploadToFolder,
 }) => {
   const hasChildren = node.children.length > 0;
@@ -104,6 +106,7 @@ const FolderTreeItem: FC<FolderTreeItemProps> = ({
             onCreateSubfolder={onCreateSubfolder}
             onRename={onRename}
             onDelete={onDelete}
+            onDeleteFiles={onDeleteFiles}
             onUploadToFolder={onUploadToFolder}
           />
         </div>

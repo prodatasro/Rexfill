@@ -1,5 +1,5 @@
 import { FC, useState, useMemo, useRef, useCallback } from 'react';
-import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X } from 'lucide-react';
+import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X, Loader2 } from 'lucide-react';
 import { setDoc, deleteDoc, deleteAsset, listAssets, Doc, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
@@ -37,6 +37,7 @@ const FileList: FC<FileListProps> = ({
 }) => {
   const { t } = useTranslation();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
   const { confirm } = useConfirm();
 
@@ -383,6 +384,110 @@ const FileList: FC<FileListProps> = ({
     lastSelectedIndexRef.current = null;
   }, []);
 
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedTemplateIds.size === 0) return;
+
+    const selectedTemplates = templates.filter(t => selectedTemplateIds.has(t.key));
+    const count = selectedTemplates.length;
+
+    const confirmed = await confirm({
+      title: t('fileList.deleteSelectedConfirmTitle'),
+      message: t('fileList.deleteSelectedConfirmMessage', { count }),
+      confirmLabel: t('confirmDialog.ok'),
+      cancelLabel: t('confirmDialog.cancel'),
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
+    setIsDeletingSelected(true);
+    setDeletingIds(prev => new Set([...prev, ...selectedTemplateIds]));
+
+    try {
+      // Get all storage assets once
+      const storageAssets = await listAssets({
+        collection: 'templates',
+        filter: {}
+      });
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const template of selectedTemplates) {
+        try {
+          // Build possible keys to match against storage
+          const possibleKeys = [
+            template.key,
+            `/${template.key}`,
+            template.data.fullPath,
+            `/templates/${template.key}`,
+            template.data.name,
+          ].filter(Boolean);
+
+          // Find matching storage asset
+          let storageAsset = null;
+          for (const asset of storageAssets.items) {
+            const junoFullPath = asset.fullPath;
+            const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
+            const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
+              ? pathWithoutCollection.substring(1)
+              : pathWithoutCollection;
+            const filename = junoFullPath.split('/').pop() || '';
+
+            for (const key of possibleKeys) {
+              if (key === junoFullPath || key === pathWithoutCollection ||
+                  key === pathNoLeadingSlash || key === filename) {
+                storageAsset = asset;
+                break;
+              }
+            }
+            if (storageAsset) break;
+          }
+
+          if (storageAsset) {
+            try {
+              await deleteAsset({
+                collection: 'templates',
+                fullPath: storageAsset.fullPath
+              });
+            } catch (assetError: any) {
+              console.warn('Failed to delete asset from storage:', assetError);
+            }
+          }
+
+          // Delete metadata from datastore
+          await deleteDoc({
+            collection: 'templates_meta',
+            doc: template
+          });
+
+          successCount++;
+        } catch (error) {
+          console.error('Delete failed for:', template.data.name, error);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showSuccessToast(t('fileList.deleteSelectedSuccess', { count: successCount }));
+      }
+      if (failCount > 0) {
+        showErrorToast(t('fileList.deleteSelectedFailed', { count: failCount }));
+      }
+
+      setSelectedTemplateIds(new Set());
+      lastSelectedIndexRef.current = null;
+      onFileDeleted();
+    } finally {
+      setIsDeletingSelected(false);
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        selectedTemplateIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    }
+  }, [selectedTemplateIds, templates, confirm, t, onFileDeleted]);
+
   const handleSelectAll = useCallback(() => {
     const allKeys = paginatedTemplates.map(t => t.key);
     setSelectedTemplateIds(new Set(allKeys));
@@ -411,7 +516,19 @@ const FileList: FC<FileListProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
+      {/* Deleting overlay */}
+      {isDeletingSelected && (
+        <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-12 h-12 animate-spin text-red-600 dark:text-red-400" />
+            <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+              {t('fileList.deleting')}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Search and Controls - Fixed at top */}
       <div className="p-4 space-y-3 shrink-0">
         {/* Search Bar */}
@@ -528,17 +645,31 @@ const FileList: FC<FileListProps> = ({
               </button>
             )}
           </div>
-          <button
-            onClick={handleProcessSelected}
-            disabled={selectedTemplateIds.size === 0}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-              selectedTemplateIds.size > 0
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-transparent text-transparent cursor-default'
-            }`}
-          >
-            {t('fileList.processSelected', { count: selectedTemplateIds.size || 1 })}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleProcessSelected}
+              disabled={selectedTemplateIds.size === 0}
+              className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                selectedTemplateIds.size > 0
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-transparent text-transparent cursor-default'
+              }`}
+            >
+              {t('fileList.processSelected', { count: selectedTemplateIds.size || 1 })}
+            </button>
+            <button
+              onClick={handleDeleteSelected}
+              disabled={selectedTemplateIds.size === 0 || isDeletingSelected}
+              className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                selectedTemplateIds.size > 0
+                  ? 'bg-red-600 hover:bg-red-700 text-white disabled:opacity-70 disabled:cursor-not-allowed'
+                  : 'bg-transparent text-transparent cursor-default'
+              }`}
+            >
+              <Trash2 className="w-4 h-4" />
+              {t('fileList.deleteSelected', { count: selectedTemplateIds.size || 1 })}
+            </button>
+          </div>
         </div>
       </div>
 

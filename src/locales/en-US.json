@@ -80,7 +80,13 @@
     "selectedCount": "{{count}} selected",
     "clearSelection": "Clear selection",
     "selectAll": "Select all",
-    "processSelected": "Process ({{count}})"
+    "processSelected": "Process ({{count}})",
+    "deleteSelected": "Delete ({{count}})",
+    "deleteSelectedConfirmTitle": "Delete Selected Templates",
+    "deleteSelectedConfirmMessage": "Are you sure you want to delete {{count}} template(s)? This action cannot be undone.",
+    "deleteSelectedSuccess": "{{count}} template(s) deleted successfully",
+    "deleteSelectedFailed": "Failed to delete {{count}} template(s)",
+    "deleting": "Deleting..."
   },
   "templateProcessor": {
     "title": "Process Template",
@@ -180,6 +186,12 @@
     "createSubfolder": "Create Subfolder",
     "renameFolder": "Rename Folder",
     "deleteFolder": "Delete Folder",
+    "deleteFiles": "Delete Files",
+    "deleteFilesConfirm": "Delete files from \"{{name}}\"?",
+    "deleteFilesDetail": "This will permanently delete {{count}} template(s) but keep the folder.",
+    "filesDeleted": "{{count}} file(s) deleted successfully",
+    "noFilesToDelete": "No files to delete in this folder",
+    "deleteFilesFailed": "Failed to delete files",
     "folderName": "Folder name",
     "parentFolder": "Parent folder",
     "enterFolderName": "Enter folder name...",
