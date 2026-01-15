@@ -9,6 +9,7 @@ import { useWordTemplateProcessor } from "../hooks/useWordTemplateProcessor";
 import { useMultiFileProcessor } from "../hooks/useMultiFileProcessor";
 import { UnsavedChangesDialog } from "./modals/UnsavedChangesDialog";
 import { SaveAsDialog } from "./modals/SaveAsDialog";
+import { MultiSaveAsDialog } from "./modals/MultiSaveAsDialog";
 
 interface WordTemplateProcessorProps {
   // Single file mode
@@ -70,13 +71,14 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const processDocument = isMultiFileMode ? multiFileHook.processAllDocuments : singleFileHook.processDocument;
 
   // Multi-file specific properties
-  const { fieldData, processingTemplates, savableTemplates } = multiFileHook;
+  const { fieldData, processingTemplates, savableTemplates, saveAllDocumentsAs } = multiFileHook;
 
   // Expanded state for file sections in multi-file mode
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
 
   // Modal states
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
+  const [showMultiSaveAsDialog, setShowMultiSaveAsDialog] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
 
   // Initialize all files as expanded (only when IDs change)
@@ -128,7 +130,11 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
   // Save As dialog handlers
   const openSaveAsDialog = () => {
-    setShowSaveAsDialog(true);
+    if (isMultiFileMode) {
+      setShowMultiSaveAsDialog(true);
+    } else {
+      setShowSaveAsDialog(true);
+    }
   };
 
   const handleSaveAsConfirm = async (
@@ -139,6 +145,35 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     const success = await handleSaveAs(filename, folderId, newFolderData);
     if (success) {
       setShowSaveAsDialog(false);
+    }
+  };
+
+  // Helper to get folder path from folderId
+  const getFolderPath = (folderId: string | null): string => {
+    if (!folderId) return '';
+    for (const node of folderTree) {
+      if (node.folder.key === folderId) {
+        return `/${node.folder.data.name}`;
+      }
+      for (const child of node.children) {
+        if (child.folder.key === folderId) {
+          return `/${node.folder.data.name}/${child.folder.data.name}`;
+        }
+      }
+    }
+    return '';
+  };
+
+  const handleMultiSaveAsConfirm = async (
+    modifierType: 'prefix' | 'suffix',
+    modifierValue: string,
+    folderId: string | null,
+    newFolderData?: { name: string; parentId: string | null }
+  ) => {
+    const folderPath = getFolderPath(folderId);
+    const success = await saveAllDocumentsAs(modifierType, modifierValue, folderId, folderPath, newFolderData);
+    if (success) {
+      setShowMultiSaveAsDialog(false);
     }
   };
 
@@ -153,7 +188,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
   return (
     <div className="flex flex-col">
-      {/* Save As Dialog */}
+      {/* Save As Dialog (Single File) */}
       <SaveAsDialog
         isOpen={showSaveAsDialog}
         initialFilename={file?.name || template?.data.name || 'document.docx'}
@@ -162,6 +197,17 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         isLoading={saving}
         onConfirm={handleSaveAsConfirm}
         onClose={() => setShowSaveAsDialog(false)}
+      />
+
+      {/* Multi Save As Dialog */}
+      <MultiSaveAsDialog
+        isOpen={showMultiSaveAsDialog}
+        fileNames={processingTemplates.map(pt => pt.fileName)}
+        initialFolderId={templates[0]?.data.folderId || null}
+        folderTree={folderTree}
+        isLoading={saving}
+        onConfirm={handleMultiSaveAsConfirm}
+        onClose={() => setShowMultiSaveAsDialog(false)}
       />
 
       {/* Unsaved Changes Dialog */}
@@ -449,19 +495,17 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 </button>
               )}
 
-              {/* Save As button - only shown in single-file mode */}
-              {!isMultiFileMode && (
-                <button
-                  onClick={openSaveAsDialog}
-                  disabled={!isFormValid || saving || processing}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
-                >
-                  <span className="flex items-center justify-center gap-1.5 sm:gap-2">
-                    <FilePlus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="text-xs sm:text-base">{t('templateProcessor.saveAs')}</span>
-                  </span>
-                </button>
-              )}
+              {/* Save As button - shown in both single and multi-file modes */}
+              <button
+                onClick={openSaveAsDialog}
+                disabled={!isFormValid || saving || processing}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
+              >
+                <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <FilePlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-base">{t('templateProcessor.saveAs')}</span>
+                </span>
+              </button>
 
               {/* Generate (Download) button */}
               <button

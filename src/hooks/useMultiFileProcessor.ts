@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Doc, uploadFile, setDoc, getDoc } from "@junobuild/core";
+import { Doc, uploadFile, setDoc } from "@junobuild/core";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word_template";
@@ -456,6 +456,88 @@ export const useMultiFileProcessor = ({
     }
   };
 
+  const saveAllDocumentsAs = async (
+    modifierType: 'prefix' | 'suffix',
+    modifierValue: string,
+    folderId: string | null,
+    folderPath: string,
+    _newFolderData?: { name: string; parentId: string | null }
+  ): Promise<boolean> => {
+    setSaving(true);
+    let savedCount = 0;
+
+    try {
+      for (let i = 0; i < processingTemplates.length; i++) {
+        const pt = processingTemplates[i];
+
+        setProcessingProgress({
+          stage: 'generating',
+          progress: Math.round(((i + 1) / processingTemplates.length) * 100),
+        });
+
+        try {
+          const blob = await generateProcessedBlob(pt, formData);
+
+          // Generate new filename with prefix/suffix
+          const nameWithoutExt = pt.fileName.replace(/\.docx$/i, '');
+          const newFileName = modifierType === 'prefix'
+            ? `${modifierValue}${nameWithoutExt}.docx`
+            : `${nameWithoutExt}${modifierValue}.docx`;
+
+          // Build the storage path
+          const fullPath = folderPath ? `${folderPath}/${newFileName}` : newFileName;
+          const storagePath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
+
+          const fileToUpload = new File([blob], newFileName, {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          });
+
+          const result = await uploadFile({
+            data: fileToUpload,
+            collection: 'templates',
+            filename: storagePath
+          });
+
+          // Create new metadata document
+          const newDocKey = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          await setDoc({
+            collection: 'templates_meta',
+            doc: {
+              key: newDocKey,
+              data: {
+                name: newFileName,
+                url: result.downloadUrl,
+                size: blob.size,
+                uploadedAt: Date.now(),
+                folderId: folderId,
+                folderPath: folderPath,
+                fullPath: fullPath,
+              }
+            }
+          });
+
+          savedCount++;
+        } catch (error) {
+          console.error(`Failed to save ${pt.fileName}:`, error);
+          showErrorToast(t('templateProcessor.saveErrorFile', { filename: pt.fileName }));
+        }
+      }
+
+      if (savedCount > 0) {
+        showSuccessToast(t('templateProcessor.multiSaveAsSuccess', { count: savedCount }));
+      }
+
+      return savedCount === processingTemplates.length;
+    } catch (error) {
+      console.error('Error saving documents:', error);
+      showErrorToast(t('templateProcessor.saveFailed'));
+      return false;
+    } finally {
+      setSaving(false);
+      setProcessingProgress(null);
+    }
+  };
+
   // Get all fields for display
   const allFields = [
     ...fieldData.sharedFields,
@@ -479,5 +561,6 @@ export const useMultiFileProcessor = ({
     handleInputChange,
     processAllDocuments,
     saveAllDocuments,
+    saveAllDocumentsAs,
   };
 };
