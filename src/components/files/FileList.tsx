@@ -1,6 +1,6 @@
 import { FC, useState, useMemo, useRef, useCallback } from 'react';
 import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X } from 'lucide-react';
-import { setDoc, deleteDoc, deleteAsset, Doc, listDocs } from '@junobuild/core';
+import { setDoc, deleteDoc, deleteAsset, listAssets, Doc, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -97,21 +97,54 @@ const FileList: FC<FileListProps> = ({
 
     setDeletingIds(prev => new Set([...prev, template.key]));
     try {
-      // Delete from storage using fullPath if available
-      const fullPath = template.data.fullPath || `/${template.data.name}`;
-      try {
-        await deleteAsset({
-          collection: 'templates',
-          fullPath: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
-        });
-      } catch (assetError: any) {
-        // If asset not found, log warning but continue to delete metadata
-        if (assetError?.message?.includes('asset_not_found')) {
-          console.warn('Asset not found in storage, continuing to delete metadata:', fullPath);
-        } else {
-          // For other errors, rethrow
-          throw assetError;
+      // Get storage assets to find the correct fullPath
+      // Juno storage fullPath includes collection prefix: /templates/folder/file.docx
+      const storageAssets = await listAssets({
+        collection: 'templates',
+        filter: {}
+      });
+
+      // Build possible keys to match against storage
+      const possibleKeys = [
+        template.key,
+        `/${template.key}`,
+        template.data.fullPath,
+        `/templates/${template.key}`,
+        template.data.name,
+      ].filter(Boolean);
+
+      // Find matching storage asset
+      let storageAsset = null;
+      for (const asset of storageAssets.items) {
+        const junoFullPath = asset.fullPath;
+        const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
+        const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
+          ? pathWithoutCollection.substring(1)
+          : pathWithoutCollection;
+        const filename = junoFullPath.split('/').pop() || '';
+
+        for (const key of possibleKeys) {
+          if (key === junoFullPath || key === pathWithoutCollection ||
+              key === pathNoLeadingSlash || key === filename) {
+            storageAsset = asset;
+            break;
+          }
         }
+        if (storageAsset) break;
+      }
+
+      if (storageAsset) {
+        try {
+          await deleteAsset({
+            collection: 'templates',
+            fullPath: storageAsset.fullPath
+          });
+          console.log(`Deleted asset: ${storageAsset.fullPath}`);
+        } catch (assetError: any) {
+          console.warn('Failed to delete asset from storage:', assetError);
+        }
+      } else {
+        console.warn('Asset not found in storage for:', template.data.name);
       }
 
       // Delete metadata from datastore

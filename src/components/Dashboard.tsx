@@ -1,9 +1,9 @@
 import { FC, useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2 } from 'lucide-react';
-import { Doc, setDoc, deleteDoc, deleteAsset } from '@junobuild/core';
+import { Doc, setDoc, deleteDoc, deleteAsset, listAssets } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
-import type { Folder } from '../types/folder';
+import type { Folder, FolderTreeNode } from '../types/folder';
 import FileUpload from './files/FileUpload';
 import FileList from './files/FileList';
 import FolderTree from './folders/FolderTree';
@@ -50,6 +50,9 @@ const Dashboard: FC = () => {
   const [isFolderUploading, setIsFolderUploading] = useState(false);
   const folderUploadInputRef = useRef<HTMLInputElement>(null);
 
+  // Folder deletion state (includes asset deletion)
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
+
   // Folder search state
   const [folderSearchQuery, setFolderSearchQuery] = useState('');
 
@@ -64,7 +67,7 @@ const Dashboard: FC = () => {
   const { templates, allTemplates, loading: templatesLoading, refresh: refreshTemplates } = useTemplatesByFolder(selectedFolderId);
 
   // Load folders
-  const { folderTree, loading: foldersLoading, deleting: folderDeleting, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
+  const { folderTree, loading: foldersLoading, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
 
   // Filter folder tree based on search query
   const filteredFolderTree = useMemo(() => {
@@ -148,13 +151,41 @@ const Dashboard: FC = () => {
   }, []);
 
   const handleDeleteFolder = useCallback(async (folder: Folder) => {
-    // Count templates in this folder
-    const templatesInFolder = allTemplates.filter(t => t.data.folderId === folder.key);
+    // Helper to get all subfolder IDs recursively
+    const getAllSubfolderIds = (folderId: string): string[] => {
+      const findInTree = (nodes: FolderTreeNode[]): string[] => {
+        for (const node of nodes) {
+          if (node.folder.key === folderId) {
+            // Found the folder, collect all descendant IDs
+            const collectIds = (n: FolderTreeNode): string[] => {
+              const ids = [n.folder.key];
+              for (const child of n.children) {
+                ids.push(...collectIds(child));
+              }
+              return ids;
+            };
+            return collectIds(node);
+          }
+          const found = findInTree(node.children);
+          if (found.length > 0) return found;
+        }
+        return [];
+      };
+      return findInTree(folderTree);
+    };
+
+    // Get all folder IDs to delete (folder + all subfolders)
+    const folderIdsToDelete = new Set(getAllSubfolderIds(folder.key));
+
+    // Count templates in this folder and all subfolders
+    const templatesInFolders = allTemplates.filter(t =>
+      t.data.folderId && folderIdsToDelete.has(t.data.folderId)
+    );
 
     // Confirm deletion
     const confirmed = await confirm({
       title: t('folders.deleteFolderConfirm', { name: folder.data.name }),
-      message: `${t('folders.deleteFolderDetail', { count: templatesInFolder.length })}\n\n${t('folders.cannotUndo')}`,
+      message: `${t('folders.deleteFolderDetail', { count: templatesInFolders.length })}\n\n${t('folders.cannotUndo')}`,
       confirmLabel: t('confirmDialog.ok'),
       cancelLabel: t('confirmDialog.cancel'),
       variant: 'danger'
@@ -162,29 +193,98 @@ const Dashboard: FC = () => {
 
     if (!confirmed) return;
 
-    try {
-      // Delete all templates in this folder
-      for (const template of templatesInFolder) {
-        const fullPath = template.data.fullPath || `/${template.data.name}`;
-        await deleteAsset({
-          collection: 'templates',
-          fullPath: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
-        });
+    // Show loading spinner
+    setIsDeletingFolder(true);
 
+    try {
+      // Get all assets from storage to find actual paths
+      // The fullPath from listAssets includes the collection prefix: /templates/folder/file.docx
+      const storageAssets = await listAssets({
+        collection: 'templates',
+        filter: {}
+      });
+
+      // Create a map to look up storage assets by various keys
+      // The fullPath from Juno is like: /templates/tt/file.docx
+      // We'll store the actual asset object for deletion
+      const storageAssetMap = new Map<string, typeof storageAssets.items[0]>();
+      for (const asset of storageAssets.items) {
+        const junoFullPath = asset.fullPath; // e.g., /templates/tt/file.docx
+
+        // Map by full Juno path
+        storageAssetMap.set(junoFullPath, asset);
+
+        // Map by path without collection prefix (e.g., /tt/file.docx)
+        const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
+        storageAssetMap.set(pathWithoutCollection, asset);
+
+        // Map by path without leading slash (e.g., tt/file.docx)
+        const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
+          ? pathWithoutCollection.substring(1)
+          : pathWithoutCollection;
+        storageAssetMap.set(pathNoLeadingSlash, asset);
+
+        // Map by just the filename (for fallback)
+        const filename = junoFullPath.split('/').pop() || '';
+        if (filename && !storageAssetMap.has(filename)) {
+          storageAssetMap.set(filename, asset);
+        }
+      }
+
+      // Delete all templates in this folder and subfolders
+      for (const template of templatesInFolders) {
+        // Try to find the asset in storage using various path strategies
+        const possibleKeys = [
+          template.key, // Primary: the storage key (e.g., "tt/file.docx")
+          `/${template.key}`, // With leading slash
+          template.data.fullPath, // From metadata
+          `/templates/${template.key}`, // Full Juno path
+          template.data.name, // Just filename
+        ].filter(Boolean);
+
+        let assetDeleted = false;
+        for (const key of possibleKeys) {
+          if (!key) continue;
+
+          // Check if this key exists in our storage map
+          const storageAsset = storageAssetMap.get(key);
+
+          if (storageAsset) {
+            try {
+              // Use the exact fullPath from the storage asset
+              await deleteAsset({
+                collection: 'templates',
+                fullPath: storageAsset.fullPath
+              });
+              assetDeleted = true;
+              console.log(`Deleted asset: ${storageAsset.fullPath}`);
+              break;
+            } catch (assetError) {
+              console.warn(`Failed to delete asset with path ${storageAsset.fullPath}:`, assetError);
+              continue;
+            }
+          }
+        }
+
+        if (!assetDeleted) {
+          console.warn(`Could not delete asset for ${template.data.name} from storage, deleting metadata only`);
+        }
+
+        // Always delete metadata
         await deleteDoc({
           collection: 'templates_meta',
           doc: template
         });
       }
 
-      // Delete the folder
+      // Delete the folder (this also deletes subfolders)
       await deleteFolder(folder.key);
 
       // Refresh templates
       await refreshTemplates();
 
       // If we deleted the currently selected folder, go to root
-      if (selectedFolderId === folder.key) {
+      if (selectedFolderId === folder.key || folderIdsToDelete.has(selectedFolderId || '')) {
         setSelectedFolderId(null);
       }
 
@@ -192,8 +292,10 @@ const Dashboard: FC = () => {
     } catch (error) {
       console.error('Failed to delete folder:', error);
       showErrorToast(t('folders.deleteFailed'));
+    } finally {
+      setIsDeletingFolder(false);
     }
-  }, [allTemplates, confirm, deleteFolder, refreshTemplates, selectedFolderId, t]);
+  }, [allTemplates, confirm, deleteFolder, folderTree, refreshTemplates, selectedFolderId, t]);
 
   const handleFolderDialogConfirm = useCallback(async (name: string) => {
     if (folderDialogState.mode === 'create') {
@@ -254,73 +356,107 @@ const Dashboard: FC = () => {
   }, []);
 
   const handleFolderFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !uploadToFolderId) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0 || !uploadToFolderId) return;
 
-    if (!file.name.endsWith('.docx')) {
+    // Filter only .docx files
+    const validFiles = files.filter(file => file.name.endsWith('.docx'));
+
+    if (validFiles.length === 0) {
       const { showWarningToast } = await import('../utils/toast');
       showWarningToast(t('fileUpload.invalidFileType'));
       return;
     }
 
-    // Check if file already exists in this folder
-    const { listDocs } = await import('@junobuild/core');
-    const docs = await listDocs({ collection: 'templates_meta' });
-    const fileExists = docs.items.some(doc => {
-      const data = doc.data as WordTemplateData;
-      return data.name === file.name && (data.folderId ?? null) === uploadToFolderId;
-    });
-
-    if (fileExists) {
+    if (validFiles.length < files.length) {
       const { showWarningToast } = await import('../utils/toast');
-      showWarningToast(t('fileUpload.fileExists', { filename: file.name }));
-      if (folderUploadInputRef.current) {
-        folderUploadInputRef.current.value = '';
-      }
-      return;
+      showWarningToast(t('fileUpload.someFilesInvalid'));
     }
 
-    // Upload the file
+    // Upload the files
     setIsFolderUploading(true);
+    let successCount = 0;
+    let failedFiles: string[] = [];
+
     try {
-      const { uploadFile, setDoc } = await import('@junobuild/core');
+      const { uploadFile, setDoc, listDocs } = await import('@junobuild/core');
+
+      // Get existing files to check for duplicates
+      const docs = await listDocs({ collection: 'templates_meta' });
+      const existingFiles = new Set(
+        docs.items
+          .filter(doc => {
+            const data = doc.data as WordTemplateData;
+            return (data.folderId ?? null) === uploadToFolderId;
+          })
+          .map(doc => (doc.data as WordTemplateData).name)
+      );
 
       const folderData = getFolderById(uploadToFolderId);
       const folderPath = folderData?.data.path || '/';
-      const fullPath = buildTemplatePath(folderPath, file.name);
 
-      const templateData: WordTemplateData = {
-        name: file.name,
-        size: file.size,
-        uploadedAt: Date.now(),
-        mimeType: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        folderId: uploadToFolderId,
-        folderPath: folderPath,
-        fullPath: fullPath
-      };
-
-      const result = await uploadFile({
-        data: file,
-        collection: 'templates',
-        filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
-      });
-
-      await setDoc({
-        collection: 'templates_meta',
-        doc: {
-          key: result.name,
-          data: {
-            ...templateData,
-            url: result.downloadUrl
-          }
+      // Process each file
+      for (const file of validFiles) {
+        // Check if file already exists in this folder
+        if (existingFiles.has(file.name)) {
+          const { showWarningToast } = await import('../utils/toast');
+          showWarningToast(t('fileUpload.fileExists', { filename: file.name }));
+          failedFiles.push(file.name);
+          continue;
         }
-      });
 
-      showSuccessToast(t('fileUpload.uploadSuccess', { filename: file.name }));
-      await refreshTemplates();
+        try {
+          const fullPath = buildTemplatePath(folderPath, file.name);
 
-      // Navigate to the folder where the file was uploaded
-      setSelectedFolderId(uploadToFolderId);
+          const templateData: WordTemplateData = {
+            name: file.name,
+            size: file.size,
+            uploadedAt: Date.now(),
+            mimeType: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            folderId: uploadToFolderId,
+            folderPath: folderPath,
+            fullPath: fullPath
+          };
+
+          const result = await uploadFile({
+            data: file,
+            collection: 'templates',
+            filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
+          });
+
+          await setDoc({
+            collection: 'templates_meta',
+            doc: {
+              key: result.name,
+              data: {
+                ...templateData,
+                url: result.downloadUrl
+              }
+            }
+          });
+
+          successCount++;
+        } catch (error) {
+          console.error(`Upload failed for ${file.name}:`, error);
+          failedFiles.push(file.name);
+        }
+      }
+
+      // Show appropriate success/error messages
+      if (successCount > 0) {
+        if (successCount === 1) {
+          showSuccessToast(t('fileUpload.uploadSuccess', { filename: validFiles[0].name }));
+        } else {
+          showSuccessToast(t('fileUpload.uploadMultipleSuccess', { count: successCount }));
+        }
+        await refreshTemplates();
+        // Navigate to the folder where the files were uploaded
+        setSelectedFolderId(uploadToFolderId);
+      }
+
+      if (failedFiles.length > 0) {
+        showErrorToast(t('fileUpload.uploadMultipleFailed', { count: failedFiles.length }));
+      }
     } catch (error) {
       console.error('Upload failed:', error);
       showErrorToast(t('fileUpload.uploadFailed'));
@@ -340,6 +476,7 @@ const Dashboard: FC = () => {
         ref={folderUploadInputRef}
         type="file"
         accept=".docx"
+        multiple
         onChange={handleFolderFileSelect}
         className="hidden"
       />
@@ -510,7 +647,7 @@ const Dashboard: FC = () => {
           )}
 
           {/* Folder delete in progress overlay */}
-          {folderDeleting && (
+          {isDeletingFolder && (
             <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="w-12 h-12 animate-spin text-red-600 dark:text-red-400" />
