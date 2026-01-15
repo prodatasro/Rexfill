@@ -75,6 +75,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
   // Expanded state for file sections in multi-file mode
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
+  const [sharedFieldsExpanded, setSharedFieldsExpanded] = useState(true);
 
   // Modal states
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
@@ -289,42 +290,60 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
                   {/* Shared Fields Section */}
                   {fieldData.sharedFields.length > 0 && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <h4 className="text-sm font-bold text-green-800 dark:text-green-300 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4" />
-                        {t('templateProcessor.sharedFields')} ({fieldData.sharedFields.length})
-                      </h4>
-                      <div className="grid grid-cols-1 gap-3">
-                        {fieldData.sharedFields.map((fieldName) => (
-                          <div key={fieldName} className="space-y-1">
-                            <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
-                              <span className="inline-flex items-center gap-1.5">
-                                {fieldData.isCustomProperty[fieldName] ? (
-                                  <FileText className="w-3.5 h-3.5" />
-                                ) : (
-                                  <Tag className="w-3.5 h-3.5" />
-                                )}
-                                {fieldName}
-                              </span>
-                            </label>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                value={formData[fieldName] || ''}
-                                onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                                className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
-                                placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
-                                autoComplete="off"
-                              />
-                              {formData[fieldName]?.trim() && (
-                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                  <Check className="w-4 h-4 text-green-500" />
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden border-l-4 border-l-green-500 dark:border-l-green-600">
+                      <button
+                        onClick={() => setSharedFieldsExpanded(!sharedFieldsExpanded)}
+                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors"
+                      >
+                        <span className="font-medium text-green-800 dark:text-green-300 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4" />
+                          {t('templateProcessor.sharedFields')}
+                          <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
+                            {fieldData.sharedFields.length}
+                          </span>
+                        </span>
+                        {sharedFieldsExpanded ? (
+                          <ChevronDown className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        )}
+                      </button>
+
+                      {sharedFieldsExpanded && (
+                        <div className="px-4 pb-4 border-t border-green-200 dark:border-green-800 bg-white/50 dark:bg-slate-800/30">
+                          <div className="grid grid-cols-1 gap-3 pt-3">
+                            {fieldData.sharedFields.map((fieldName) => (
+                              <div key={fieldName} className="space-y-1">
+                                <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
+                                  <span className="inline-flex items-center gap-1.5">
+                                    {fieldData.isCustomProperty[fieldName] ? (
+                                      <FileText className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                                    ) : (
+                                      <Tag className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                                    )}
+                                    {fieldName}
+                                  </span>
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={formData[fieldName] || ''}
+                                    onChange={(e) => handleInputChange(fieldName, e.target.value)}
+                                    className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-green-300 dark:border-green-700/50 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-green-400 dark:hover:border-green-600"
+                                    placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
+                                    autoComplete="off"
+                                  />
+                                  {formData[fieldName]?.trim() && (
+                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                      <Check className="w-4 h-4 text-green-500" />
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -334,36 +353,36 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     const isExpanded = expandedFiles.has(fileId);
 
                     return (
-                      <div key={fileId} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                      <div key={fileId} className="bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg overflow-hidden border-l-4 border-l-amber-400 dark:border-l-amber-600">
                         <button
                           onClick={() => toggleFileExpanded(fileId)}
-                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors"
                         >
                           <span className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-slate-500" />
+                            <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                             {fileInfo.fileName}
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              ({fileInfo.fields.length} {t('templateProcessor.uniqueFields')})
+                            <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                              {fileInfo.fields.length} {t('templateProcessor.uniqueFields')}
                             </span>
                           </span>
                           {isExpanded ? (
-                            <ChevronDown className="w-5 h-5 text-slate-500" />
+                            <ChevronDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                           ) : (
-                            <ChevronRight className="w-5 h-5 text-slate-500" />
+                            <ChevronRight className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                           )}
                         </button>
 
                         {isExpanded && (
-                          <div className="px-4 pb-4 border-t border-slate-200 dark:border-slate-700">
+                          <div className="px-4 pb-4 border-t border-amber-200 dark:border-amber-800/50 bg-white/50 dark:bg-slate-800/30">
                             <div className="grid grid-cols-1 gap-3 pt-3">
                               {fileInfo.fields.map((fieldName) => (
                                 <div key={fieldName} className="space-y-1">
                                   <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
                                     <span className="inline-flex items-center gap-1.5">
                                       {fieldData.isCustomProperty[fieldName] ? (
-                                        <FileText className="w-3.5 h-3.5" />
+                                        <FileText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                                       ) : (
-                                        <Tag className="w-3.5 h-3.5" />
+                                        <Tag className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                                       )}
                                       {fieldName}
                                     </span>
@@ -373,7 +392,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                                       type="text"
                                       value={formData[fieldName] || ''}
                                       onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                                      className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
+                                      className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/50 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-amber-400 dark:hover:border-amber-600"
                                       placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
                                       autoComplete="off"
                                     />
