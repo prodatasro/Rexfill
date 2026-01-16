@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Doc, uploadFile, setDoc, listDocs, getDoc } from "@junobuild/core";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode, FolderData } from "../types/folder";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
+import { fixSplitPlaceholdersOptimized } from "../utils/documentProcessing";
 import { buildTemplatePath } from "../utils/templatePathUtils";
 import { validateFolderName, buildFolderPath } from "../utils/folderUtils";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
@@ -29,13 +30,18 @@ export const useWordTemplateProcessor = ({
 
   const [placeholders, setPlaceholders] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [initialFormData, setInitialFormData] = useState<Record<string, string>>({});
   const [customProperties, setCustomProperties] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [processingProgress, setProcessingProgress] = useState<ProcessingProgress | null>(null);
+
+  // Performance optimization: Batch state updates and incremental change tracking
+  const pendingChangesRef = useRef<Record<string, string>>({});
+  const flushTimeoutRef = useRef<number | null>(null);
+  const changedFieldsRef = useRef<Set<string>>(new Set());
+  const initialFormDataRef = useRef<Record<string, string>>({});
 
   // Sync worker progress to local state
   useEffect(() => {
@@ -82,7 +88,10 @@ export const useWordTemplateProcessor = ({
             initialData[key] = value;
           });
 
-          setInitialFormData(initialData);
+          // Store in ref for incremental change tracking
+          initialFormDataRef.current = initialData;
+          changedFieldsRef.current = new Set();
+
           setFormData(initialData);
           return;
         } catch (workerError) {
@@ -126,18 +135,21 @@ export const useWordTemplateProcessor = ({
 
       setPlaceholders(uniquePlaceholders);
 
-      const initialFormData: Record<string, string> = {};
+      const initialData: Record<string, string> = {};
 
       uniquePlaceholders.forEach(placeholder => {
-        initialFormData[placeholder] = '';
+        initialData[placeholder] = '';
       });
 
       Object.entries(docCustomProperties).forEach(([key, value]) => {
-        initialFormData[key] = value;
+        initialData[key] = value;
       });
 
-      setInitialFormData(initialFormData);
-      setFormData(initialFormData);
+      // Store in ref for incremental change tracking
+      initialFormDataRef.current = initialData;
+      changedFieldsRef.current = new Set();
+
+      setFormData(initialData);
     } catch (error) {
       console.error('Error extracting placeholders and properties:', error);
     } finally {
@@ -145,19 +157,44 @@ export const useWordTemplateProcessor = ({
     }
   };
 
-  useEffect(() => {
-    const changed = Object.keys(formData).some(
-      key => formData[key] !== (initialFormData[key] || '')
-    );
-    setHasChanges(changed);
-  }, [formData, initialFormData]);
+  // PERFORMANCE: Optimized handleInputChange with batched updates and incremental change tracking
+  const handleInputChange = useCallback((fieldName: string, value: string) => {
+    // Track which fields have changed (O(1) instead of O(n) change detection)
+    const initialValue = initialFormDataRef.current[fieldName] || '';
+    if (value !== initialValue) {
+      changedFieldsRef.current.add(fieldName);
+    } else {
+      changedFieldsRef.current.delete(fieldName);
+    }
 
-  const handleInputChange = (placeholder: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [placeholder]: value
-    }));
-  };
+    // Update hasChanges immediately (O(1) check)
+    setHasChanges(changedFieldsRef.current.size > 0);
+
+    // Batch state updates to reduce re-renders
+    pendingChangesRef.current[fieldName] = value;
+
+    if (flushTimeoutRef.current) {
+      clearTimeout(flushTimeoutRef.current);
+    }
+
+    // Flush batched changes after 100ms of inactivity
+    flushTimeoutRef.current = window.setTimeout(() => {
+      setFormData(prev => ({
+        ...prev,
+        ...pendingChangesRef.current
+      }));
+      pendingChangesRef.current = {};
+    }, 100);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (flushTimeoutRef.current) {
+        clearTimeout(flushTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const generateProcessedBlob = async (): Promise<{ blob: Blob; fileName: string }> => {
     let arrayBuffer: ArrayBuffer;
@@ -221,30 +258,8 @@ export const useWordTemplateProcessor = ({
         if (documentXml) {
           let xmlContent = documentXml.asText();
 
-          // Fix split placeholder patterns
-          xmlContent = xmlContent.replace(
-            /(<w:t[^>]*>)([^<]*\{+[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*[}]+[^<]*?)(<\/w:t>)/g,
-            '$1$2$3$4'
-          );
-
-          xmlContent = xmlContent.replace(
-            /(<w:t[^>]*>)([^<]*\{\{[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*}}[^<]*?)(<\/w:t>)/g,
-            '$1$2$3$4'
-          );
-
-          // Fix specific placeholders that might be split
-          placeholders.forEach(placeholder => {
-            const parts = placeholder.split('');
-            for (let i = 1; i < parts.length; i++) {
-              const firstPart = '{{' + parts.slice(0, i).join('');
-              const secondPart = parts.slice(i).join('') + '}}';
-              const pattern = new RegExp(
-                `(<w:t[^>]*>)([^<]*${firstPart.replace(/[{}]/g, '\\$&')})<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*${secondPart.replace(/[{}]/g, '\\$&')}[^<]*?)(<\/w:t>)`,
-                'g'
-              );
-              xmlContent = xmlContent.replace(pattern, `$1$2$3$4`);
-            }
-          });
+          // PERFORMANCE: Use optimized algorithm with early exit and strategic split points
+          xmlContent = fixSplitPlaceholdersOptimized(xmlContent, placeholders);
 
           zip.file("word/document.xml", xmlContent);
         }
@@ -429,7 +444,9 @@ export const useWordTemplateProcessor = ({
         onTemplateChange(updatedTemplate);
       }
 
-      setInitialFormData({ ...formData });
+      // Update initial form data and reset change tracking refs
+      initialFormDataRef.current = { ...formData };
+      changedFieldsRef.current = new Set();
       setHasChanges(false);
 
       showSuccessToast(t('templateProcessor.saveSuccess'));
@@ -597,7 +614,9 @@ export const useWordTemplateProcessor = ({
         onTemplateChange(newTemplateDoc);
       }
 
-      setInitialFormData({ ...formData });
+      // Update initial form data and reset change tracking refs
+      initialFormDataRef.current = { ...formData };
+      changedFieldsRef.current = new Set();
       setHasChanges(false);
 
       showSuccessToast(t('templateProcessor.saveAsSuccess', { filename: finalFilename }));

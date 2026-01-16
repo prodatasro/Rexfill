@@ -160,6 +160,90 @@ export function fixSplitPlaceholders(xmlContent: string, placeholders: string[])
 }
 
 /**
+ * PERFORMANCE OPTIMIZED: Fix split placeholders with early exit and strategic split points
+ *
+ * This version reduces the algorithmic complexity from O(n * m * xmlLength) to much less:
+ * - Early exit if all placeholders are already present (common case)
+ * - Only processes placeholders that are actually missing
+ * - Uses strategic split points (first, middle, last) instead of all positions
+ *
+ * For 500 placeholders, this reduces regex operations from ~7500 to ~50-100 in most cases.
+ */
+export function fixSplitPlaceholdersOptimized(xmlContent: string, placeholders: string[]): string {
+  // Skip if no placeholders
+  if (placeholders.length === 0) return xmlContent;
+
+  // Generic patterns first (covers most cases in a single pass)
+  let result = xmlContent.replace(
+    /(<w:t[^>]*>)([^<]*\{+[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*[}]+[^<]*?)(<\/w:t>)/g,
+    '$1$2$3$4'
+  );
+
+  result = result.replace(
+    /(<w:t[^>]*>)([^<]*\{\{[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*}}[^<]*?)(<\/w:t>)/g,
+    '$1$2$3$4'
+  );
+
+  // EARLY EXIT: Check if all placeholders are already present
+  // This is the common case after generic fixes, avoiding O(n * m) loop entirely
+  const allPlaceholdersPresent = placeholders.every(p => result.includes(`{{${p}}}`));
+  if (allPlaceholdersPresent) return result;
+
+  // Only process placeholders that are still missing (split)
+  const missingPlaceholders = placeholders.filter(p => !result.includes(`{{${p}}}`));
+
+  // For remaining missing placeholders, use strategic split points
+  for (const placeholder of missingPlaceholders) {
+    const len = placeholder.length;
+
+    // Strategic split points: first position, middle, and last position
+    // This catches most real-world Word split scenarios without checking every position
+    const splitPoints: number[] = [];
+
+    if (len >= 1) splitPoints.push(1);                    // First character split (e.g., {{c|ustomerName}})
+    if (len >= 3) splitPoints.push(Math.floor(len / 2));  // Middle split (e.g., {{custo|merName}})
+    if (len >= 2) splitPoints.push(len - 1);              // Last character split (e.g., {{customerNam|e}})
+
+    // Remove duplicates for short placeholders
+    const uniqueSplitPoints = [...new Set(splitPoints)];
+
+    for (const i of uniqueSplitPoints) {
+      const firstPart = '{{' + placeholder.slice(0, i);
+      const secondPart = placeholder.slice(i) + '}}';
+      const pattern = new RegExp(
+        `(<w:t[^>]*>)([^<]*${escapeRegex(firstPart)})<\\/w:t><\\/w:r><w:r[^>]*><w:t[^>]*>([^<]*${escapeRegex(secondPart)}[^<]*?)(<\\/w:t>)`,
+        'g'
+      );
+      result = result.replace(pattern, '$1$2$3$4');
+
+      // Check if this placeholder is now fixed
+      if (result.includes(`{{${placeholder}}}`)) break;
+    }
+
+    // If still not found after strategic points, try all positions as fallback
+    if (!result.includes(`{{${placeholder}}}`)) {
+      for (let i = 1; i < len; i++) {
+        // Skip positions we already tried
+        if (uniqueSplitPoints.includes(i)) continue;
+
+        const firstPart = '{{' + placeholder.slice(0, i);
+        const secondPart = placeholder.slice(i) + '}}';
+        const pattern = new RegExp(
+          `(<w:t[^>]*>)([^<]*${escapeRegex(firstPart)})<\\/w:t><\\/w:r><w:r[^>]*><w:t[^>]*>([^<]*${escapeRegex(secondPart)}[^<]*?)(<\\/w:t>)`,
+          'g'
+        );
+        result = result.replace(pattern, '$1$2$3$4');
+
+        // Check if this placeholder is now fixed
+        if (result.includes(`{{${placeholder}}}`)) break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
  * Unescape XML entities back to characters
  */
 function unescapeXml(text: string): string {

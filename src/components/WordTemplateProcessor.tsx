@@ -1,6 +1,6 @@
 import { Doc } from "@junobuild/core";
 import { FC, useEffect, useCallback, useState } from "react";
-import { FileText, ClipboardList, Sparkles, X, Tag, Loader2, Check, Rocket, Save, FilePlus, ChevronDown, ChevronRight, Files } from 'lucide-react';
+import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,7 @@ import { useMultiFileProcessor } from "../hooks/useMultiFileProcessor";
 import { UnsavedChangesDialog } from "./modals/UnsavedChangesDialog";
 import { SaveAsDialog } from "./modals/SaveAsDialog";
 import { MultiSaveAsDialog } from "./modals/MultiSaveAsDialog";
+import { VirtualizedFieldList } from "./processor/VirtualizedFieldList";
 
 interface WordTemplateProcessorProps {
   // Single file mode
@@ -64,7 +65,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   } = isMultiFileMode ? multiFileHook : singleFileHook;
 
   // Single-file specific properties
-  const customProperties = isMultiFileMode ? multiFileHook.fieldData.isCustomProperty : singleFileHook.customProperties;
   const saving = isMultiFileMode ? multiFileHook.saving : singleFileHook.saving;
   const handleSave = isMultiFileMode ? multiFileHook.saveAllDocuments : singleFileHook.handleSave;
   const handleSaveAs = singleFileHook.handleSaveAs;
@@ -276,186 +276,39 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     {t('templateProcessor.noPlaceholdersDesc')}
                   </p>
                 </div>
-              ) : isMultiFileMode ? (
-                /* Multi-file mode: Show shared fields first, then per-file unique fields */
+              ) : (
+                /* PERFORMANCE OPTIMIZED: Virtualized field list for both modes */
                 <>
-                  <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Files className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
-                        {t('templateProcessor.multiFileDesc', { fileCount: processingTemplates.length, fieldCount: allFields.length })}
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Shared Fields Section */}
-                  {fieldData.sharedFields.length > 0 && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden border-l-4 border-l-green-500 dark:border-l-green-600">
-                      <button
-                        onClick={() => setSharedFieldsExpanded(!sharedFieldsExpanded)}
-                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors"
-                      >
-                        <span className="font-medium text-green-800 dark:text-green-300 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4" />
-                          {t('templateProcessor.sharedFields')}
-                          <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
-                            {fieldData.sharedFields.length}
-                          </span>
-                        </span>
-                        {sharedFieldsExpanded ? (
-                          <ChevronDown className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        ) : (
-                          <ChevronRight className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        )}
-                      </button>
-
-                      {sharedFieldsExpanded && (
-                        <div className="px-4 pb-4 border-t border-green-200 dark:border-green-800 bg-white/50 dark:bg-slate-800/30">
-                          <div className="grid grid-cols-1 gap-3 pt-3">
-                            {fieldData.sharedFields.map((fieldName) => (
-                              <div key={fieldName} className="space-y-1">
-                                <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
-                                  <span className="inline-flex items-center gap-1.5">
-                                    {fieldData.isCustomProperty[fieldName] ? (
-                                      <FileText className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                                    ) : (
-                                      <Tag className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                                    )}
-                                    {fieldName}
-                                  </span>
-                                </label>
-                                <div className="relative">
-                                  <input
-                                    type="text"
-                                    value={formData[fieldName] || ''}
-                                    onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                                    className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-green-300 dark:border-green-700/50 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-green-400 dark:hover:border-green-600"
-                                    placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
-                                    autoComplete="off"
-                                  />
-                                  {formData[fieldName]?.trim() && (
-                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                      <Check className="w-4 h-4 text-green-500" />
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                  {/* Single-file mode header */}
+                  {!isMultiFileMode && (
+                    <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
+                          {t('templateProcessor.customizationTitle')}
+                        </h3>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: allFields.length }) }}>
+                      </p>
                     </div>
                   )}
 
-                  {/* Per-file Unique Fields Sections */}
-                  {Array.from(fieldData.fileFields.entries()).map(([fileId, fileInfo]) => {
-                    if (fileInfo.fields.length === 0) return null;
-                    const isExpanded = expandedFiles.has(fileId);
-
-                    return (
-                      <div key={fileId} className="bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg overflow-hidden border-l-4 border-l-amber-400 dark:border-l-amber-600">
-                        <button
-                          onClick={() => toggleFileExpanded(fileId)}
-                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors"
-                        >
-                          <span className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                            {fileInfo.fileName}
-                            <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                              {fileInfo.fields.length} {t('templateProcessor.uniqueFields')}
-                            </span>
-                          </span>
-                          {isExpanded ? (
-                            <ChevronDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                          ) : (
-                            <ChevronRight className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                          )}
-                        </button>
-
-                        {isExpanded && (
-                          <div className="px-4 pb-4 border-t border-amber-200 dark:border-amber-800/50 bg-white/50 dark:bg-slate-800/30">
-                            <div className="grid grid-cols-1 gap-3 pt-3">
-                              {fileInfo.fields.map((fieldName) => (
-                                <div key={fieldName} className="space-y-1">
-                                  <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
-                                    <span className="inline-flex items-center gap-1.5">
-                                      {fieldData.isCustomProperty[fieldName] ? (
-                                        <FileText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                                      ) : (
-                                        <Tag className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                                      )}
-                                      {fieldName}
-                                    </span>
-                                  </label>
-                                  <div className="relative">
-                                    <input
-                                      type="text"
-                                      value={formData[fieldName] || ''}
-                                      onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                                      className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/50 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-amber-400 dark:hover:border-amber-600"
-                                      placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
-                                      autoComplete="off"
-                                    />
-                                    {formData[fieldName]?.trim() && (
-                                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                        <Check className="w-4 h-4 text-green-500" />
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </>
-              ) : (
-                /* Single file mode: Original flat list */
-                <>
-                  <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
-                        {t('templateProcessor.customizationTitle')}
-                      </h3>
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: allFields.length }) }}>
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3">
-                    {allFields.map((fieldName) => (
-                      <div key={fieldName} className="space-y-1">
-                        <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
-                          <span className="inline-flex items-center gap-1.5">
-                            {fieldName in customProperties ? (
-                              <FileText className="w-3.5 h-3.5" />
-                            ) : (
-                              <Tag className="w-3.5 h-3.5" />
-                            )}
-                            {fieldName}
-                          </span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={formData[fieldName] || ''}
-                            onChange={(e) => handleInputChange(fieldName, e.target.value)}
-                            className="w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 hover:border-slate-400 dark:hover:border-slate-500"
-                            placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
-                            autoComplete="off"
-                          />
-                          {formData[fieldName]?.trim() && (
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                              <Check className="w-4 h-4 text-green-500" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {/* Virtualized field list - handles both single and multi-file modes */}
+                  <VirtualizedFieldList
+                    fields={!isMultiFileMode ? allFields : undefined}
+                    customPropertiesRecord={!isMultiFileMode ? singleFileHook.customProperties : undefined}
+                    sharedFields={isMultiFileMode ? fieldData.sharedFields : undefined}
+                    fileFields={isMultiFileMode ? fieldData.fileFields : undefined}
+                    expandedFiles={expandedFiles}
+                    sharedFieldsExpanded={sharedFieldsExpanded}
+                    isCustomProperty={isMultiFileMode ? fieldData.isCustomProperty : undefined}
+                    formData={formData}
+                    onInputChange={handleInputChange}
+                    onToggleSection={toggleFileExpanded}
+                    onToggleSharedFields={() => setSharedFieldsExpanded(!sharedFieldsExpanded)}
+                    isMultiFileMode={isMultiFileMode}
+                    fileCount={processingTemplates.length}
+                  />
                 </>
               )}
             </div>

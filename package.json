@@ -20,6 +20,7 @@
   "dependencies": {
     "@junobuild/core": "^3.3.2",
     "@junobuild/functions": "^0.5.3",
+    "@tanstack/react-virtual": "^3.13.18",
     "docxtemplater": "^3.47.2",
     "i18next": "^25.7.3",
     "lucide-react": "^0.562.0",

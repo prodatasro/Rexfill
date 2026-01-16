@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Doc, uploadFile, setDoc } from "@junobuild/core";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word_template";
 import { ProcessingTemplate, MultiFileFieldData, ProcessedDocumentResult } from "../types/multi-processing";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
+import { fixSplitPlaceholdersOptimized } from "../utils/documentProcessing";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { useTranslation } from "react-i18next";
 import { ProcessingProgress } from "./useDocumentWorker";
@@ -29,13 +30,18 @@ export const useMultiFileProcessor = ({
     isCustomProperty: {},
   });
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [initialFormData, setInitialFormData] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [processingProgress, setProcessingProgress] = useState<ProcessingProgress | null>(null);
+
+  // Performance optimization: Batch state updates and incremental change tracking
+  const pendingChangesRef = useRef<Record<string, string>>({});
+  const flushTimeoutRef = useRef<number | null>(null);
+  const changedFieldsRef = useRef<Set<string>>(new Set());
+  const initialFormDataRef = useRef<Record<string, string>>({});
 
   // Create stable keys to prevent infinite re-renders from array reference changes
   const templateKeys = templates.map(t => t.key).join(',');
@@ -85,46 +91,49 @@ export const useMultiFileProcessor = ({
   const extractAllPlaceholdersAndProperties = async () => {
     setLoading(true);
     try {
-      const extractedTemplates: ProcessingTemplate[] = [];
-
-      // Process saved templates
-      for (const template of templates) {
+      // PERFORMANCE: Extract all files in parallel instead of sequential
+      const templateTasks = templates.map(async (template): Promise<ProcessingTemplate | null> => {
         try {
-          if (!template.data.url) continue;
+          if (!template.data.url) return null;
 
           const response = await fetch(template.data.url);
           const arrayBuffer = await response.arrayBuffer();
           const { placeholders, customProperties } = await extractPlaceholdersFromBuffer(arrayBuffer);
 
-          extractedTemplates.push({
+          return {
             id: template.key,
             template,
             fileName: template.data.name,
             placeholders,
             customProperties,
-          });
+          };
         } catch (error) {
           console.error(`Failed to extract from template ${template.data.name}:`, error);
+          return null;
         }
-      }
+      });
 
-      // Process one-time files
-      for (const file of files) {
+      const fileTasks = files.map(async (file): Promise<ProcessingTemplate | null> => {
         try {
           const arrayBuffer = await file.arrayBuffer();
           const { placeholders, customProperties } = await extractPlaceholdersFromBuffer(arrayBuffer);
 
-          extractedTemplates.push({
+          return {
             id: file.name,
             file,
             fileName: file.name,
             placeholders,
             customProperties,
-          });
+          };
         } catch (error) {
           console.error(`Failed to extract from file ${file.name}:`, error);
+          return null;
         }
-      }
+      });
+
+      // Run all extractions in parallel (browser naturally limits concurrent fetches)
+      const results = await Promise.all([...templateTasks, ...fileTasks]);
+      const extractedTemplates = results.filter((pt): pt is ProcessingTemplate => pt !== null);
 
       setProcessingTemplates(extractedTemplates);
 
@@ -150,7 +159,10 @@ export const useMultiFileProcessor = ({
         initial[fieldName] = templateWithValue?.customProperties[fieldName] || '';
       });
 
-      setInitialFormData(initial);
+      // Store in ref for incremental change tracking
+      initialFormDataRef.current = initial;
+      changedFieldsRef.current = new Set();
+
       setFormData(initial);
     } catch (error) {
       console.error('Error extracting placeholders:', error);
@@ -215,19 +227,43 @@ export const useMultiFileProcessor = ({
     };
   };
 
-  // Track changes
-  useEffect(() => {
-    const changed = Object.keys(formData).some(
-      key => formData[key] !== (initialFormData[key] || '')
-    );
-    setHasChanges(changed);
-  }, [formData, initialFormData]);
-
+  // PERFORMANCE: Optimized handleInputChange with batched updates and incremental change tracking
   const handleInputChange = useCallback((fieldName: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
+    // Track which fields have changed (O(1) instead of O(n) change detection)
+    const initialValue = initialFormDataRef.current[fieldName] || '';
+    if (value !== initialValue) {
+      changedFieldsRef.current.add(fieldName);
+    } else {
+      changedFieldsRef.current.delete(fieldName);
+    }
+
+    // Update hasChanges immediately (O(1) check)
+    setHasChanges(changedFieldsRef.current.size > 0);
+
+    // Batch state updates to reduce re-renders
+    pendingChangesRef.current[fieldName] = value;
+
+    if (flushTimeoutRef.current) {
+      clearTimeout(flushTimeoutRef.current);
+    }
+
+    // Flush batched changes after 100ms of inactivity
+    flushTimeoutRef.current = window.setTimeout(() => {
+      setFormData(prev => ({
+        ...prev,
+        ...pendingChangesRef.current
+      }));
+      pendingChangesRef.current = {};
+    }, 100);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (flushTimeoutRef.current) {
+        clearTimeout(flushTimeoutRef.current);
+      }
+    };
   }, []);
 
   const generateProcessedBlob = async (pt: ProcessingTemplate, currentFormData: Record<string, string>): Promise<Blob> => {
@@ -276,30 +312,8 @@ export const useMultiFileProcessor = ({
       if (documentXml) {
         let xmlContent = documentXml.asText();
 
-        // Fix split placeholder patterns
-        xmlContent = xmlContent.replace(
-          /(<w:t[^>]*>)([^<]*\{+[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*[}]+[^<]*?)(<\/w:t>)/g,
-          '$1$2$3$4'
-        );
-
-        xmlContent = xmlContent.replace(
-          /(<w:t[^>]*>)([^<]*\{\{[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*}}[^<]*?)(<\/w:t>)/g,
-          '$1$2$3$4'
-        );
-
-        // Fix specific placeholders
-        pt.placeholders.forEach(placeholder => {
-          const parts = placeholder.split('');
-          for (let i = 1; i < parts.length; i++) {
-            const firstPart = '{{' + parts.slice(0, i).join('');
-            const secondPart = parts.slice(i).join('') + '}}';
-            const pattern = new RegExp(
-              `(<w:t[^>]*>)([^<]*${firstPart.replace(/[{}]/g, '\\$&')})<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*${secondPart.replace(/[{}]/g, '\\$&')}[^<]*?)(<\/w:t>)`,
-              'g'
-            );
-            xmlContent = xmlContent.replace(pattern, `$1$2$3$4`);
-          }
-        });
+        // PERFORMANCE: Use optimized algorithm with early exit and strategic split points
+        xmlContent = fixSplitPlaceholdersOptimized(xmlContent, pt.placeholders);
 
         zip.file("word/document.xml", xmlContent);
       }
@@ -440,7 +454,8 @@ export const useMultiFileProcessor = ({
 
       if (savedCount > 0) {
         // Update initial form data to reflect saved state
-        setInitialFormData({ ...formData });
+        initialFormDataRef.current = { ...formData };
+        changedFieldsRef.current = new Set();
         setHasChanges(false);
         showSuccessToast(t('templateProcessor.multiSaveSuccess', { count: savedCount }));
       }
