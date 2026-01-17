@@ -1,6 +1,6 @@
 import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload, Clock, FileText, Trash2, Download, Archive } from 'lucide-react';
+import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload, Clock, FileText, Trash2, Download, Archive, Star } from 'lucide-react';
 import { Doc, setDoc } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder } from '../types/folder';
@@ -105,6 +105,13 @@ const Dashboard: FC = () => {
       .filter((t): t is Doc<WordTemplateData> => t !== undefined)
       .slice(0, 5); // Show max 5 in the UI
   }, [recentTemplates, allTemplates]);
+
+  // Get favorite templates
+  const favoriteTemplates = useMemo(() => {
+    return allTemplates
+      .filter(t => t.data.isFavorite)
+      .slice(0, 5); // Show max 5 in the UI
+  }, [allTemplates]);
 
   // Filter folder tree based on debounced search query
   const filteredFolderTree = useMemo(() => {
@@ -1008,6 +1015,44 @@ const Dashboard: FC = () => {
               />
             </div>
 
+            {/* Favorites Section */}
+            {favoriteTemplates.length > 0 && !selectedFolderId && (
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-yellow-50 dark:bg-yellow-900/20 shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                    <Star className="w-4 h-4 fill-current" />
+                    <span>{t('dashboard.favoriteTemplates')}</span>
+                    <span className="px-1.5 py-0.5 text-xs rounded-full bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200">
+                      {allTemplates.filter(t => t.data.isFavorite).length}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {favoriteTemplates.map(template => (
+                    <div
+                      key={template.key}
+                      onClick={() => handleTemplateSelect(template)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleTemplateSelect(template);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-yellow-300 dark:border-yellow-700 rounded-lg hover:border-yellow-400 dark:hover:border-yellow-500 hover:shadow-sm transition-all shrink-0 max-w-50 cursor-pointer"
+                      title={template.data.name}
+                    >
+                      <Star className="w-4 h-4 text-yellow-500 fill-current shrink-0" />
+                      <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                        {template.data.name.replace('.docx', '')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Recent Templates Section */}
             {recentTemplateObjects.length > 0 && !selectedFolderId && (
               <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0">
@@ -1038,7 +1083,7 @@ const Dashboard: FC = () => {
                       }}
                       role="button"
                       tabIndex={0}
-                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all shrink-0 max-w-[200px] group cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all shrink-0 max-w-50 group cursor-pointer"
                       title={template.data.name}
                     >
                       <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />

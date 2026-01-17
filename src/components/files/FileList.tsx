@@ -12,7 +12,7 @@ import TemplateRenameDialog from './TemplateRenameDialog';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
 
-type SortField = 'name' | 'size' | 'createdOn';
+type SortField = 'name' | 'size' | 'createdOn' | 'favorite';
 type SortDirection = 'asc' | 'desc';
 
 interface FileListProps {
@@ -56,6 +56,7 @@ const FileList: FC<FileListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const handleDownload = async (template: Doc<WordTemplateData>) => {
     try {
@@ -261,11 +262,19 @@ const FileList: FC<FileListProps> = ({
   };
 
   // Filter, sort, and paginate templates
-  const { paginatedTemplates, totalPages, totalFilteredCount } = useMemo(() => {
+  const { paginatedTemplates, totalPages, totalFilteredCount, favoritesCount } = useMemo(() => {
     // Filter by debounced search query for better performance
     let filtered = templates.filter(template =>
       template.data.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
+
+    // Count favorites before filtering
+    const totalFavorites = filtered.filter(t => t.data.isFavorite).length;
+
+    // Filter by favorites if enabled
+    if (showFavoritesOnly) {
+      filtered = filtered.filter(template => template.data.isFavorite);
+    }
 
     // Sort templates
     const sorted = [...filtered].sort((a, b) => {
@@ -280,6 +289,10 @@ const FileList: FC<FileListProps> = ({
           break;
         case 'createdOn':
           comparison = a.data.uploadedAt - b.data.uploadedAt;
+          break;
+        case 'favorite':
+          // Favorites first (true = 1, false = 0, so b - a for descending)
+          comparison = (b.data.isFavorite ? 1 : 0) - (a.data.isFavorite ? 1 : 0);
           break;
       }
 
@@ -296,9 +309,10 @@ const FileList: FC<FileListProps> = ({
     return {
       paginatedTemplates: paginated,
       totalPages: pages,
-      totalFilteredCount: totalCount
+      totalFilteredCount: totalCount,
+      favoritesCount: totalFavorites
     };
-  }, [templates, debouncedSearchQuery, sortField, sortDirection, currentPage, itemsPerPage]);
+  }, [templates, debouncedSearchQuery, sortField, sortDirection, currentPage, itemsPerPage, showFavoritesOnly]);
 
   // Reset to page 1 when filters change
   const handleSearchChange = (value: string) => {
@@ -663,11 +677,49 @@ const FileList: FC<FileListProps> = ({
           />
         </div>
 
+        {/* Favorites Filter */}
+        {favoritesCount > 0 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setShowFavoritesOnly(!showFavoritesOnly);
+                setCurrentPage(1);
+              }}
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                showFavoritesOnly
+                  ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+              }`}
+            >
+              <Star className={`w-4 h-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+              <span>{t('fileList.favorites')}</span>
+              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                showFavoritesOnly
+                  ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
+                  : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300'
+              }`}>
+                {favoritesCount}
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* Sort and Items Per Page Controls */}
         <div className="flex flex-wrap gap-3 items-center justify-between">
           {/* Sort Controls */}
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm text-slate-600 dark:text-slate-400">{t('fileList.sortBy')}:</span>
+            <button
+              onClick={() => handleSortChange('favorite')}
+              className={`flex items-center gap-1 px-3 py-1 text-sm rounded-md transition-colors ${
+                sortField === 'favorite'
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+              }`}
+            >
+              <Star className={`w-3.5 h-3.5 ${sortField === 'favorite' ? 'fill-current' : ''}`} />
+              {sortField === 'favorite' && (sortDirection === 'asc' ? '↓' : '↑')}
+            </button>
             <button
               onClick={() => handleSortChange('name')}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${

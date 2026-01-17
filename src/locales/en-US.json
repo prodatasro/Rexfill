@@ -45,7 +45,8 @@
     "subtitle": "Upload DOCX files with placeholders like {{name}} and fill them dynamically.",
     "recentTemplates": "Recent Templates",
     "noRecentTemplates": "No recently accessed templates",
-    "clearRecent": "Clear"
+    "clearRecent": "Clear",
+    "favoriteTemplates": "Favorites"
   },
   "fileUpload": {
     "title": "Upload Word Template",

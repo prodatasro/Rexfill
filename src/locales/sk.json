@@ -45,7 +45,8 @@
     "subtitle": "Nahrajte DOCX súbory s premennými ako {{name}} a vypĺňajte ich dynamicky.",
     "recentTemplates": "Nedávne šablóny",
     "noRecentTemplates": "Žiadne nedávno použité šablóny",
-    "clearRecent": "Vymazať"
+    "clearRecent": "Vymazať",
+    "favoriteTemplates": "Obľúbené"
   },
   "fileUpload": {
     "title": "Nahrať Word šablónu",
