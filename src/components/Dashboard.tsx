@@ -1,6 +1,6 @@
 import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload, Clock, FileText, Trash2 } from 'lucide-react';
+import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload, Clock, FileText, Trash2, Download, Archive } from 'lucide-react';
 import { Doc, setDoc } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder } from '../types/folder';
@@ -9,6 +9,8 @@ import FileList from './files/FileList';
 import FolderTree from './folders/FolderTree';
 import FolderDialog from './folders/FolderDialog';
 import Breadcrumbs from './Breadcrumbs';
+import ExportDialog from './ExportDialog';
+import ImportDialog from './ImportDialog';
 import { useFolders } from '../hooks/useFolders';
 import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
 import { useRecentTemplates } from '../hooks/useRecentTemplates';
@@ -83,11 +85,15 @@ const Dashboard: FC = () => {
   // Folder sort state
   const [folderSortOrder, setFolderSortOrder] = useState<'asc' | 'desc'>('asc');
 
+  // Export/Import dialog state
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+
   // Load templates by folder
   const { templates, allTemplates, loading: templatesLoading, refresh: refreshTemplates } = useTemplatesByFolder(selectedFolderId);
 
   // Load folders
-  const { folderTree, loading: foldersLoading, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
+  const { folders, folderTree, loading: foldersLoading, loadFolders, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
 
   // Recent templates
   const { recentTemplates, addRecentTemplate, removeRecentTemplate, clearRecentTemplates } = useRecentTemplates();
@@ -139,6 +145,18 @@ const Dashboard: FC = () => {
 
     return filterTree(folderTree);
   }, [folderTree, debouncedFolderSearchQuery]);
+
+  // Fetch template blob for export
+  const fetchTemplateBlob = useCallback(async (template: Doc<WordTemplateData>): Promise<Blob | null> => {
+    if (!template.data.url) return null;
+    try {
+      const response = await fetch(template.data.url);
+      return await response.blob();
+    } catch (error) {
+      console.error(`Failed to fetch template ${template.data.name}:`, error);
+      return null;
+    }
+  }, []);
 
   // Handle template selection for processing
   const handleTemplateSelect = useCallback((template: Doc<WordTemplateData>) => {
@@ -821,7 +839,7 @@ const Dashboard: FC = () => {
                       </button>
                     )}
                   </div>
-                  {/* Expand/Collapse/Sort buttons */}
+                  {/* Expand/Collapse/Sort/Export/Import buttons */}
                   <div className="flex gap-1 mt-2 justify-center">
                     <button
                       onClick={() => setExpandAllTrigger(prev => prev + 1)}
@@ -846,6 +864,23 @@ const Dashboard: FC = () => {
                       aria-label={folderSortOrder === 'asc' ? t('folders.sortAZ') : t('folders.sortZA')}
                     >
                       <ArrowUpDown className="w-5 h-5" />
+                    </button>
+                    <div className="w-px bg-slate-300 dark:bg-slate-600 mx-1" />
+                    <button
+                      onClick={() => setIsExportDialogOpen(true)}
+                      className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                      title={t('exportImport.exportTitle')}
+                      aria-label={t('exportImport.exportTitle')}
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setIsImportDialogOpen(true)}
+                      className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                      title={t('exportImport.importTitle')}
+                      aria-label={t('exportImport.importTitle')}
+                    >
+                      <Archive className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -1169,6 +1204,28 @@ const Dashboard: FC = () => {
           </div>
         </div>
       )}
+
+      {/* Export Dialog */}
+      <ExportDialog
+        isOpen={isExportDialogOpen}
+        onClose={() => setIsExportDialogOpen(false)}
+        templates={allTemplates}
+        folders={folders}
+        folderTree={folderTree}
+        fetchTemplateBlob={fetchTemplateBlob}
+      />
+
+      {/* Import Dialog */}
+      <ImportDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        existingTemplates={allTemplates}
+        existingFolders={folders}
+        onImportComplete={async () => {
+          await loadFolders();
+          await refreshTemplates();
+        }}
+      />
     </>
   );
 };

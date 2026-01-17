@@ -18,8 +18,11 @@
     "postinstall": "npm run postinstall:copy-auth"
   },
   "dependencies": {
-    "@junobuild/core": "^3.3.2",
-    "@junobuild/functions": "^0.5.3",
+    "@dfinity/utils": "^4.1.0",
+    "@icp-sdk/auth": "^5.0.0",
+    "@icp-sdk/core": "^5.0.0",
+    "@junobuild/core": "^3.4.1",
+    "@junobuild/functions": "^0.5.5",
     "@tanstack/react-virtual": "^3.13.18",
     "docxtemplater": "^3.47.2",
     "i18next": "^25.7.3",
@@ -34,8 +37,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
-    "@junobuild/config": "^2.7.0",
-    "@junobuild/vite-plugin": "^4.4.0",
+    "@junobuild/config": "^2.9.0",
+    "@junobuild/vite-plugin": "^4.5.1",
     "@tailwindcss/postcss": "^4.1.13",
     "@tailwindcss/vite": "^4.1.13",
     "@types/react": "^19.2.7",
