@@ -247,6 +247,8 @@
   "folders": {
     "title": "Priečinky",
     "allTemplates": "Všetky šablóny",
+    "favorites": "Obľúbené",
+    "recent": "Nedávne",
     "newFolder": "Nový priečinok",
     "searchPlaceholder": "Hľadať priečinky...",
     "noFolders": "Zatiaľ žiadne priečinky",
