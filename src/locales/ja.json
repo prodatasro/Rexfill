@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "エラーが発生しました",
+    "message": "予期しないエラーが発生しました。作業が保存されていない可能性があります。",
+    "technicalDetails": "技術的な詳細",
+    "tryAgain": "再試行",
+    "goHome": "ホームへ",
+    "persistsHint": "問題が解決しない場合は、ページを更新するか、ブラウザのキャッシュをクリアしてください。"
+  },
+  "draftRecovery": {
+    "title": "下書きを復元しますか？",
+    "message": "{{date}}の未保存の下書きが見つかりました。復元しますか？",
+    "restore": "下書きを復元",
+    "discard": "破棄"
+  },
   "header": {
     "logout": "ログアウト",
     "toggleTheme": "テーマを切り替える"
+  },
+  "globalSearch": {
+    "title": "検索",
+    "placeholder": "検索...",
+    "inputPlaceholder": "テンプレートとフォルダを検索...",
+    "noResults": "結果が見つかりません",
+    "navigate": "で移動",
+    "select": "で選択",
+    "close": "で閉じる",
+    "hint": "テンプレートとフォルダを検索するには入力を開始してください"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "{{count}} 件のテンプレートを削除してもよろしいですか？この操作は元に戻せません。",
     "deleteSelectedSuccess": "{{count}} 件のテンプレートが正常に削除されました",
     "deleteSelectedFailed": "{{count}} 件のテンプレートの削除に失敗しました",
-    "deleting": "削除中..."
+    "deleting": "削除中...",
+    "toggleFavorite": "お気に入りを切り替え",
+    "favoriteFailed": "お気に入りの状態を更新できませんでした",
+    "favorites": "お気に入り",
+    "showFavorites": "お気に入りのみ表示",
+    "duplicateTemplate": "テンプレートを複製",
+    "duplicateSuccess": "テンプレートが「{{filename}}」として複製されました",
+    "duplicateFailed": "テンプレートの複製に失敗しました"
   },
   "templateProcessor": {
     "title": "テンプレートを処理",

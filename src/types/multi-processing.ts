@@ -46,3 +46,19 @@ export interface ProcessedDocumentResult {
   fileName: string;
   blob: Blob;
 }
+
+/**
+ * Status of individual file processing
+ */
+export type FileProcessingStatus = 'pending' | 'processing' | 'success' | 'error';
+
+/**
+ * Detailed status information for a file being processed
+ */
+export interface FileStatusInfo {
+  id: string;
+  fileName: string;
+  status: FileProcessingStatus;
+  error?: string;
+  retryCount?: number;
+}

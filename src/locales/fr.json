@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "Une erreur s'est produite",
+    "message": "Une erreur inattendue s'est produite. Votre travail n'a peut-être pas été enregistré.",
+    "technicalDetails": "Détails techniques",
+    "tryAgain": "Réessayer",
+    "goHome": "Accueil",
+    "persistsHint": "Si le problème persiste, essayez d'actualiser la page ou de vider le cache du navigateur."
+  },
+  "draftRecovery": {
+    "title": "Restaurer le brouillon ?",
+    "message": "Nous avons trouvé un brouillon non enregistré du {{date}}. Voulez-vous le restaurer ?",
+    "restore": "Restaurer le brouillon",
+    "discard": "Ignorer"
+  },
   "header": {
     "logout": "Se déconnecter",
     "toggleTheme": "Changer de thème"
+  },
+  "globalSearch": {
+    "title": "Rechercher",
+    "placeholder": "Rechercher...",
+    "inputPlaceholder": "Rechercher des modèles et dossiers...",
+    "noResults": "Aucun résultat trouvé",
+    "navigate": "pour naviguer",
+    "select": "pour sélectionner",
+    "close": "pour fermer",
+    "hint": "Commencez à taper pour rechercher des modèles et dossiers"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "Êtes-vous sûr de vouloir supprimer {{count}} modèle(s) ? Cette action ne peut pas être annulée.",
     "deleteSelectedSuccess": "{{count}} modèle(s) supprimé(s) avec succès",
     "deleteSelectedFailed": "Échec de la suppression de {{count}} modèle(s)",
-    "deleting": "Suppression..."
+    "deleting": "Suppression...",
+    "toggleFavorite": "Basculer le favori",
+    "favoriteFailed": "Échec de la mise à jour du statut favori",
+    "favorites": "Favoris",
+    "showFavorites": "Afficher uniquement les favoris",
+    "duplicateTemplate": "Dupliquer le modèle",
+    "duplicateSuccess": "Modèle dupliqué sous \"{{filename}}\"",
+    "duplicateFailed": "Échec de la duplication du modèle"
   },
   "templateProcessor": {
     "title": "Traiter le modèle",

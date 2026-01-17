@@ -2,8 +2,10 @@ import { FC } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSearch } from '../contexts/SearchContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
+import { GlobalSearch } from './ui/GlobalSearch';
 
 interface HeaderProps {
   onLogoClick?: () => void | Promise<void>;
@@ -13,10 +15,15 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
   const { logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
+  const { allTemplates, folderTree, onSelectTemplate, onSelectFolder } = useSearch();
 
   const handleToggleTheme = () => {
     toggleTheme();
   };
+
+  // Fallback handlers if callbacks are not set
+  const handleSelectTemplate = onSelectTemplate || (() => {});
+  const handleSelectFolder = onSelectFolder || (() => {});
 
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
@@ -27,8 +34,15 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
           className="h-8 sm:h-10 cursor-pointer"
           onClick={onLogoClick}
         />
-        
+
         <div className="flex items-center gap-2 sm:gap-4">
+          <GlobalSearch
+            allTemplates={allTemplates}
+            folderTree={folderTree}
+            onSelectTemplate={handleSelectTemplate}
+            onSelectFolder={handleSelectFolder}
+          />
+
           <LanguageSelector />
           
           <button

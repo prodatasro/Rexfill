@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "Algo salió mal",
+    "message": "Ocurrió un error inesperado. Es posible que su trabajo no se haya guardado.",
+    "technicalDetails": "Detalles técnicos",
+    "tryAgain": "Intentar de nuevo",
+    "goHome": "Ir a inicio",
+    "persistsHint": "Si el problema persiste, intente actualizar la página o borrar la caché del navegador."
+  },
+  "draftRecovery": {
+    "title": "¿Restaurar borrador?",
+    "message": "Encontramos un borrador sin guardar del {{date}}. ¿Desea restaurarlo?",
+    "restore": "Restaurar borrador",
+    "discard": "Descartar"
+  },
   "header": {
     "logout": "Cerrar sesión",
     "toggleTheme": "Cambiar tema"
+  },
+  "globalSearch": {
+    "title": "Buscar",
+    "placeholder": "Buscar...",
+    "inputPlaceholder": "Buscar plantillas y carpetas...",
+    "noResults": "No se encontraron resultados",
+    "navigate": "para navegar",
+    "select": "para seleccionar",
+    "close": "para cerrar",
+    "hint": "Comience a escribir para buscar plantillas y carpetas"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "¿Está seguro de que desea eliminar {{count}} plantilla(s)? Esta acción no se puede deshacer.",
     "deleteSelectedSuccess": "{{count}} plantilla(s) eliminada(s) exitosamente",
     "deleteSelectedFailed": "No se pudieron eliminar {{count}} plantilla(s)",
-    "deleting": "Eliminando..."
+    "deleting": "Eliminando...",
+    "toggleFavorite": "Alternar favorito",
+    "favoriteFailed": "Error al actualizar el estado de favoritos",
+    "favorites": "Favoritos",
+    "showFavorites": "Mostrar solo favoritos",
+    "duplicateTemplate": "Duplicar plantilla",
+    "duplicateSuccess": "Plantilla duplicada como \"{{filename}}\"",
+    "duplicateFailed": "Error al duplicar la plantilla"
   },
   "templateProcessor": {
     "title": "Procesar plantilla",

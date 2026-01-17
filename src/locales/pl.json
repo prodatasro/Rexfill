@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "Coś poszło nie tak",
+    "message": "Wystąpił nieoczekiwany błąd. Twoja praca mogła nie zostać zapisana.",
+    "technicalDetails": "Szczegóły techniczne",
+    "tryAgain": "Spróbuj ponownie",
+    "goHome": "Strona główna",
+    "persistsHint": "Jeśli problem się powtarza, spróbuj odświeżyć stronę lub wyczyścić pamięć podręczną przeglądarki."
+  },
+  "draftRecovery": {
+    "title": "Przywrócić wersję roboczą?",
+    "message": "Znaleźliśmy niezapisaną wersję roboczą z {{date}}. Czy chcesz ją przywrócić?",
+    "restore": "Przywróć wersję roboczą",
+    "discard": "Odrzuć"
+  },
   "header": {
     "logout": "Wyloguj się",
     "toggleTheme": "Przełącz motyw"
+  },
+  "globalSearch": {
+    "title": "Szukaj",
+    "placeholder": "Szukaj...",
+    "inputPlaceholder": "Szukaj szablonów i folderów...",
+    "noResults": "Brak wyników",
+    "navigate": "do nawigacji",
+    "select": "do wyboru",
+    "close": "do zamknięcia",
+    "hint": "Zacznij pisać, aby wyszukać szablony i foldery"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "Czy na pewno chcesz usunąć {{count}} szablon(ów)? Tej akcji nie można cofnąć.",
     "deleteSelectedSuccess": "{{count}} szablon(ów) zostało pomyślnie usuniętych",
     "deleteSelectedFailed": "Nie udało się usunąć {{count}} szablon(ów)",
-    "deleting": "Usuwanie..."
+    "deleting": "Usuwanie...",
+    "toggleFavorite": "Przełącz ulubione",
+    "favoriteFailed": "Nie udało się zaktualizować statusu ulubionych",
+    "favorites": "Ulubione",
+    "showFavorites": "Pokaż tylko ulubione",
+    "duplicateTemplate": "Duplikuj szablon",
+    "duplicateSuccess": "Szablon zduplikowany jako \"{{filename}}\"",
+    "duplicateFailed": "Nie udało się zduplikować szablonu"
   },
   "templateProcessor": {
     "title": "Przetwórz szablon",

@@ -1,9 +1,9 @@
 import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload } from 'lucide-react';
-import { Doc, setDoc, deleteDoc, deleteAsset, listAssets } from '@junobuild/core';
+import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload, Clock, FileText, Trash2 } from 'lucide-react';
+import { Doc, setDoc } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
-import type { Folder, FolderTreeNode } from '../types/folder';
+import type { Folder } from '../types/folder';
 import FileUpload from './files/FileUpload';
 import FileList from './files/FileList';
 import FolderTree from './folders/FolderTree';
@@ -11,11 +11,15 @@ import FolderDialog from './folders/FolderDialog';
 import Breadcrumbs from './Breadcrumbs';
 import { useFolders } from '../hooks/useFolders';
 import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
+import { useRecentTemplates } from '../hooks/useRecentTemplates';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { useFileProcessing } from '../contexts/FileProcessingContext';
+import { useSearch } from '../contexts/SearchContext';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { updateTemplatePathAfterRename, buildTemplatePath } from '../utils/templatePathUtils';
+import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../utils/templateDeletion';
 import { useTranslation } from 'react-i18next';
+import { useDebounce } from '../hooks/useDebounce';
 
 const Dashboard: FC = () => {
   const { t } = useTranslation();
@@ -23,6 +27,7 @@ const Dashboard: FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { setOneTimeFile } = useFileProcessing();
+  const { setAllTemplates, setFolderTree, setOnSelectTemplate, setOnSelectFolder } = useSearch();
 
   // Initialize selectedFolderId from URL params BEFORE any hook calls
   const folderIdFromParams = searchParams.get('folder');
@@ -53,6 +58,14 @@ const Dashboard: FC = () => {
   // Folder deletion state (includes asset deletion)
   const [isDeletingFolder, setIsDeletingFolder] = useState(false);
 
+  // Upload progress state
+  const [uploadProgress, setUploadProgress] = useState<{
+    currentFile: number;
+    totalFiles: number;
+    currentFileName: string;
+    status: 'preparing' | 'uploading' | 'saving';
+  } | null>(null);
+
   // Drag and drop state
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggedFiles, setDraggedFiles] = useState<File[]>([]);
@@ -61,6 +74,7 @@ const Dashboard: FC = () => {
 
   // Folder search state
   const [folderSearchQuery, setFolderSearchQuery] = useState('');
+  const debouncedFolderSearchQuery = useDebounce(folderSearchQuery, 300);
 
   // Folder expansion triggers
   const [expandAllTrigger, setExpandAllTrigger] = useState(0);
@@ -75,14 +89,25 @@ const Dashboard: FC = () => {
   // Load folders
   const { folderTree, loading: foldersLoading, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
 
-  // Filter folder tree based on search query
+  // Recent templates
+  const { recentTemplates, addRecentTemplate, removeRecentTemplate, clearRecentTemplates } = useRecentTemplates();
+
+  // Get actual template objects for recent templates
+  const recentTemplateObjects = useMemo(() => {
+    return recentTemplates
+      .map(recent => allTemplates.find(t => t.key === recent.id))
+      .filter((t): t is Doc<WordTemplateData> => t !== undefined)
+      .slice(0, 5); // Show max 5 in the UI
+  }, [recentTemplates, allTemplates]);
+
+  // Filter folder tree based on debounced search query
   const filteredFolderTree = useMemo(() => {
-    // Only filter if search query has at least 3 characters
-    if (folderSearchQuery.length < 2) {
+    // Only filter if search query has at least 2 characters
+    if (debouncedFolderSearchQuery.length < 2) {
       return folderTree;
     }
 
-    const query = folderSearchQuery.toLowerCase();
+    const query = debouncedFolderSearchQuery.toLowerCase();
 
     // Helper function to check if a node or any of its children match the search
     const nodeMatchesSearch = (node: typeof folderTree[0]): boolean => {
@@ -113,13 +138,34 @@ const Dashboard: FC = () => {
     };
 
     return filterTree(folderTree);
-  }, [folderTree, folderSearchQuery]);
+  }, [folderTree, debouncedFolderSearchQuery]);
 
   // Handle template selection for processing
-  const handleTemplateSelect = (template: Doc<WordTemplateData>) => {
+  const handleTemplateSelect = useCallback((template: Doc<WordTemplateData>) => {
+    // Add to recent templates
+    addRecentTemplate(template.key, template.data.name);
     // Navigate to processor page with template ID
     navigate(`/process?id=${template.key}`);
-  };
+  }, [navigate, addRecentTemplate]);
+
+  // Sync data with search context for global search
+  useEffect(() => {
+    setAllTemplates(allTemplates);
+  }, [allTemplates, setAllTemplates]);
+
+  useEffect(() => {
+    setFolderTree(folderTree);
+  }, [folderTree, setFolderTree]);
+
+  useEffect(() => {
+    setOnSelectTemplate(handleTemplateSelect);
+    setOnSelectFolder(setSelectedFolderId);
+
+    return () => {
+      setOnSelectTemplate(null);
+      setOnSelectFolder(null);
+    };
+  }, [handleTemplateSelect, setOnSelectTemplate, setOnSelectFolder]);
 
   const handleOneTimeProcess = (file: File) => {
     // Store file in context and navigate to processor
@@ -157,31 +203,8 @@ const Dashboard: FC = () => {
   }, []);
 
   const handleDeleteFolder = useCallback(async (folder: Folder) => {
-    // Helper to get all subfolder IDs recursively
-    const getAllSubfolderIds = (folderId: string): string[] => {
-      const findInTree = (nodes: FolderTreeNode[]): string[] => {
-        for (const node of nodes) {
-          if (node.folder.key === folderId) {
-            // Found the folder, collect all descendant IDs
-            const collectIds = (n: FolderTreeNode): string[] => {
-              const ids = [n.folder.key];
-              for (const child of n.children) {
-                ids.push(...collectIds(child));
-              }
-              return ids;
-            };
-            return collectIds(node);
-          }
-          const found = findInTree(node.children);
-          if (found.length > 0) return found;
-        }
-        return [];
-      };
-      return findInTree(folderTree);
-    };
-
     // Get all folder IDs to delete (folder + all subfolders)
-    const folderIdsToDelete = new Set(getAllSubfolderIds(folder.key));
+    const folderIdsToDelete = new Set(getAllSubfolderIds(folder.key, folderTree));
 
     // Count templates in this folder and all subfolders
     const templatesInFolders = allTemplates.filter(t =>
@@ -203,85 +226,9 @@ const Dashboard: FC = () => {
     setIsDeletingFolder(true);
 
     try {
-      // Get all assets from storage to find actual paths
-      // The fullPath from listAssets includes the collection prefix: /templates/folder/file.docx
-      const storageAssets = await listAssets({
-        collection: 'templates',
-        filter: {}
-      });
-
-      // Create a map to look up storage assets by various keys
-      // The fullPath from Juno is like: /templates/tt/file.docx
-      // We'll store the actual asset object for deletion
-      const storageAssetMap = new Map<string, typeof storageAssets.items[0]>();
-      for (const asset of storageAssets.items) {
-        const junoFullPath = asset.fullPath; // e.g., /templates/tt/file.docx
-
-        // Map by full Juno path
-        storageAssetMap.set(junoFullPath, asset);
-
-        // Map by path without collection prefix (e.g., /tt/file.docx)
-        const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
-        storageAssetMap.set(pathWithoutCollection, asset);
-
-        // Map by path without leading slash (e.g., tt/file.docx)
-        const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
-          ? pathWithoutCollection.substring(1)
-          : pathWithoutCollection;
-        storageAssetMap.set(pathNoLeadingSlash, asset);
-
-        // Map by just the filename (for fallback)
-        const filename = junoFullPath.split('/').pop() || '';
-        if (filename && !storageAssetMap.has(filename)) {
-          storageAssetMap.set(filename, asset);
-        }
-      }
-
-      // Delete all templates in this folder and subfolders
-      for (const template of templatesInFolders) {
-        // Try to find the asset in storage using various path strategies
-        const possibleKeys = [
-          template.key, // Primary: the storage key (e.g., "tt/file.docx")
-          `/${template.key}`, // With leading slash
-          template.data.fullPath, // From metadata
-          `/templates/${template.key}`, // Full Juno path
-          template.data.name, // Just filename
-        ].filter(Boolean);
-
-        let assetDeleted = false;
-        for (const key of possibleKeys) {
-          if (!key) continue;
-
-          // Check if this key exists in our storage map
-          const storageAsset = storageAssetMap.get(key);
-
-          if (storageAsset) {
-            try {
-              // Use the exact fullPath from the storage asset
-              await deleteAsset({
-                collection: 'templates',
-                fullPath: storageAsset.fullPath
-              });
-              assetDeleted = true;
-              console.log(`Deleted asset: ${storageAsset.fullPath}`);
-              break;
-            } catch (assetError) {
-              console.warn(`Failed to delete asset with path ${storageAsset.fullPath}:`, assetError);
-              continue;
-            }
-          }
-        }
-
-        if (!assetDeleted) {
-          console.warn(`Could not delete asset for ${template.data.name} from storage, deleting metadata only`);
-        }
-
-        // Always delete metadata
-        await deleteDoc({
-          collection: 'templates_meta',
-          doc: template
-        });
-      }
+      // Build storage asset map and delete all templates
+      const storageAssetMap = await buildStorageAssetMap();
+      await deleteTemplates(templatesInFolders, storageAssetMap);
 
       // Delete the folder (this also deletes subfolders)
       await deleteFolder(folder.key);
@@ -304,31 +251,8 @@ const Dashboard: FC = () => {
   }, [allTemplates, confirm, deleteFolder, folderTree, refreshTemplates, selectedFolderId, t]);
 
   const handleDeleteFolderFiles = useCallback(async (folder: Folder) => {
-    // Helper to get all subfolder IDs recursively
-    const getAllSubfolderIds = (folderId: string): string[] => {
-      const findInTree = (nodes: FolderTreeNode[]): string[] => {
-        for (const node of nodes) {
-          if (node.folder.key === folderId) {
-            // Found the folder, collect all descendant IDs
-            const collectIds = (n: FolderTreeNode): string[] => {
-              const ids = [n.folder.key];
-              for (const child of n.children) {
-                ids.push(...collectIds(child));
-              }
-              return ids;
-            };
-            return collectIds(node);
-          }
-          const found = findInTree(node.children);
-          if (found.length > 0) return found;
-        }
-        return [];
-      };
-      return findInTree(folderTree);
-    };
-
     // Get all folder IDs (folder + all subfolders)
-    const folderIdsToCheck = new Set(getAllSubfolderIds(folder.key));
+    const folderIdsToCheck = new Set(getAllSubfolderIds(folder.key, folderTree));
 
     // Count templates in this folder and all subfolders
     const templatesInFolders = allTemplates.filter(t =>
@@ -355,80 +279,9 @@ const Dashboard: FC = () => {
     setIsDeletingFolder(true);
 
     try {
-      // Get all assets from storage to find actual paths
-      const storageAssets = await listAssets({
-        collection: 'templates',
-        filter: {}
-      });
-
-      // Create a map to look up storage assets by various keys
-      const storageAssetMap = new Map<string, typeof storageAssets.items[0]>();
-      for (const asset of storageAssets.items) {
-        const junoFullPath = asset.fullPath;
-
-        // Map by full Juno path
-        storageAssetMap.set(junoFullPath, asset);
-
-        // Map by path without collection prefix
-        const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
-        storageAssetMap.set(pathWithoutCollection, asset);
-
-        // Map by path without leading slash
-        const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
-          ? pathWithoutCollection.substring(1)
-          : pathWithoutCollection;
-        storageAssetMap.set(pathNoLeadingSlash, asset);
-
-        // Map by just the filename (for fallback)
-        const filename = junoFullPath.split('/').pop() || '';
-        if (filename && !storageAssetMap.has(filename)) {
-          storageAssetMap.set(filename, asset);
-        }
-      }
-
-      // Delete all templates in this folder and subfolders
-      for (const template of templatesInFolders) {
-        // Try to find the asset in storage using various path strategies
-        const possibleKeys = [
-          template.key,
-          `/${template.key}`,
-          template.data.fullPath,
-          `/templates/${template.key}`,
-          template.data.name,
-        ].filter(Boolean);
-
-        let assetDeleted = false;
-        for (const key of possibleKeys) {
-          if (!key) continue;
-
-          const storageAsset = storageAssetMap.get(key);
-
-          if (storageAsset) {
-            try {
-              await deleteAsset({
-                collection: 'templates',
-                fullPath: storageAsset.fullPath
-              });
-              assetDeleted = true;
-              console.log(`Deleted asset: ${storageAsset.fullPath}`);
-              break;
-            } catch (assetError) {
-              console.warn(`Failed to delete asset with path ${storageAsset.fullPath}:`, assetError);
-              continue;
-            }
-          }
-        }
-
-        if (!assetDeleted) {
-          console.warn(`Could not delete asset for ${template.data.name} from storage, deleting metadata only`);
-        }
-
-        // Delete metadata
-        await deleteDoc({
-          collection: 'templates_meta',
-          doc: template
-        });
-      }
+      // Build storage asset map and delete all templates
+      const storageAssetMap = await buildStorageAssetMap();
+      await deleteTemplates(templatesInFolders, storageAssetMap);
 
       // Refresh templates
       await refreshTemplates();
@@ -532,8 +385,12 @@ const Dashboard: FC = () => {
     setIsDragOver(false);
     dragCounterRef.current = 0;
 
+    // File size limits
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    const WARNING_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+
     const files = Array.from(e.dataTransfer.files);
-    const validFiles = files.filter(file => file.name.endsWith('.docx'));
+    let validFiles = files.filter(file => file.name.endsWith('.docx'));
 
     if (validFiles.length === 0) {
       showErrorToast(t('fileUpload.invalidFileType'));
@@ -544,6 +401,37 @@ const Dashboard: FC = () => {
       import('../utils/toast').then(({ showWarningToast }) => {
         showWarningToast(t('fileUpload.someFilesInvalid'));
       });
+    }
+
+    // Check file sizes
+    const oversizedFiles = validFiles.filter(file => file.size > MAX_FILE_SIZE);
+    const largeFiles = validFiles.filter(file => file.size > WARNING_FILE_SIZE && file.size <= MAX_FILE_SIZE);
+
+    // Remove oversized files
+    if (oversizedFiles.length > 0) {
+      oversizedFiles.forEach(file => {
+        showErrorToast(t('fileUpload.fileTooLarge', {
+          filename: file.name,
+          maxSize: Math.round(MAX_FILE_SIZE / (1024 * 1024))
+        }));
+      });
+      validFiles = validFiles.filter(file => file.size <= MAX_FILE_SIZE);
+    }
+
+    // Warn about large (but acceptable) files
+    if (largeFiles.length > 0) {
+      import('../utils/toast').then(({ showWarningToast }) => {
+        largeFiles.forEach(file => {
+          showWarningToast(t('fileUpload.fileLargeWarning', {
+            filename: file.name,
+            size: Math.round(file.size / (1024 * 1024))
+          }));
+        });
+      });
+    }
+
+    if (validFiles.length === 0) {
+      return;
     }
 
     setDraggedFiles(validFiles);
@@ -586,7 +474,17 @@ const Dashboard: FC = () => {
       const folderData = selectedFolderId ? getFolderById(selectedFolderId) : null;
       const folderPath = folderData?.data.path || '/';
 
-      for (const file of draggedFiles) {
+      for (let i = 0; i < draggedFiles.length; i++) {
+        const file = draggedFiles[i];
+
+        // Update progress - preparing
+        setUploadProgress({
+          currentFile: i + 1,
+          totalFiles: draggedFiles.length,
+          currentFileName: file.name,
+          status: 'preparing'
+        });
+
         if (existingFiles.has(file.name)) {
           const { showWarningToast } = await import('../utils/toast');
           showWarningToast(t('fileUpload.fileExists', { filename: file.name }));
@@ -607,10 +505,26 @@ const Dashboard: FC = () => {
             fullPath: fullPath
           };
 
+          // Update progress - uploading
+          setUploadProgress({
+            currentFile: i + 1,
+            totalFiles: draggedFiles.length,
+            currentFileName: file.name,
+            status: 'uploading'
+          });
+
           const result = await uploadFile({
             data: file,
             collection: 'templates',
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
+          });
+
+          // Update progress - saving metadata
+          setUploadProgress({
+            currentFile: i + 1,
+            totalFiles: draggedFiles.length,
+            currentFileName: file.name,
+            status: 'saving'
           });
 
           await setDocJuno({
@@ -655,6 +569,7 @@ const Dashboard: FC = () => {
       showErrorToast(t('fileUpload.uploadFailed'));
     } finally {
       setIsFolderUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -704,7 +619,17 @@ const Dashboard: FC = () => {
       const folderPath = folderData?.data.path || '/';
 
       // Process each file
-      for (const file of validFiles) {
+      for (let i = 0; i < validFiles.length; i++) {
+        const file = validFiles[i];
+
+        // Update progress - preparing
+        setUploadProgress({
+          currentFile: i + 1,
+          totalFiles: validFiles.length,
+          currentFileName: file.name,
+          status: 'preparing'
+        });
+
         // Check if file already exists in this folder
         if (existingFiles.has(file.name)) {
           const { showWarningToast } = await import('../utils/toast');
@@ -726,10 +651,26 @@ const Dashboard: FC = () => {
             fullPath: fullPath
           };
 
+          // Update progress - uploading
+          setUploadProgress({
+            currentFile: i + 1,
+            totalFiles: validFiles.length,
+            currentFileName: file.name,
+            status: 'uploading'
+          });
+
           const result = await uploadFile({
             data: file,
             collection: 'templates',
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
+          });
+
+          // Update progress - saving metadata
+          setUploadProgress({
+            currentFile: i + 1,
+            totalFiles: validFiles.length,
+            currentFileName: file.name,
+            status: 'saving'
           });
 
           await setDoc({
@@ -770,6 +711,7 @@ const Dashboard: FC = () => {
       showErrorToast(t('fileUpload.uploadFailed'));
     } finally {
       setIsFolderUploading(false);
+      setUploadProgress(null);
       if (folderUploadInputRef.current) {
         folderUploadInputRef.current.value = '';
       }
@@ -952,11 +894,44 @@ const Dashboard: FC = () => {
           {/* Upload in progress overlay */}
           {isFolderUploading && (
             <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-4 px-6 w-full max-w-md">
                 <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400" />
                 <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {t('fileUpload.uploading')}
                 </p>
+
+                {/* Progress details */}
+                {uploadProgress && (
+                  <div className="w-full space-y-2">
+                    {/* Progress bar */}
+                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-purple-600 dark:bg-purple-500 rounded-full transition-all duration-300"
+                        style={{ width: `${(uploadProgress.currentFile / uploadProgress.totalFiles) * 100}%` }}
+                      />
+                    </div>
+
+                    {/* File counter */}
+                    <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                      <span>
+                        {t('fileUpload.uploadProgress', {
+                          current: uploadProgress.currentFile,
+                          total: uploadProgress.totalFiles
+                        })}
+                      </span>
+                      <span>
+                        {uploadProgress.status === 'preparing' && t('fileUpload.statusPreparing')}
+                        {uploadProgress.status === 'uploading' && t('fileUpload.statusUploading')}
+                        {uploadProgress.status === 'saving' && t('fileUpload.statusSaving')}
+                      </span>
+                    </div>
+
+                    {/* Current file name */}
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate text-center">
+                      {uploadProgress.currentFileName}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -997,6 +972,60 @@ const Dashboard: FC = () => {
                 onSelectFolder={setSelectedFolderId}
               />
             </div>
+
+            {/* Recent Templates Section */}
+            {recentTemplateObjects.length > 0 && !selectedFolderId && (
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <Clock className="w-4 h-4" />
+                    <span>{t('dashboard.recentTemplates')}</span>
+                  </div>
+                  <button
+                    onClick={clearRecentTemplates}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                    title={t('dashboard.clearRecent')}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span className="hidden sm:inline">{t('dashboard.clearRecent')}</span>
+                  </button>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {recentTemplateObjects.map(template => (
+                    <div
+                      key={template.key}
+                      onClick={() => handleTemplateSelect(template)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleTemplateSelect(template);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all shrink-0 max-w-[200px] group cursor-pointer"
+                      title={template.data.name}
+                    >
+                      <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
+                      <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                        {template.data.name.replace('.docx', '')}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRecentTemplate(template.key);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-all"
+                        title="Remove from recent"
+                      >
+                        <X className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex-1 min-h-0">
               <FileList
                 templates={templates}

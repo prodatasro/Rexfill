@@ -1,5 +1,5 @@
 import { FC, useState, useMemo, useRef, useCallback } from 'react';
-import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X, Loader2 } from 'lucide-react';
+import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X, Loader2, Star, Copy, Pencil } from 'lucide-react';
 import { setDoc, deleteDoc, deleteAsset, listAssets, Doc, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
@@ -8,7 +8,9 @@ import { showErrorToast, showSuccessToast, showWarningToast } from '../../utils/
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useTranslation } from 'react-i18next';
 import TemplateMoveDialog from '../folders/TemplateMoveDialog';
+import TemplateRenameDialog from './TemplateRenameDialog';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
+import { useDebounce } from '../../hooks/useDebounce';
 
 type SortField = 'name' | 'size' | 'createdOn';
 type SortDirection = 'asc' | 'desc';
@@ -27,6 +29,7 @@ interface FileListProps {
 
 const FileList: FC<FileListProps> = ({
   templates,
+  allTemplates,
   loading,
   onTemplateSelect,
   onMultiTemplateSelect,
@@ -39,6 +42,7 @@ const FileList: FC<FileListProps> = ({
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
+  const [templateToRename, setTemplateToRename] = useState<Doc<WordTemplateData> | null>(null);
   const { confirm } = useConfirm();
 
   // Multi-select state
@@ -47,6 +51,7 @@ const FileList: FC<FileListProps> = ({
 
   // Search, sort, and pagination state
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -257,9 +262,9 @@ const FileList: FC<FileListProps> = ({
 
   // Filter, sort, and paginate templates
   const { paginatedTemplates, totalPages, totalFilteredCount } = useMemo(() => {
-    // Filter by search query
+    // Filter by debounced search query for better performance
     let filtered = templates.filter(template =>
-      template.data.name.toLowerCase().includes(searchQuery.toLowerCase())
+      template.data.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
 
     // Sort templates
@@ -293,7 +298,7 @@ const FileList: FC<FileListProps> = ({
       totalPages: pages,
       totalFilteredCount: totalCount
     };
-  }, [templates, searchQuery, sortField, sortDirection, currentPage, itemsPerPage]);
+  }, [templates, debouncedSearchQuery, sortField, sortDirection, currentPage, itemsPerPage]);
 
   // Reset to page 1 when filters change
   const handleSearchChange = (value: string) => {
@@ -493,6 +498,121 @@ const FileList: FC<FileListProps> = ({
     setSelectedTemplateIds(new Set(allKeys));
   }, [paginatedTemplates]);
 
+  // Favorite toggle handler
+  const handleToggleFavorite = useCallback(async (template: Doc<WordTemplateData>) => {
+    try {
+      const newIsFavorite = !template.data.isFavorite;
+      await setDoc({
+        collection: 'templates_meta',
+        doc: {
+          ...template,
+          data: {
+            ...template.data,
+            isFavorite: newIsFavorite,
+          }
+        }
+      });
+      onFileDeleted(); // Refresh to show updated favorite status
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      showErrorToast(t('fileList.favoriteFailed'));
+    }
+  }, [onFileDeleted, t]);
+
+  // Duplicate template handler
+  const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
+
+  const handleDuplicate = useCallback(async (template: Doc<WordTemplateData>) => {
+    setDuplicatingIds(prev => new Set([...prev, template.key]));
+    try {
+      // Generate a unique name with " (Copy)" suffix
+      const baseName = template.data.name.replace(/\.docx$/i, '');
+      let copyName = `${baseName} (Copy).docx`;
+      let copyNumber = 1;
+
+      // Check if name already exists and increment number if needed
+      const existingNames = new Set(
+        allTemplates
+          .filter(t => t.data.folderId === template.data.folderId)
+          .map(t => t.data.name.toLowerCase())
+      );
+
+      while (existingNames.has(copyName.toLowerCase())) {
+        copyNumber++;
+        copyName = `${baseName} (Copy ${copyNumber}).docx`;
+      }
+
+      // Build the new full path
+      const newFullPath = buildTemplatePath(template.data.folderPath || '/', copyName);
+
+      // Create new metadata entry with a new key
+      const newKey = `${Date.now()}_${copyName}`;
+      await setDoc({
+        collection: 'templates_meta',
+        doc: {
+          key: newKey,
+          data: {
+            ...template.data,
+            name: copyName,
+            fullPath: newFullPath,
+            uploadedAt: Date.now(),
+            isFavorite: false, // Don't copy favorite status
+          }
+        }
+      });
+
+      showSuccessToast(t('fileList.duplicateSuccess', { filename: copyName }));
+      onFileDeleted(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to duplicate template:', error);
+      showErrorToast(t('fileList.duplicateFailed'));
+    } finally {
+      setDuplicatingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(template.key);
+        return newSet;
+      });
+    }
+  }, [allTemplates, onFileDeleted, t]);
+
+  // Rename template handler
+  const handleRename = useCallback(async (newName: string) => {
+    if (!templateToRename) return;
+
+    try {
+      // Build the new full path
+      const newFullPath = buildTemplatePath(templateToRename.data.folderPath || '/', newName);
+
+      // Update template metadata with new name and fullPath
+      await setDoc({
+        collection: 'templates_meta',
+        doc: {
+          ...templateToRename,
+          data: {
+            ...templateToRename.data,
+            name: newName,
+            fullPath: newFullPath,
+          }
+        }
+      });
+
+      showSuccessToast(t('templateRename.renameSuccess', { filename: newName }));
+      onFileDeleted(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to rename template:', error);
+      showErrorToast(t('templateRename.renameFailed'));
+      throw error; // Re-throw to let dialog handle error state
+    }
+  }, [templateToRename, onFileDeleted, t]);
+
+  // Get existing names in the same folder for duplicate validation
+  const existingNamesInFolder = useMemo(() => {
+    if (!templateToRename) return [];
+    return allTemplates
+      .filter(t => t.data.folderId === templateToRename.data.folderId)
+      .map(t => t.data.name);
+  }, [templateToRename, allTemplates]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -613,8 +733,8 @@ const FileList: FC<FileListProps> = ({
         }`}>
           <div className="flex items-center gap-2">
             {/* Select All / Deselect All checkbox */}
-            <div
-              className="cursor-pointer"
+            <button
+              className="cursor-pointer p-0.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
               onClick={() => {
                 if (selectedTemplateIds.size === paginatedTemplates.length) {
                   handleClearSelection();
@@ -622,13 +742,15 @@ const FileList: FC<FileListProps> = ({
                   handleSelectAll();
                 }
               }}
+              aria-label={selectedTemplateIds.size === paginatedTemplates.length ? t('fileList.clearSelection') : t('fileList.selectAll')}
+              aria-pressed={selectedTemplateIds.size === paginatedTemplates.length && paginatedTemplates.length > 0}
             >
               {selectedTemplateIds.size === paginatedTemplates.length && paginatedTemplates.length > 0 ? (
                 <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               ) : (
                 <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
               )}
-            </div>
+            </button>
             <span className="text-sm text-slate-600 dark:text-slate-400">
               {selectedTemplateIds.size > 0
                 ? t('fileList.selectedCount', { count: selectedTemplateIds.size })
@@ -674,10 +796,10 @@ const FileList: FC<FileListProps> = ({
       </div>
 
       {/* File List - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto px-4" role="region" aria-label={t('fileList.title')}>
         {totalFilteredCount === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
-            <ClipboardList className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-slate-400 dark:text-slate-600" />
+            <ClipboardList className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-slate-400 dark:text-slate-600" aria-hidden="true" />
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-50 mb-2">
               {t('fileList.noResults')}
             </h3>
@@ -686,7 +808,7 @@ const FileList: FC<FileListProps> = ({
             </p>
           </div>
         ) : (
-          <div className="space-y-1 pb-4">
+          <div className="space-y-1 pb-4" role="list" aria-label={t('fileList.title')}>
             {paginatedTemplates.map((template, index) => {
               const isDeleting = deletingIds.has(template.key);
               const isSelected = selectedTemplateIds.has(template.key);
@@ -694,25 +816,29 @@ const FileList: FC<FileListProps> = ({
               return (
                 <div
                   key={template.key}
+                  role="listitem"
+                  aria-selected={isSelected}
                   className={`flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-sm transition-all duration-200 ${
                     isSelected ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800' : ''
                   }`}
                 >
                   {/* Checkbox */}
-                  <div
-                    className="shrink-0"
+                  <button
+                    className="shrink-0 p-0.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCheckboxChange(template, !isSelected);
                       lastSelectedIndexRef.current = index;
                     }}
+                    aria-label={isSelected ? t('fileList.clearSelection') : t('fileList.selectAll')}
+                    aria-pressed={isSelected}
                   >
                     {isSelected ? (
                       <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     ) : (
                       <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
                     )}
-                  </div>
+                  </button>
 
                   {/* File Icon */}
                   <FileText className="w-5 h-5 shrink-0 text-slate-400 dark:text-slate-600" />
@@ -730,6 +856,21 @@ const FileList: FC<FileListProps> = ({
                     </h3>
                   </div>
 
+                  {/* Placeholder Count Badge */}
+                  {template.data.placeholderCount !== undefined && template.data.placeholderCount > 0 && (
+                    <div
+                      className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium shrink-0 cursor-help"
+                      title={
+                        template.data.placeholderNames && template.data.placeholderNames.length > 0
+                          ? `${t('fileList.placeholders')}: ${template.data.placeholderNames.slice(0, 5).join(', ')}${template.data.placeholderNames.length > 5 ? ` +${template.data.placeholderNames.length - 5}` : ''}`
+                          : t('fileList.placeholders')
+                      }
+                    >
+                      <span>{template.data.placeholderCount}</span>
+                      <span>{template.data.placeholderCount === 1 ? t('fileList.placeholder') : t('fileList.placeholders')}</span>
+                    </div>
+                  )}
+
                   {/* Metadata - Hidden on mobile, visible on tablet+ */}
                   <div className="hidden sm:flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 shrink-0">
                     <span>{formatFileSize(template.data.size)}</span>
@@ -739,6 +880,20 @@ const FileList: FC<FileListProps> = ({
                   {/* Action Buttons */}
                   <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button
+                      onClick={() => handleToggleFavorite(template)}
+                      disabled={isDeleting}
+                      className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        template.data.isFavorite
+                          ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-slate-700'
+                          : 'text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-slate-700'
+                      }`}
+                      title={t('fileList.toggleFavorite')}
+                      aria-label={t('fileList.toggleFavorite')}
+                    >
+                      <Star className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`} />
+                    </button>
+
+                    <button
                       onClick={() => handleDownload(template)}
                       disabled={isDeleting}
                       className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -746,6 +901,30 @@ const FileList: FC<FileListProps> = ({
                       aria-label={t('fileList.downloadTemplate')}
                     >
                       <Download className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDuplicate(template)}
+                      disabled={isDeleting || duplicatingIds.has(template.key)}
+                      className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={t('fileList.duplicateTemplate')}
+                      aria-label={t('fileList.duplicateTemplate')}
+                    >
+                      {duplicatingIds.has(template.key) ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setTemplateToRename(template)}
+                      disabled={isDeleting}
+                      className="p-1.5 text-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={t('fileList.renameTemplate')}
+                      aria-label={t('fileList.renameTemplate')}
+                    >
+                      <Pencil className="w-4 h-4" />
                     </button>
 
                     <button
@@ -822,6 +1001,15 @@ const FileList: FC<FileListProps> = ({
         folders={folderTree}
         onMove={handleMove}
         onCancel={() => setTemplateToMove(null)}
+      />
+
+      {/* Rename Template Dialog */}
+      <TemplateRenameDialog
+        isOpen={templateToRename !== null}
+        template={templateToRename}
+        existingNames={existingNamesInFolder}
+        onRename={handleRename}
+        onCancel={() => setTemplateToRename(null)}
       />
     </div>
   );

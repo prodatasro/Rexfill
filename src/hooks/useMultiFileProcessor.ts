@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Doc, uploadFile, setDoc } from "@junobuild/core";
+import { Doc, uploadFile, setDoc, getDoc } from "@junobuild/core";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word_template";
-import { ProcessingTemplate, MultiFileFieldData, ProcessedDocumentResult } from "../types/multi-processing";
+import { ProcessingTemplate, MultiFileFieldData, ProcessedDocumentResult, FileStatusInfo } from "../types/multi-processing";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
 import { fixSplitPlaceholdersOptimized } from "../utils/documentProcessing";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
+import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
 import { useTranslation } from "react-i18next";
 import { ProcessingProgress } from "./useDocumentWorker";
+
+const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
 
 interface UseMultiFileProcessorProps {
   templates: Doc<WordTemplateData>[];
@@ -36,6 +39,9 @@ export const useMultiFileProcessor = ({
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [processingProgress, setProcessingProgress] = useState<ProcessingProgress | null>(null);
+
+  // Per-file status tracking for batch error reporting
+  const [fileStatuses, setFileStatuses] = useState<FileStatusInfo[]>([]);
 
   // Performance optimization: Batch state updates and incremental change tracking
   const pendingChangesRef = useRef<Record<string, string>>({});
@@ -96,7 +102,7 @@ export const useMultiFileProcessor = ({
         try {
           if (!template.data.url) return null;
 
-          const response = await fetch(template.data.url);
+          const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
           const arrayBuffer = await response.arrayBuffer();
           const { placeholders, customProperties } = await extractPlaceholdersFromBuffer(arrayBuffer);
 
@@ -108,7 +114,11 @@ export const useMultiFileProcessor = ({
             customProperties,
           };
         } catch (error) {
-          console.error(`Failed to extract from template ${template.data.name}:`, error);
+          if (error instanceof TimeoutError) {
+            console.error(`Timeout fetching template ${template.data.name}`);
+          } else {
+            console.error(`Failed to extract from template ${template.data.name}:`, error);
+          }
           return null;
         }
       });
@@ -272,7 +282,7 @@ export const useMultiFileProcessor = ({
     if (pt.file) {
       arrayBuffer = await pt.file.arrayBuffer();
     } else if (pt.template?.data.url) {
-      const response = await fetch(pt.template.data.url);
+      const response = await fetchWithTimeout(pt.template.data.url, { timeout: FETCH_TIMEOUT });
       arrayBuffer = await response.arrayBuffer();
     } else {
       throw new Error(`No file or template URL for ${pt.fileName}`);
@@ -339,16 +349,46 @@ export const useMultiFileProcessor = ({
     return blob;
   };
 
-  const processAllDocuments = async (): Promise<boolean> => {
+  const processAllDocuments = async (retryFileIds?: string[]): Promise<boolean> => {
     setProcessing(true);
+
+    // Determine which templates to process (all or only retry ones)
+    const templatesToProcess = retryFileIds
+      ? processingTemplates.filter(pt => retryFileIds.includes(pt.id))
+      : processingTemplates;
+
+    // Initialize file statuses
+    const initialStatuses: FileStatusInfo[] = templatesToProcess.map(pt => ({
+      id: pt.id,
+      fileName: pt.fileName,
+      status: 'pending' as const,
+    }));
+
+    // If retrying, merge with existing statuses (keep success ones)
+    if (retryFileIds) {
+      setFileStatuses(prev => {
+        const successStatuses = prev.filter(s => s.status === 'success' && !retryFileIds.includes(s.id));
+        return [...successStatuses, ...initialStatuses];
+      });
+    } else {
+      setFileStatuses(initialStatuses);
+    }
+
     try {
       const results: ProcessedDocumentResult[] = [];
+      const errors: { id: string; fileName: string; error: string }[] = [];
 
-      for (let i = 0; i < processingTemplates.length; i++) {
-        const pt = processingTemplates[i];
+      for (let i = 0; i < templatesToProcess.length; i++) {
+        const pt = templatesToProcess[i];
+
+        // Update status to processing
+        setFileStatuses(prev => prev.map(s =>
+          s.id === pt.id ? { ...s, status: 'processing' as const } : s
+        ));
+
         setProcessingProgress({
           stage: 'generating',
-          progress: Math.round(((i + 1) / processingTemplates.length) * 100),
+          progress: Math.round(((i + 1) / templatesToProcess.length) * 100),
         });
 
         try {
@@ -359,9 +399,23 @@ export const useMultiFileProcessor = ({
             fileName: pt.fileName,
             blob,
           });
+
+          // Update status to success
+          setFileStatuses(prev => prev.map(s =>
+            s.id === pt.id ? { ...s, status: 'success' as const } : s
+          ));
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           console.error(`Failed to process ${pt.fileName}:`, error);
-          showErrorToast(t('templateProcessor.processErrorFile', { filename: pt.fileName }));
+
+          // Update status to error with message
+          setFileStatuses(prev => prev.map(s =>
+            s.id === pt.id
+              ? { ...s, status: 'error' as const, error: errorMessage, retryCount: (s.retryCount || 0) + 1 }
+              : s
+          ));
+
+          errors.push({ id: pt.id, fileName: pt.fileName, error: errorMessage });
         }
       }
 
@@ -378,11 +432,16 @@ export const useMultiFileProcessor = ({
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      if (results.length > 0) {
+      // Show appropriate toast messages
+      if (results.length > 0 && errors.length === 0) {
         showSuccessToast(t('templateProcessor.multiProcessSuccess', { count: results.length }));
+      } else if (results.length > 0 && errors.length > 0) {
+        showSuccessToast(t('templateProcessor.multiProcessPartial', { success: results.length, failed: errors.length }));
+      } else if (errors.length > 0) {
+        showErrorToast(t('templateProcessor.multiProcessFailed', { count: errors.length }));
       }
 
-      return results.length === processingTemplates.length;
+      return errors.length === 0;
     } catch (error) {
       console.error('Error processing documents:', error);
       showErrorToast(t('templateProcessor.processError'));
@@ -396,23 +455,51 @@ export const useMultiFileProcessor = ({
   // Get templates that can be saved (those with template data, not one-time files)
   const savableTemplates = processingTemplates.filter(pt => pt.template);
 
-  const saveAllDocuments = async (): Promise<boolean> => {
+  const saveAllDocuments = async (retryFileIds?: string[]): Promise<boolean> => {
     if (savableTemplates.length === 0) {
       showErrorToast(t('templateProcessor.noTemplatesToSave'));
       return false;
     }
 
     setSaving(true);
+
+    // Determine which templates to save (all or only retry ones)
+    const templatesToSave = retryFileIds
+      ? savableTemplates.filter(pt => retryFileIds.includes(pt.id))
+      : savableTemplates;
+
+    // Initialize file statuses for saving
+    const initialStatuses: FileStatusInfo[] = templatesToSave.map(pt => ({
+      id: pt.id,
+      fileName: pt.fileName,
+      status: 'pending' as const,
+    }));
+
+    if (retryFileIds) {
+      setFileStatuses(prev => {
+        const successStatuses = prev.filter(s => s.status === 'success' && !retryFileIds.includes(s.id));
+        return [...successStatuses, ...initialStatuses];
+      });
+    } else {
+      setFileStatuses(initialStatuses);
+    }
+
+    const errors: { id: string; fileName: string; error: string }[] = [];
     let savedCount = 0;
 
     try {
-      for (let i = 0; i < savableTemplates.length; i++) {
-        const pt = savableTemplates[i];
+      for (let i = 0; i < templatesToSave.length; i++) {
+        const pt = templatesToSave[i];
         if (!pt.template) continue;
+
+        // Update status to processing
+        setFileStatuses(prev => prev.map(s =>
+          s.id === pt.id ? { ...s, status: 'processing' as const } : s
+        ));
 
         setProcessingProgress({
           stage: 'generating',
-          progress: Math.round(((i + 1) / savableTemplates.length) * 100),
+          progress: Math.round(((i + 1) / templatesToSave.length) * 100),
         });
 
         try {
@@ -445,10 +532,37 @@ export const useMultiFileProcessor = ({
             }
           });
 
+          // Fetch the updated template to get the new version
+          const updatedTemplate = await getDoc<WordTemplateData>({
+            collection: 'templates_meta',
+            key: pt.template.key
+          });
+
+          // Update processingTemplates with the new template version
+          if (updatedTemplate) {
+            setProcessingTemplates(prev => prev.map(p =>
+              p.id === pt.id ? { ...p, template: updatedTemplate } : p
+            ));
+          }
+
           savedCount++;
+
+          // Update status to success
+          setFileStatuses(prev => prev.map(s =>
+            s.id === pt.id ? { ...s, status: 'success' as const } : s
+          ));
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           console.error(`Failed to save ${pt.fileName}:`, error);
-          showErrorToast(t('templateProcessor.saveErrorFile', { filename: pt.fileName }));
+
+          // Update status to error
+          setFileStatuses(prev => prev.map(s =>
+            s.id === pt.id
+              ? { ...s, status: 'error' as const, error: errorMessage, retryCount: (s.retryCount || 0) + 1 }
+              : s
+          ));
+
+          errors.push({ id: pt.id, fileName: pt.fileName, error: errorMessage });
         }
       }
 
@@ -457,10 +571,17 @@ export const useMultiFileProcessor = ({
         initialFormDataRef.current = { ...formData };
         changedFieldsRef.current = new Set();
         setHasChanges(false);
-        showSuccessToast(t('templateProcessor.multiSaveSuccess', { count: savedCount }));
+
+        if (errors.length === 0) {
+          showSuccessToast(t('templateProcessor.multiSaveSuccess', { count: savedCount }));
+        } else {
+          showSuccessToast(t('templateProcessor.multiSavePartial', { success: savedCount, failed: errors.length }));
+        }
+      } else if (errors.length > 0) {
+        showErrorToast(t('templateProcessor.multiSaveFailed', { count: errors.length }));
       }
 
-      return savedCount === savableTemplates.length;
+      return errors.length === 0;
     } catch (error) {
       console.error('Error saving documents:', error);
       showErrorToast(t('templateProcessor.saveFailed'));
@@ -559,6 +680,19 @@ export const useMultiFileProcessor = ({
     ...Array.from(fieldData.fileFields.values()).flatMap(f => f.fields)
   ];
 
+  // Helper to get IDs of failed files for retry
+  const getFailedFileIds = useCallback(() => {
+    return fileStatuses.filter(s => s.status === 'error').map(s => s.id);
+  }, [fileStatuses]);
+
+  // Helper to check if there are any failed files
+  const hasFailedFiles = fileStatuses.some(s => s.status === 'error');
+
+  // Helper to clear file statuses (e.g., when closing error panel)
+  const clearFileStatuses = useCallback(() => {
+    setFileStatuses([]);
+  }, []);
+
   return {
     // State
     processingTemplates,
@@ -571,11 +705,15 @@ export const useMultiFileProcessor = ({
     allFields,
     processingProgress,
     savableTemplates,
+    fileStatuses,
+    hasFailedFiles,
 
     // Handlers
     handleInputChange,
     processAllDocuments,
     saveAllDocuments,
     saveAllDocumentsAs,
+    getFailedFileIds,
+    clearFileStatuses,
   };
 };

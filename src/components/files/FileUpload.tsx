@@ -2,12 +2,45 @@ import { FC, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
 import { uploadFile, listDocs } from '@junobuild/core';
+import PizZip from 'pizzip';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
 import FolderSelector from '../folders/FolderSelector';
 import { useTranslation } from 'react-i18next';
+
+// Extract placeholders from a DOCX file
+const extractPlaceholdersFromFile = async (file: File): Promise<string[]> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = new PizZip(arrayBuffer);
+    const documentXml = zip.file("word/document.xml");
+
+    if (!documentXml) {
+      return [];
+    }
+
+    const xmlContent = documentXml.asText();
+
+    // Extract all text content from <w:t> tags
+    const textTagRegex = /<w:t[^>]*>([^<]*)<\/w:t>/gi;
+    let reconstructedText = "";
+    let match;
+
+    while ((match = textTagRegex.exec(xmlContent)) !== null) {
+      reconstructedText += match[1];
+    }
+
+    // Find all placeholders
+    const placeholderRegex = /\{\{([^}]+)\}\}/g;
+    const matches = reconstructedText.match(placeholderRegex) || [];
+    return [...new Set(matches.map(m => m.slice(2, -2).trim()))];
+  } catch (error) {
+    console.error('Failed to extract placeholders:', error);
+    return [];
+  }
+};
 
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;
@@ -20,12 +53,24 @@ interface FileUploadProps {
 
 type UploadMode = 'save' | 'oneTime' | null;
 
+// File size limits (in bytes)
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max
+const WARNING_FILE_SIZE = 25 * 1024 * 1024; // 25MB warning threshold
+
+interface UploadProgress {
+  currentFile: number;
+  totalFiles: number;
+  currentFileName: string;
+  status: 'preparing' | 'uploading' | 'saving';
+}
+
 const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, onSaveAndProcess, selectedFolderId, folderTree, compact = false }) => {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<UploadMode>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadFolderId, setUploadFolderId] = useState<string | null>(selectedFolderId);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const checkFileExists = async (filename: string, folderId: string | null): Promise<boolean> => {
@@ -49,7 +94,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
     if (files.length === 0) return;
 
     // Filter only .docx files
-    const validFiles = files.filter(file => file.name.endsWith('.docx'));
+    let validFiles = files.filter(file => file.name.endsWith('.docx'));
 
     if (validFiles.length === 0) {
       showWarningToast(t('fileUpload.invalidFileType'));
@@ -58,6 +103,35 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
 
     if (validFiles.length < files.length) {
       showWarningToast(t('fileUpload.someFilesInvalid'));
+    }
+
+    // Check file sizes
+    const oversizedFiles = validFiles.filter(file => file.size > MAX_FILE_SIZE);
+    const largeFiles = validFiles.filter(file => file.size > WARNING_FILE_SIZE && file.size <= MAX_FILE_SIZE);
+
+    // Remove oversized files
+    if (oversizedFiles.length > 0) {
+      oversizedFiles.forEach(file => {
+        showErrorToast(t('fileUpload.fileTooLarge', {
+          filename: file.name,
+          maxSize: Math.round(MAX_FILE_SIZE / (1024 * 1024))
+        }));
+      });
+      validFiles = validFiles.filter(file => file.size <= MAX_FILE_SIZE);
+    }
+
+    // Warn about large (but acceptable) files
+    if (largeFiles.length > 0) {
+      largeFiles.forEach(file => {
+        showWarningToast(t('fileUpload.fileLargeWarning', {
+          filename: file.name,
+          size: Math.round(file.size / (1024 * 1024))
+        }));
+      });
+    }
+
+    if (validFiles.length === 0) {
+      return;
     }
 
     // Store the files and show mode selection dialog
@@ -111,7 +185,17 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
       const folderPath = folderData?.data.path || '/';
 
       // Process each file
-      for (const file of selectedFiles) {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+
+        // Update progress - preparing
+        setUploadProgress({
+          currentFile: i + 1,
+          totalFiles: selectedFiles.length,
+          currentFileName: file.name,
+          status: 'preparing'
+        });
+
         try {
           // Check if file with same name already exists in this folder
           const fileExists = await checkFileExists(file.name, uploadFolderId);
@@ -123,6 +207,9 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
 
           const fullPath = buildTemplatePath(folderPath, file.name);
 
+          // Extract placeholders from the file
+          const placeholders = await extractPlaceholdersFromFile(file);
+
           const templateData: WordTemplateData = {
             name: file.name,
             size: file.size,
@@ -130,13 +217,31 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             mimeType: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             folderId: uploadFolderId,
             folderPath: folderPath,
-            fullPath: fullPath
+            fullPath: fullPath,
+            placeholderCount: placeholders.length,
+            placeholderNames: placeholders
           };
+
+          // Update progress - uploading
+          setUploadProgress({
+            currentFile: i + 1,
+            totalFiles: selectedFiles.length,
+            currentFileName: file.name,
+            status: 'uploading'
+          });
 
           const result = await uploadFile({
             data: file,
             collection: 'templates',
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
+          });
+
+          // Update progress - saving metadata
+          setUploadProgress({
+            currentFile: i + 1,
+            totalFiles: selectedFiles.length,
+            currentFileName: file.name,
+            status: 'saving'
           });
 
           // Store template metadata in datastore
@@ -193,6 +298,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
       showErrorToast(t('fileUpload.uploadFailed'));
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -267,11 +373,44 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             {/* Upload in progress overlay */}
             {uploading && (
               <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-4 px-6 w-full max-w-md">
                   <Loader2 className="w-12 h-12 animate-spin text-purple-600 dark:text-purple-400" />
                   <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
                     {t('fileUpload.uploading')}
                   </p>
+
+                  {/* Progress details */}
+                  {uploadProgress && (
+                    <div className="w-full space-y-2">
+                      {/* Progress bar */}
+                      <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-purple-600 dark:bg-purple-500 rounded-full transition-all duration-300"
+                          style={{ width: `${(uploadProgress.currentFile / uploadProgress.totalFiles) * 100}%` }}
+                        />
+                      </div>
+
+                      {/* File counter */}
+                      <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                        <span>
+                          {t('fileUpload.uploadProgress', {
+                            current: uploadProgress.currentFile,
+                            total: uploadProgress.totalFiles
+                          })}
+                        </span>
+                        <span>
+                          {uploadProgress.status === 'preparing' && t('fileUpload.statusPreparing')}
+                          {uploadProgress.status === 'uploading' && t('fileUpload.statusUploading')}
+                          {uploadProgress.status === 'saving' && t('fileUpload.statusSaving')}
+                        </span>
+                      </div>
+
+                      {/* Current file name */}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate text-center">
+                        {uploadProgress.currentFileName}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

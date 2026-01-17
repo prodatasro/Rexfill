@@ -9,8 +9,11 @@ import { fixSplitPlaceholdersOptimized } from "../utils/documentProcessing";
 import { buildTemplatePath } from "../utils/templatePathUtils";
 import { validateFolderName, buildFolderPath } from "../utils/folderUtils";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
+import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
 import { useTranslation } from "react-i18next";
 import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
+
+const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
 
 interface UseWordTemplateProcessorProps {
   template?: Doc<WordTemplateData>;
@@ -65,8 +68,16 @@ export const useWordTemplateProcessor = ({
       if (file) {
         arrayBuffer = await file.arrayBuffer();
       } else if (template?.data.url) {
-        const response = await fetch(template.data.url);
-        arrayBuffer = await response.arrayBuffer();
+        try {
+          const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
+          arrayBuffer = await response.arrayBuffer();
+        } catch (error) {
+          if (error instanceof TimeoutError) {
+            showErrorToast(t('errors.timeout'));
+            throw error;
+          }
+          throw error;
+        }
       } else {
         throw new Error("No file or template provided");
       }
@@ -87,6 +98,15 @@ export const useWordTemplateProcessor = ({
           Object.entries(docCustomProperties).forEach(([key, value]) => {
             initialData[key] = value;
           });
+
+          // Apply saved defaults if available
+          if (template?.data.defaultValues) {
+            Object.entries(template.data.defaultValues).forEach(([key, value]) => {
+              if (key in initialData) {
+                initialData[key] = value;
+              }
+            });
+          }
 
           // Store in ref for incremental change tracking
           initialFormDataRef.current = initialData;
@@ -144,6 +164,15 @@ export const useWordTemplateProcessor = ({
       Object.entries(docCustomProperties).forEach(([key, value]) => {
         initialData[key] = value;
       });
+
+      // Apply saved defaults if available
+      if (template?.data.defaultValues) {
+        Object.entries(template.data.defaultValues).forEach(([key, value]) => {
+          if (key in initialData) {
+            initialData[key] = value;
+          }
+        });
+      }
 
       // Store in ref for incremental change tracking
       initialFormDataRef.current = initialData;
@@ -632,6 +661,107 @@ export const useWordTemplateProcessor = ({
 
   const allFields = [...placeholders, ...Object.keys(customProperties)];
 
+  // Save current form values as defaults for this template
+  const saveDefaults = useCallback(async () => {
+    if (!template) {
+      showErrorToast(t('templateProcessor.saveDefaultsFailed'));
+      return false;
+    }
+
+    try {
+      // Only save non-empty values
+      const defaultValues: Record<string, string> = {};
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value && value.trim()) {
+          defaultValues[key] = value;
+        }
+      });
+
+      await setDoc({
+        collection: 'templates_meta',
+        doc: {
+          ...template,
+          data: {
+            ...template.data,
+            defaultValues
+          }
+        }
+      });
+
+      // Update template in parent if callback is provided
+      if (onTemplateChange) {
+        const updatedTemplate = await getDoc<WordTemplateData>({
+          collection: 'templates_meta',
+          key: template.key
+        });
+        if (updatedTemplate) {
+          onTemplateChange(updatedTemplate);
+        }
+      }
+
+      showSuccessToast(t('templateProcessor.saveDefaultsSuccess'));
+      return true;
+    } catch (error) {
+      console.error('Failed to save defaults:', error);
+      showErrorToast(t('templateProcessor.saveDefaultsFailed'));
+      return false;
+    }
+  }, [template, formData, t, onTemplateChange]);
+
+  // Clear saved defaults for this template
+  const clearDefaults = useCallback(async () => {
+    if (!template) return false;
+
+    try {
+      await setDoc({
+        collection: 'templates_meta',
+        doc: {
+          ...template,
+          data: {
+            ...template.data,
+            defaultValues: undefined
+          }
+        }
+      });
+
+      // Update template in parent if callback is provided
+      if (onTemplateChange) {
+        const updatedTemplate = await getDoc<WordTemplateData>({
+          collection: 'templates_meta',
+          key: template.key
+        });
+        if (updatedTemplate) {
+          onTemplateChange(updatedTemplate);
+        }
+      }
+
+      showSuccessToast(t('templateProcessor.clearDefaultsSuccess'));
+      return true;
+    } catch (error) {
+      console.error('Failed to clear defaults:', error);
+      return false;
+    }
+  }, [template, t, onTemplateChange]);
+
+  // Load saved defaults into the form
+  const loadDefaults = useCallback(() => {
+    if (!template?.data.defaultValues) {
+      showErrorToast(t('templateProcessor.noDefaults'));
+      return false;
+    }
+
+    const defaults = template.data.defaultValues;
+    Object.entries(defaults).forEach(([key, value]) => {
+      handleInputChange(key, value);
+    });
+
+    showSuccessToast(t('templateProcessor.defaultsLoaded'));
+    return true;
+  }, [template, handleInputChange, t]);
+
+  // Check if template has saved defaults
+  const hasDefaults = Boolean(template?.data.defaultValues && Object.keys(template.data.defaultValues).length > 0);
+
   return {
     // State
     placeholders,
@@ -643,11 +773,15 @@ export const useWordTemplateProcessor = ({
     hasChanges,
     allFields,
     processingProgress,
+    hasDefaults,
 
     // Handlers
     handleInputChange,
     processDocument,
     handleSave,
     handleSaveAs,
+    saveDefaults,
+    clearDefaults,
+    loadDefaults,
   };
 };

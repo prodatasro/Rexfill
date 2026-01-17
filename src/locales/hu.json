@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "Valami hiba történt",
+    "message": "Váratlan hiba történt. Előfordulhat, hogy munkája nem lett elmentve.",
+    "technicalDetails": "Technikai részletek",
+    "tryAgain": "Újrapróbálás",
+    "goHome": "Főoldal",
+    "persistsHint": "Ha a probléma továbbra is fennáll, próbálja meg frissíteni az oldalt vagy törölni a böngésző gyorsítótárát."
+  },
+  "draftRecovery": {
+    "title": "Piszkozat visszaállítása?",
+    "message": "Találtunk egy el nem mentett piszkozatot ({{date}}). Szeretné visszaállítani?",
+    "restore": "Piszkozat visszaállítása",
+    "discard": "Elvetés"
+  },
   "header": {
     "logout": "Kijelentkezés",
     "toggleTheme": "Téma váltása"
+  },
+  "globalSearch": {
+    "title": "Keresés",
+    "placeholder": "Keresés...",
+    "inputPlaceholder": "Sablonok és mappák keresése...",
+    "noResults": "Nincs találat",
+    "navigate": "navigáláshoz",
+    "select": "kiválasztáshoz",
+    "close": "bezáráshoz",
+    "hint": "Kezdjen el gépelni a sablonok és mappák kereséséhez"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "Biztosan törölni szeretné a(z) {{count}} sablont? Ez a művelet nem vonható vissza.",
     "deleteSelectedSuccess": "{{count}} sablon sikeresen törölve",
     "deleteSelectedFailed": "{{count}} sablon törlése sikertelen",
-    "deleting": "Törlés..."
+    "deleting": "Törlés...",
+    "toggleFavorite": "Kedvenc váltása",
+    "favoriteFailed": "A kedvenc állapot frissítése sikertelen",
+    "favorites": "Kedvencek",
+    "showFavorites": "Csak kedvencek megjelenítése",
+    "duplicateTemplate": "Sablon másolása",
+    "duplicateSuccess": "Sablon másolva \"{{filename}}\" néven",
+    "duplicateFailed": "A sablon másolása sikertelen"
   },
   "templateProcessor": {
     "title": "Sablon feldolgozása",

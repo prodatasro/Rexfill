@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "Qualcosa è andato storto",
+    "message": "Si è verificato un errore imprevisto. Il tuo lavoro potrebbe non essere stato salvato.",
+    "technicalDetails": "Dettagli tecnici",
+    "tryAgain": "Riprova",
+    "goHome": "Vai alla home",
+    "persistsHint": "Se il problema persiste, prova ad aggiornare la pagina o a svuotare la cache del browser."
+  },
+  "draftRecovery": {
+    "title": "Ripristinare la bozza?",
+    "message": "Abbiamo trovato una bozza non salvata del {{date}}. Vuoi ripristinarla?",
+    "restore": "Ripristina bozza",
+    "discard": "Elimina"
+  },
   "header": {
     "logout": "Esci",
     "toggleTheme": "Cambia tema"
+  },
+  "globalSearch": {
+    "title": "Cerca",
+    "placeholder": "Cerca...",
+    "inputPlaceholder": "Cerca modelli e cartelle...",
+    "noResults": "Nessun risultato trovato",
+    "navigate": "per navigare",
+    "select": "per selezionare",
+    "close": "per chiudere",
+    "hint": "Inizia a digitare per cercare modelli e cartelle"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "Sei sicuro di voler eliminare {{count}} modello/i? Questa azione non può essere annullata.",
     "deleteSelectedSuccess": "{{count}} modello/i eliminato/i con successo",
     "deleteSelectedFailed": "Impossibile eliminare {{count}} modello/i",
-    "deleting": "Eliminazione..."
+    "deleting": "Eliminazione...",
+    "toggleFavorite": "Attiva/disattiva preferito",
+    "favoriteFailed": "Impossibile aggiornare lo stato preferito",
+    "favorites": "Preferiti",
+    "showFavorites": "Mostra solo i preferiti",
+    "duplicateTemplate": "Duplica modello",
+    "duplicateSuccess": "Modello duplicato come \"{{filename}}\"",
+    "duplicateFailed": "Impossibile duplicare il modello"
   },
   "templateProcessor": {
     "title": "Elabora modello",

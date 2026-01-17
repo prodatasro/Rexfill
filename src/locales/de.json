@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "Etwas ist schiefgelaufen",
+    "message": "Ein unerwarteter Fehler ist aufgetreten. Ihre Arbeit wurde möglicherweise nicht gespeichert.",
+    "technicalDetails": "Technische Details",
+    "tryAgain": "Erneut versuchen",
+    "goHome": "Startseite",
+    "persistsHint": "Wenn das Problem weiterhin besteht, versuchen Sie, die Seite zu aktualisieren oder den Browser-Cache zu löschen."
+  },
+  "draftRecovery": {
+    "title": "Entwurf wiederherstellen?",
+    "message": "Wir haben einen ungespeicherten Entwurf vom {{date}} gefunden. Möchten Sie ihn wiederherstellen?",
+    "restore": "Entwurf wiederherstellen",
+    "discard": "Verwerfen"
+  },
   "header": {
     "logout": "Abmelden",
     "toggleTheme": "Design wechseln"
+  },
+  "globalSearch": {
+    "title": "Suche",
+    "placeholder": "Suchen...",
+    "inputPlaceholder": "Vorlagen und Ordner suchen...",
+    "noResults": "Keine Ergebnisse gefunden",
+    "navigate": "zum Navigieren",
+    "select": "zum Auswählen",
+    "close": "zum Schließen",
+    "hint": "Tippen Sie, um Vorlagen und Ordner zu suchen"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "Möchten Sie wirklich {{count}} Vorlage(n) löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
     "deleteSelectedSuccess": "{{count}} Vorlage(n) erfolgreich gelöscht",
     "deleteSelectedFailed": "{{count}} Vorlage(n) konnten nicht gelöscht werden",
-    "deleting": "Löschen..."
+    "deleting": "Löschen...",
+    "toggleFavorite": "Favorit umschalten",
+    "favoriteFailed": "Favoritenstatus konnte nicht aktualisiert werden",
+    "favorites": "Favoriten",
+    "showFavorites": "Nur Favoriten anzeigen",
+    "duplicateTemplate": "Vorlage duplizieren",
+    "duplicateSuccess": "Vorlage als \"{{filename}}\" dupliziert",
+    "duplicateFailed": "Vorlage konnte nicht dupliziert werden"
   },
   "templateProcessor": {
     "title": "Vorlage verarbeiten",

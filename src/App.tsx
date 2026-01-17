@@ -5,9 +5,11 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FileProcessingProvider } from "./contexts/FileProcessingContext";
 import { ProcessorProvider } from "./contexts/ProcessorContext";
+import { SearchProvider } from "./contexts/SearchContext";
 import Layout from "./components/Layout.tsx";
 import { Toaster } from "sonner";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const App: FC = () => {
   useEffect(() => {
@@ -22,21 +24,25 @@ const App: FC = () => {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <FileProcessingProvider>
-            <ProcessorProvider>
-              <ConfirmProvider>
-                <Layout />
-                <Toaster
-                  position="bottom-right"
-                  richColors
-                  closeButton
-                  duration={5000}
-                />
-              </ConfirmProvider>
-            </ProcessorProvider>
-          </FileProcessingProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <FileProcessingProvider>
+              <ProcessorProvider>
+                <ConfirmProvider>
+                  <SearchProvider>
+                    <Layout />
+                  </SearchProvider>
+                  <Toaster
+                    position="bottom-right"
+                    richColors
+                    closeButton
+                    duration={5000}
+                  />
+                </ConfirmProvider>
+              </ProcessorProvider>
+            </FileProcessingProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </ThemeProvider>
     </BrowserRouter>
   );

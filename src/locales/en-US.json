@@ -2,9 +2,37 @@
   "app": {
     "title": "Rexfill"
   },
+  "errors": {
+    "timeout": "Request timed out. Please check your connection and try again.",
+    "networkError": "Network error. Please check your connection."
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred. Your work may not have been saved.",
+    "technicalDetails": "Technical details",
+    "tryAgain": "Try Again",
+    "goHome": "Go Home",
+    "persistsHint": "If this problem persists, try refreshing the page or clearing your browser cache."
+  },
+  "draftRecovery": {
+    "title": "Restore Draft?",
+    "message": "We found an unsaved draft from {{date}}. Would you like to restore it?",
+    "restore": "Restore Draft",
+    "discard": "Discard"
+  },
   "header": {
     "logout": "Logout",
     "toggleTheme": "Toggle theme"
+  },
+  "globalSearch": {
+    "title": "Search",
+    "placeholder": "Search...",
+    "inputPlaceholder": "Search templates and folders...",
+    "noResults": "No results found",
+    "navigate": "to navigate",
+    "select": "to select",
+    "close": "to close",
+    "hint": "Start typing to search templates and folders"
   },
   "login": {
     "title": "Rexfill",
@@ -14,7 +42,10 @@
   },
   "dashboard": {
     "title": "Your Word Templates",
-    "subtitle": "Upload DOCX files with placeholders like {{name}} and fill them dynamically."
+    "subtitle": "Upload DOCX files with placeholders like {{name}} and fill them dynamically.",
+    "recentTemplates": "Recent Templates",
+    "noRecentTemplates": "No recently accessed templates",
+    "clearRecent": "Clear"
   },
   "fileUpload": {
     "title": "Upload Word Template",
@@ -23,6 +54,9 @@
     "uploading": "Uploading...",
     "fileExists": "A file with the name \"{{filename}}\" already exists in this folder. Please rename your file or choose a different one.",
     "invalidFileType": "Please select a .docx file",
+    "fileTooLarge": "File \"{{filename}}\" exceeds the maximum size of {{maxSize}}MB",
+    "fileLargeWarning": "File \"{{filename}}\" is {{size}}MB. Large files may take longer to process.",
+    "someFilesTooLarge": "{{count}} file(s) exceeded the maximum size limit",
     "someFilesInvalid": "Some files were skipped (only .docx files are allowed)",
     "uploadSuccess": "Template \"{{filename}}\" uploaded successfully!",
     "uploadMultipleSuccess": "{{count}} templates uploaded successfully!",
@@ -42,7 +76,11 @@
     "rootFolder": "Root (All Templates)",
     "dropFilesHere": "Drop files here",
     "dropFilesHint": "Release to upload .docx files",
-    "uploadToFolder": "Upload to folder"
+    "uploadToFolder": "Upload to folder",
+    "uploadProgress": "{{current}} of {{total}}",
+    "statusPreparing": "Preparing...",
+    "statusUploading": "Uploading...",
+    "statusSaving": "Saving..."
   },
   "fileList": {
     "title": "Templates",
@@ -86,7 +124,17 @@
     "deleteSelectedConfirmMessage": "Are you sure you want to delete {{count}} template(s)? This action cannot be undone.",
     "deleteSelectedSuccess": "{{count}} template(s) deleted successfully",
     "deleteSelectedFailed": "Failed to delete {{count}} template(s)",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "toggleFavorite": "Toggle favorite",
+    "favoriteFailed": "Failed to update favorite status",
+    "favorites": "Favorites",
+    "showFavorites": "Show favorites only",
+    "duplicateTemplate": "Duplicate template",
+    "duplicateSuccess": "Template duplicated as \"{{filename}}\"",
+    "duplicateFailed": "Failed to duplicate template",
+    "renameTemplate": "Rename template",
+    "placeholder": "field",
+    "placeholders": "fields"
   },
   "templateProcessor": {
     "title": "Process Template",
@@ -129,6 +177,22 @@
     "processErrorFile": "Error processing \"{{filename}}\"",
     "saveAll": "Save All ({{count}})",
     "multiSaveSuccess": "{{count}} templates saved successfully!",
+    "multiSavePartial": "{{success}} templates saved, {{failed}} failed",
+    "multiSaveFailed": "Failed to save {{count}} template(s)",
+    "multiProcessPartial": "{{success}} documents processed, {{failed}} failed",
+    "multiProcessFailed": "Failed to process {{count}} document(s)",
+    "batchStatus": {
+      "title": "Processing Status",
+      "pending": "Pending",
+      "processing": "Processing...",
+      "success": "Completed",
+      "error": "Failed",
+      "retryFailed": "Retry Failed",
+      "retryAll": "Retry All Failed",
+      "dismiss": "Dismiss",
+      "filesProcessed": "{{success}} of {{total}} files processed",
+      "filesSaved": "{{success}} of {{total}} files saved"
+    },
     "multiSaveAsTitle": "Save {{count}} Templates As",
     "multiSaveAsModifierType": "How to modify filenames?",
     "multiSaveAsPrefix": "Prefix",
@@ -141,6 +205,14 @@
     "multiSaveAsSuccess": "{{count}} templates saved as new files successfully!",
     "saveErrorFile": "Error saving \"{{filename}}\"",
     "noTemplatesToSave": "No templates to save",
+    "saveDefaults": "Save as Defaults",
+    "saveDefaultsSuccess": "Default values saved successfully!",
+    "saveDefaultsFailed": "Failed to save default values",
+    "clearDefaults": "Clear Defaults",
+    "clearDefaultsSuccess": "Default values cleared",
+    "loadDefaults": "Load Defaults",
+    "defaultsLoaded": "Default values loaded",
+    "noDefaults": "No default values saved for this template",
     "progress": {
       "loading": "Loading document...",
       "parsing": "Parsing document...",
@@ -226,5 +298,19 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "templateRename": {
+    "title": "Rename Template",
+    "currentName": "Current name",
+    "newName": "New name",
+    "placeholder": "Enter new filename...",
+    "renameButton": "Rename",
+    "renaming": "Renaming...",
+    "renameSuccess": "Template renamed to \"{{filename}}\"",
+    "renameFailed": "Failed to rename template",
+    "nameEmpty": "Filename cannot be empty",
+    "nameTooLong": "Filename too long (max 100 characters)",
+    "invalidChars": "Invalid characters: /\\:*?\"<>|",
+    "nameExists": "A file with this name already exists in this folder"
   }
 }

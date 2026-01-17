@@ -1,16 +1,19 @@
 import { Doc } from "@junobuild/core";
 import { FC, useEffect, useCallback, useState } from "react";
-import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files } from 'lucide-react';
+import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files, BookmarkPlus, BookmarkCheck, Trash2 } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
 import { useTranslation } from "react-i18next";
 import { useProcessor } from "../contexts/ProcessorContext";
 import { useWordTemplateProcessor } from "../hooks/useWordTemplateProcessor";
 import { useMultiFileProcessor } from "../hooks/useMultiFileProcessor";
+import { useDraftRecovery } from "../hooks/useDraftRecovery";
 import { UnsavedChangesDialog } from "./modals/UnsavedChangesDialog";
 import { SaveAsDialog } from "./modals/SaveAsDialog";
 import { MultiSaveAsDialog } from "./modals/MultiSaveAsDialog";
+import { DraftRecoveryDialog } from "./modals/DraftRecoveryDialog";
 import { VirtualizedFieldList } from "./processor/VirtualizedFieldList";
+import { BatchStatusPanel } from "./processor/BatchStatusPanel";
 
 interface WordTemplateProcessorProps {
   // Single file mode
@@ -39,6 +42,24 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
   // Determine if we're in multi-file mode
   const isMultiFileMode = templates.length > 1 || files.length > 1;
+
+  // Generate a unique ID for draft recovery (use template key or file name)
+  const templateId = template?.key || file?.name || (templates[0]?.key) || (files[0]?.name) || null;
+  const templateName = template?.data.name || file?.name || (templates[0]?.data.name) || (files[0]?.name) || undefined;
+
+  // Draft recovery hook - only enabled for single-file mode with a template
+  const {
+    showRecoveryPrompt,
+    draftData,
+    restoreDraft,
+    dismissDraft,
+    clearDraft,
+    updateFormData,
+  } = useDraftRecovery({
+    templateId: templateId || undefined,
+    templateName,
+    enabled: !isMultiFileMode && !!templateId,
+  });
 
   // Use the appropriate hook based on mode
   const singleFileHook = useWordTemplateProcessor({
@@ -71,7 +92,10 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const processDocument = isMultiFileMode ? multiFileHook.processAllDocuments : singleFileHook.processDocument;
 
   // Multi-file specific properties
-  const { fieldData, processingTemplates, savableTemplates, saveAllDocumentsAs } = multiFileHook;
+  const { fieldData, processingTemplates, savableTemplates, saveAllDocumentsAs, fileStatuses, getFailedFileIds, clearFileStatuses } = multiFileHook;
+
+  // Default values functions (single-file mode only)
+  const { saveDefaults, clearDefaults, loadDefaults, hasDefaults } = singleFileHook;
 
   // Expanded state for file sections in multi-file mode
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
@@ -107,6 +131,35 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     setHasUnsavedChanges(hasChanges);
   }, [hasChanges, setHasUnsavedChanges]);
 
+  // Sync form data with draft recovery for auto-save
+  useEffect(() => {
+    if (!isMultiFileMode) {
+      updateFormData(formData, hasChanges);
+    }
+  }, [formData, hasChanges, isMultiFileMode, updateFormData]);
+
+  // State for tracking if draft was restored (to apply it after loading)
+  const [pendingDraftRestore, setPendingDraftRestore] = useState<Record<string, string> | null>(null);
+
+  // Handle draft restoration
+  const handleRestoreDraft = useCallback(() => {
+    const restoredData = restoreDraft();
+    if (restoredData) {
+      setPendingDraftRestore(restoredData);
+    }
+  }, [restoreDraft]);
+
+  // Apply restored draft after loading completes
+  useEffect(() => {
+    if (pendingDraftRestore && !loading && !isMultiFileMode) {
+      // Apply each field from the restored draft
+      Object.entries(pendingDraftRestore).forEach(([fieldName, value]) => {
+        handleInputChange(fieldName, value);
+      });
+      setPendingDraftRestore(null);
+    }
+  }, [pendingDraftRestore, loading, isMultiFileMode, handleInputChange]);
+
   // Enhanced cancel with change detection
   const handleCancel = useCallback(() => {
     if (!hasChanges) {
@@ -115,6 +168,18 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     }
     setShowUnsavedChangesDialog(true);
   }, [hasChanges, onClose]);
+
+  // Handle ESC key to trigger cancel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !saving && !processing) {
+        handleCancel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleCancel, saving, processing]);
 
   // Set up navigation request handler for logo clicks
   useEffect(() => {
@@ -181,14 +246,32 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const handleProcessAndClose = async () => {
     const success = await processDocument();
     if (success) {
+      clearDraft(); // Clear draft after successful processing
       onClose();
     }
+  };
+
+  // Wrap handleSave to clear draft on success
+  const handleSaveWithDraftClear = async () => {
+    const success = await handleSave();
+    if (success) {
+      clearDraft();
+    }
+    return success;
   };
 
   const isFormValid = true; // All fields are optional
 
   return (
     <div className="flex flex-col">
+      {/* Draft Recovery Dialog */}
+      <DraftRecoveryDialog
+        isOpen={showRecoveryPrompt}
+        savedAt={draftData?.savedAt || Date.now()}
+        onRestore={handleRestoreDraft}
+        onDiscard={dismissDraft}
+      />
+
       {/* Save As Dialog (Single File) */}
       <SaveAsDialog
         isOpen={showSaveAsDialog}
@@ -216,7 +299,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
         isOpen={showUnsavedChangesDialog}
         hasTemplate={!!template}
         isLoading={saving}
-        onSave={handleSave}
+        onSave={handleSaveWithDraftClear}
         onSaveAs={openSaveAsDialog}
         onDiscard={onClose}
         onClose={() => setShowUnsavedChangesDialog(false)}
@@ -257,6 +340,16 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
       {/* Content */}
       <div className="bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pb-32 rounded-b-lg">
         <div className="p-4 sm:p-8">
+          {/* Batch Status Panel for multi-file mode */}
+          {isMultiFileMode && (
+            <BatchStatusPanel
+              fileStatuses={fileStatuses}
+              onRetryFailed={() => processDocument(getFailedFileIds())}
+              onDismiss={clearFileStatuses}
+              isProcessing={processing}
+            />
+          )}
+
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 sm:py-16">
               <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-blue-600 mb-4" />
@@ -282,11 +375,48 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                   {/* Single-file mode header */}
                   {!isMultiFileMode && (
                     <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4 mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
-                          {t('templateProcessor.customizationTitle')}
-                        </h3>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
+                            {t('templateProcessor.customizationTitle')}
+                          </h3>
+                        </div>
+                        {/* Default values buttons - only for saved templates */}
+                        {template && (
+                          <div className="flex items-center gap-1">
+                            {hasDefaults && (
+                              <>
+                                <button
+                                  onClick={loadDefaults}
+                                  disabled={saving || processing}
+                                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/50 rounded-md transition-colors disabled:opacity-50"
+                                  title={t('templateProcessor.loadDefaults')}
+                                >
+                                  <BookmarkCheck className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">{t('templateProcessor.loadDefaults')}</span>
+                                </button>
+                                <button
+                                  onClick={clearDefaults}
+                                  disabled={saving || processing}
+                                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800/50 rounded-md transition-colors disabled:opacity-50"
+                                  title={t('templateProcessor.clearDefaults')}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={saveDefaults}
+                              disabled={saving || processing}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 dark:hover:bg-purple-800/50 rounded-md transition-colors disabled:opacity-50"
+                              title={t('templateProcessor.saveDefaults')}
+                            >
+                              <BookmarkPlus className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">{t('templateProcessor.saveDefaults')}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: allFields.length }) }}>
                       </p>
@@ -351,7 +481,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
               {/* Save button - for saved templates (single-file or multi-file mode) */}
               {((!isMultiFileMode && template) || (isMultiFileMode && savableTemplates.length > 0)) && (
                 <button
-                  onClick={handleSave}
+                  onClick={handleSaveWithDraftClear}
                   disabled={!isFormValid || saving || processing}
                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:hover:bg-slate-400 text-white font-bold py-3 px-3 sm:px-6 rounded-xl transition-all duration-200 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg hover:shadow-xl disabled:shadow-none"
                 >

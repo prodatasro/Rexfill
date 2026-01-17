@@ -2,9 +2,37 @@
   "app": {
     "title": "Rexfill"
   },
+  "errors": {
+    "timeout": "Požiadavka vypršala. Skontrolujte pripojenie a skúste znova.",
+    "networkError": "Chyba siete. Skontrolujte pripojenie."
+  },
+  "errorBoundary": {
+    "title": "Niečo sa pokazilo",
+    "message": "Nastala neočakávaná chyba. Vaša práca nemusela byť uložená.",
+    "technicalDetails": "Technické detaily",
+    "tryAgain": "Skúsiť znova",
+    "goHome": "Domov",
+    "persistsHint": "Ak problém pretrváva, skúste obnoviť stránku alebo vymazať cache prehliadača."
+  },
+  "draftRecovery": {
+    "title": "Obnoviť koncept?",
+    "message": "Našli sme neuložený koncept z {{date}}. Chcete ho obnoviť?",
+    "restore": "Obnoviť koncept",
+    "discard": "Zahodiť"
+  },
   "header": {
     "logout": "Odhlásiť sa",
     "toggleTheme": "Prepnúť tému"
+  },
+  "globalSearch": {
+    "title": "Vyhľadávanie",
+    "placeholder": "Hľadať...",
+    "inputPlaceholder": "Hľadať šablóny a priečinky...",
+    "noResults": "Žiadne výsledky",
+    "navigate": "na navigáciu",
+    "select": "na výber",
+    "close": "na zatvorenie",
+    "hint": "Začnite písať pre vyhľadávanie šablón a priečinkov"
   },
   "login": {
     "title": "Rexfill",
@@ -14,7 +42,10 @@
   },
   "dashboard": {
     "title": "Vaše Word šablóny",
-    "subtitle": "Nahrajte DOCX súbory s premennými ako {{name}} a vypĺňajte ich dynamicky."
+    "subtitle": "Nahrajte DOCX súbory s premennými ako {{name}} a vypĺňajte ich dynamicky.",
+    "recentTemplates": "Nedávne šablóny",
+    "noRecentTemplates": "Žiadne nedávno použité šablóny",
+    "clearRecent": "Vymazať"
   },
   "fileUpload": {
     "title": "Nahrať Word šablónu",
@@ -23,6 +54,9 @@
     "uploading": "Nahrávam...",
     "fileExists": "Súbor s názvom \"{{filename}}\" už existuje v tomto priečinku. Prosím premenujte váš súbor alebo vyberte iný.",
     "invalidFileType": "Prosím vyberte .docx súbor",
+    "fileTooLarge": "Súbor \"{{filename}}\" prekračuje maximálnu veľkosť {{maxSize}}MB",
+    "fileLargeWarning": "Súbor \"{{filename}}\" má {{size}}MB. Veľké súbory môžu trvať dlhšie na spracovanie.",
+    "someFilesTooLarge": "{{count}} súbor(ov) prekročilo maximálnu veľkosť",
     "someFilesInvalid": "Niektoré súbory boli preskočené (povolené sú iba .docx súbory)",
     "uploadSuccess": "Šablóna \"{{filename}}\" bola úspešne nahraná!",
     "uploadMultipleSuccess": "{{count}} šablón bolo úspešne nahraných!",
@@ -42,7 +76,11 @@
     "rootFolder": "Koreň (Všetky šablóny)",
     "dropFilesHere": "Sem presuňte súbory",
     "dropFilesHint": "Pustite pre nahratie .docx súborov",
-    "uploadToFolder": "Nahrať do priečinka"
+    "uploadToFolder": "Nahrať do priečinka",
+    "uploadProgress": "{{current}} z {{total}}",
+    "statusPreparing": "Pripravujem...",
+    "statusUploading": "Nahrávam...",
+    "statusSaving": "Ukladám..."
   },
   "fileList": {
     "title": "Šablóny",
@@ -86,7 +124,17 @@
     "deleteSelectedConfirmMessage": "Naozaj chcete zmazať {{count}} šablón(y)? Túto akciu nie je možné vrátiť späť.",
     "deleteSelectedSuccess": "{{count}} šablón(y) bolo úspešne zmazaných",
     "deleteSelectedFailed": "Nepodarilo sa zmazať {{count}} šablón(y)",
-    "deleting": "Mazanie..."
+    "deleting": "Mazanie...",
+    "toggleFavorite": "Prepnúť obľúbené",
+    "favoriteFailed": "Nepodarilo sa aktualizovať stav obľúbených",
+    "favorites": "Obľúbené",
+    "showFavorites": "Zobraziť iba obľúbené",
+    "duplicateTemplate": "Duplikovať šablónu",
+    "duplicateSuccess": "Šablóna bola duplikovaná ako \"{{filename}}\"",
+    "duplicateFailed": "Nepodarilo sa duplikovať šablónu",
+    "renameTemplate": "Premenovať šablónu",
+    "placeholder": "pole",
+    "placeholders": "polí"
   },
   "templateProcessor": {
     "title": "Spracovať šablónu",
@@ -131,6 +179,22 @@
     "processErrorFile": "Chyba pri spracovaní \"{{filename}}\"",
     "saveAll": "Uložiť všetko ({{count}})",
     "multiSaveSuccess": "{{count}} šablón bolo úspešne uložených!",
+    "multiSavePartial": "{{success}} šablón uložených, {{failed}} zlyhalo",
+    "multiSaveFailed": "Nepodarilo sa uložiť {{count}} šablón",
+    "multiProcessPartial": "{{success}} dokumentov spracovaných, {{failed}} zlyhalo",
+    "multiProcessFailed": "Nepodarilo sa spracovať {{count}} dokumentov",
+    "batchStatus": {
+      "title": "Stav spracovania",
+      "pending": "Čaká",
+      "processing": "Spracúva sa...",
+      "success": "Dokončené",
+      "error": "Zlyhalo",
+      "retryFailed": "Opakovať zlyhané",
+      "retryAll": "Opakovať všetky zlyhané",
+      "dismiss": "Zavrieť",
+      "filesProcessed": "{{success}} z {{total}} súborov spracovaných",
+      "filesSaved": "{{success}} z {{total}} súborov uložených"
+    },
     "multiSaveAsTitle": "Uložiť {{count}} šablón ako",
     "multiSaveAsModifierType": "Ako upraviť názvy súborov?",
     "multiSaveAsPrefix": "Predpona",
@@ -143,6 +207,14 @@
     "multiSaveAsSuccess": "{{count}} šablón bolo úspešne uložených ako nové súbory!",
     "saveErrorFile": "Chyba pri ukladaní \"{{filename}}\"",
     "noTemplatesToSave": "Žiadne šablóny na uloženie",
+    "saveDefaults": "Uložiť ako predvolené",
+    "saveDefaultsSuccess": "Predvolené hodnoty boli úspešne uložené!",
+    "saveDefaultsFailed": "Nepodarilo sa uložiť predvolené hodnoty",
+    "clearDefaults": "Vymazať predvolené",
+    "clearDefaultsSuccess": "Predvolené hodnoty boli vymazané",
+    "loadDefaults": "Načítať predvolené",
+    "defaultsLoaded": "Predvolené hodnoty boli načítané",
+    "noDefaults": "Žiadne predvolené hodnoty pre túto šablónu",
     "progress": {
       "loading": "Načítavam dokument...",
       "parsing": "Analyzujem dokument...",
@@ -228,5 +300,19 @@
     "moveTo": "Presunúť do",
     "moveButton": "Presunúť šablónu",
     "moving": "Presúvam..."
+  },
+  "templateRename": {
+    "title": "Premenovať šablónu",
+    "currentName": "Aktuálny názov",
+    "newName": "Nový názov",
+    "placeholder": "Zadajte nový názov súboru...",
+    "renameButton": "Premenovať",
+    "renaming": "Premenovávam...",
+    "renameSuccess": "Šablóna bola premenovaná na \"{{filename}}\"",
+    "renameFailed": "Nepodarilo sa premenovať šablónu",
+    "nameEmpty": "Názov súboru nemôže byť prázdny",
+    "nameTooLong": "Názov súboru je príliš dlhý (max 100 znakov)",
+    "invalidChars": "Nepovolené znaky: /\\:*?\"<>|",
+    "nameExists": "Súbor s týmto názvom už existuje v tomto priečinku"
   }
 }

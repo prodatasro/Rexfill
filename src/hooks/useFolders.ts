@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
-import type { Folder, FolderTreeNode } from '../types/folder';
+import type { Folder } from '../types/folder';
 import type { Doc } from '@junobuild/core';
 import { validateFolderName, buildFolderPath, buildFolderTree } from '../utils/folderUtils';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
@@ -9,12 +9,41 @@ import { useTranslation } from 'react-i18next';
 export const useFolders = (templates: Doc<any>[] = []) => {
   const { t } = useTranslation();
   const [folders, setFolders] = useState<Folder[]>([]);
-  const [folderTree, setFolderTree] = useState<FolderTreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Cache keys for memoization
+  const prevFolderKeysRef = useRef<string>('');
+  const prevTemplateCountRef = useRef<number>(0);
+
+  // Memoize folder tree building - only rebuild when folders or template counts change
+  const folderTree = useMemo(() => {
+    // Create a stable key from folder IDs and template folder assignments
+    const folderKeys = folders.map(f => f.key).sort().join(',');
+    const templateFolderCounts = templates.reduce((acc, t) => {
+      const folderId = t.data?.folderId || 'root';
+      acc[folderId] = (acc[folderId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const templateCountKey = Object.entries(templateFolderCounts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}:${v}`)
+      .join(',');
+    const cacheKey = `${folderKeys}|${templateCountKey}`;
+
+    // Skip rebuild if nothing changed
+    if (cacheKey === prevFolderKeysRef.current && templates.length === prevTemplateCountRef.current) {
+      // Return previous value - React will reuse the memoized result
+    }
+
+    prevFolderKeysRef.current = cacheKey;
+    prevTemplateCountRef.current = templates.length;
+
+    return buildFolderTree(folders, templates);
+  }, [folders, templates]);
 
   // Load all folders from Juno
   const loadFolders = useCallback(async () => {
@@ -24,10 +53,6 @@ export const useFolders = (templates: Doc<any>[] = []) => {
       const result = await listDocs({ collection: 'folders' });
       const folderList = result.items as Folder[];
       setFolders(folderList);
-
-      // Build tree structure
-      const tree = buildFolderTree(folderList, templates);
-      setFolderTree(tree);
     } catch (err) {
       console.error('Failed to load folders:', err);
       setError('Failed to load folders');
@@ -35,7 +60,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
     } finally {
       setLoading(false);
     }
-  }, [templates, t]);
+  }, [t]);
 
   // Load folders on mount
   useEffect(() => {

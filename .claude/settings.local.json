@@ -12,7 +12,10 @@
       "Bash(echo:*)",
       "Bash(npm run lint)",
       "Bash(tasklist:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(while read commit msg)",
+      "Bash(do echo \"=== $msg ===\")",
+      "Bash(done)"
     ]
   }
 }

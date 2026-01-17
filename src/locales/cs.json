@@ -2,9 +2,33 @@
   "app": {
     "title": "Rexfill"
   },
+  "errorBoundary": {
+    "title": "Něco se pokazilo",
+    "message": "Nastala neočekávaná chyba. Vaše práce nemusela být uložena.",
+    "technicalDetails": "Technické detaily",
+    "tryAgain": "Zkusit znovu",
+    "goHome": "Domů",
+    "persistsHint": "Pokud problém přetrvává, zkuste obnovit stránku nebo vymazat cache prohlížeče."
+  },
+  "draftRecovery": {
+    "title": "Obnovit koncept?",
+    "message": "Našli jsme neuložený koncept z {{date}}. Chcete ho obnovit?",
+    "restore": "Obnovit koncept",
+    "discard": "Zahodit"
+  },
   "header": {
     "logout": "Odhlásit se",
     "toggleTheme": "Přepnout téma"
+  },
+  "globalSearch": {
+    "title": "Vyhledávání",
+    "placeholder": "Hledat...",
+    "inputPlaceholder": "Hledat šablony a složky...",
+    "noResults": "Žádné výsledky",
+    "navigate": "pro navigaci",
+    "select": "pro výběr",
+    "close": "pro zavření",
+    "hint": "Začněte psát pro vyhledávání šablon a složek"
   },
   "login": {
     "title": "Rexfill",
@@ -81,7 +105,14 @@
     "deleteSelectedConfirmMessage": "Opravdu chcete smazat {{count}} šablon(y)? Tuto akci nelze vrátit zpět.",
     "deleteSelectedSuccess": "{{count}} šablon(y) bylo úspěšně smazáno",
     "deleteSelectedFailed": "Nepodařilo se smazat {{count}} šablon(y)",
-    "deleting": "Mazání..."
+    "deleting": "Mazání...",
+    "toggleFavorite": "Přepnout oblíbené",
+    "favoriteFailed": "Nepodařilo se aktualizovat stav oblíbených",
+    "favorites": "Oblíbené",
+    "showFavorites": "Zobrazit pouze oblíbené",
+    "duplicateTemplate": "Duplikovat šablonu",
+    "duplicateSuccess": "Šablona byla duplikována jako \"{{filename}}\"",
+    "duplicateFailed": "Nepodařilo se duplikovat šablonu"
   },
   "templateProcessor": {
     "title": "Zpracovat šablonu",
