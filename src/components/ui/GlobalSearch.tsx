@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Search, X, FileText, Folder, Command } from 'lucide-react';
+import { Search, X, FileText, Folder, Command, FolderOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import type { Doc } from '@junobuild/core';
@@ -165,6 +165,16 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
     }
   }, [onSelectTemplate, onSelectFolder, navigate, closeSearch]);
 
+  // Handle go to folder (for templates)
+  const handleGoToFolder = useCallback((e: React.MouseEvent, result: SearchResult) => {
+    e.stopPropagation();
+    closeSearch();
+    if (result.type === 'template' && result.template) {
+      onSelectFolder(result.template.data.folderId ?? null);
+      navigate('/');
+    }
+  }, [onSelectFolder, navigate, closeSearch]);
+
   // Format file size
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -229,37 +239,51 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
           )}
 
           {results.map((result, index) => (
-            <button
+            <div
               key={`${result.type}-${result.id}`}
-              onClick={() => handleSelect(result)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
                 index === selectedIndex
                   ? 'bg-blue-50 dark:bg-blue-900/30'
                   : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'
               }`}
             >
-              {result.type === 'template' ? (
-                <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
-              ) : (
-                <Folder className="w-5 h-5 text-amber-500 flex-shrink-0" />
+              <button
+                onClick={() => handleSelect(result)}
+                className="flex-1 flex items-center gap-3 text-left min-w-0"
+              >
+                {result.type === 'template' ? (
+                  <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                ) : (
+                  <Folder className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                    {result.name}
+                  </div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                    {result.path || '/'}
+                    {result.type === 'template' && result.template && (
+                      <span className="ml-2">• {formatSize(result.template.data.size)}</span>
+                    )}
+                  </div>
+                </div>
+              </button>
+              {result.type === 'template' && (
+                <button
+                  onClick={(e) => handleGoToFolder(e, result)}
+                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors flex-shrink-0"
+                  title={t('globalSearch.goToFolder')}
+                  aria-label={t('globalSearch.goToFolder')}
+                >
+                  <FolderOpen className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                </button>
               )}
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                  {result.name}
-                </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                  {result.path || '/'}
-                  {result.type === 'template' && result.template && (
-                    <span className="ml-2">• {formatSize(result.template.data.size)}</span>
-                  )}
-                </div>
-              </div>
               {index === selectedIndex && (
-                <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs text-slate-500 dark:text-slate-400">
+                <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
                   ↵
                 </kbd>
               )}
-            </button>
+            </div>
           ))}
         </div>
 
