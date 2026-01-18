@@ -1,9 +1,11 @@
 import { FC, useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X, Loader2, Star, Copy, Pencil, MoreVertical } from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { ClipboardList, Search, ChevronLeft, ChevronRight, X, Loader2, Star, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Doc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import FileListItem from './FileListItem';
 import { showErrorToast, showSuccessToast, showWarningToast } from '../../utils/toast';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +16,11 @@ import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
 import { setDocWithTimeout, deleteDocWithTimeout, deleteAssetWithTimeout, listAssetsWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+
+// Threshold for enabling virtualization - only virtualize when we have many items
+const VIRTUALIZATION_THRESHOLD = 20;
+// Estimated height of each FileListItem row (in pixels)
+const ROW_HEIGHT_ESTIMATE = 64;
 
 type SortField = 'name' | 'size' | 'createdOn' | 'favorite';
 type SortDirection = 'asc' | 'desc';
@@ -245,24 +252,6 @@ const FileList: FC<FileListProps> = ({
       console.error('Move failed:', error);
       showErrorToast(t('fileList.moveFailed'));
     }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   // Filter, sort, and paginate templates
@@ -542,7 +531,45 @@ const FileList: FC<FileListProps> = ({
 
   // Mobile action menu state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Virtualization
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const shouldVirtualize = paginatedTemplates.length > VIRTUALIZATION_THRESHOLD;
+
+  const rowVirtualizer = useVirtualizer({
+    count: paginatedTemplates.length,
+    getScrollElement: () => listContainerRef.current,
+    estimateSize: () => ROW_HEIGHT_ESTIMATE,
+    overscan: 5,
+    enabled: shouldVirtualize,
+  });
+
+  // Stable callbacks for FileListItem to prevent re-renders
+  const handleItemSelect = useCallback((template: Doc<WordTemplateData>, selected: boolean) => {
+    handleCheckboxChange(template, selected);
+  }, [handleCheckboxChange]);
+
+  const handleItemRowClick = useCallback((template: Doc<WordTemplateData>, index: number, e: React.MouseEvent) => {
+    handleRowClick(template, index, e);
+    lastSelectedIndexRef.current = index;
+  }, [handleRowClick]);
+
+  const handleItemDuplicate = useCallback((template: Doc<WordTemplateData>) => {
+    setTemplateToDuplicate(template);
+  }, []);
+
+  const handleItemRename = useCallback((template: Doc<WordTemplateData>) => {
+    setTemplateToRename(template);
+  }, []);
+
+  const handleItemMove = useCallback((template: Doc<WordTemplateData>) => {
+    setTemplateToMove(template);
+  }, []);
+
+  const handleMenuToggle = useCallback((templateKey: string | null) => {
+    setOpenMenuId(templateKey);
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -864,7 +891,12 @@ const FileList: FC<FileListProps> = ({
       </div>
 
       {/* File List - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-4" role="region" aria-label={t('fileList.title')}>
+      <div
+        ref={listContainerRef}
+        className="flex-1 overflow-y-auto px-4"
+        role="region"
+        aria-label={t('fileList.title')}
+      >
         {totalFilteredCount === 0 ? (
           <div className="text-center py-8 sm:py-12 px-4">
             <ClipboardList className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-slate-400 dark:text-slate-600" aria-hidden="true" />
@@ -875,252 +907,76 @@ const FileList: FC<FileListProps> = ({
               {t('fileList.getStarted')}
             </p>
           </div>
-        ) : (
-          <div className="space-y-1 pb-4" role="list" aria-label={t('fileList.title')}>
-            {paginatedTemplates.map((template, index) => {
-              const isDeleting = deletingIds.has(template.key);
-              const isSelected = selectedTemplateIds.has(template.key);
-
+        ) : shouldVirtualize ? (
+          /* Virtualized list for many items */
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+            role="list"
+            aria-label={t('fileList.title')}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+              const template = paginatedTemplates[virtualItem.index];
               return (
                 <div
                   key={template.key}
-                  role="listitem"
-                  aria-selected={isSelected}
-                  className={`flex items-center gap-3 py-3 px-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-sm transition-all duration-200 ${
-                    isSelected ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800' : ''
-                  }`}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualItem.start}px)`,
+                  }}
                 >
-                  {/* Checkbox */}
-                  <button
-                    className="shrink-0 p-0.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCheckboxChange(template, !isSelected);
-                      lastSelectedIndexRef.current = index;
-                    }}
-                    aria-label={isSelected ? t('fileList.clearSelection') : t('fileList.selectAll')}
-                    aria-pressed={isSelected}
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    ) : (
-                      <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
-                    )}
-                  </button>
-
-                  {/* File Icon */}
-                  <FileText className="w-5 h-5 shrink-0 text-slate-400 dark:text-slate-600" />
-
-                  {/* File Name and Path */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-slate-900 dark:text-slate-50 truncate">
-                      <span
-                        className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                        title={template.data.name}
-                        onClick={(e) => handleRowClick(template, index, e)}
-                      >
-                        {template.data.name}
-                      </span>
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                      {template.data.folderPath || '/'}
-                    </p>
-                  </div>
-
-                  {/* Placeholder Count Badge */}
-                  {template.data.placeholderCount !== undefined && template.data.placeholderCount > 0 && (
-                    <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium shrink-0">
-                      <span>{template.data.placeholderCount}</span>
-                      <span>{template.data.placeholderCount === 1 ? t('fileList.placeholder') : t('fileList.placeholders')}</span>
-                    </div>
-                  )}
-
-                  {/* Custom Property Count Badge */}
-                  {template.data.customPropertyCount !== undefined && template.data.customPropertyCount > 0 && (
-                    <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium shrink-0">
-                      <span>{template.data.customPropertyCount}</span>
-                      <span>{template.data.customPropertyCount === 1 ? t('fileList.customProperty') : t('fileList.customProperties')}</span>
-                    </div>
-                  )}
-
-                  {/* Metadata - Hidden on mobile, visible on tablet+ */}
-                  <div className="hidden sm:flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 shrink-0">
-                    <span>{formatFileSize(template.data.size)}</span>
-                    <span>{formatDate(template.data.uploadedAt)}</span>
-                  </div>
-
-                  {/* Action Buttons - Desktop */}
-                  <div className="hidden sm:flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleToggleFavorite(template)}
-                      disabled={isDeleting}
-                      className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        template.data.isFavorite
-                          ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-slate-700'
-                          : 'text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-slate-700'
-                      }`}
-                      title={t('fileList.toggleFavorite')}
-                      aria-label={t('fileList.toggleFavorite')}
-                    >
-                      <Star className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`} />
-                    </button>
-
-                    <button
-                      onClick={() => handleDownload(template)}
-                      disabled={isDeleting}
-                      className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={t('fileList.downloadTemplate')}
-                      aria-label={t('fileList.downloadTemplate')}
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => setTemplateToDuplicate(template)}
-                      disabled={isDeleting || duplicatingIds.has(template.key)}
-                      className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={t('fileList.duplicateTemplate')}
-                      aria-label={t('fileList.duplicateTemplate')}
-                    >
-                      {duplicatingIds.has(template.key) ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => setTemplateToRename(template)}
-                      disabled={isDeleting}
-                      className="p-1.5 text-amber-500 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={t('fileList.renameTemplate')}
-                      aria-label={t('fileList.renameTemplate')}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => setTemplateToMove(template)}
-                      disabled={isDeleting}
-                      className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={t('fileList.moveTemplate')}
-                      aria-label={t('fileList.moveTemplate')}
-                    >
-                      <Move className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(template)}
-                      disabled={isDeleting}
-                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={t('fileList.deleteTemplate')}
-                      aria-label={t('fileList.deleteTemplate')}
-                    >
-                      {isDeleting ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Action Buttons - Mobile: Favorite + Dropdown Menu */}
-                  <div className="flex sm:hidden gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleToggleFavorite(template)}
-                      disabled={isDeleting}
-                      className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        template.data.isFavorite
-                          ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-slate-700'
-                          : 'text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-slate-700'
-                      }`}
-                      title={t('fileList.toggleFavorite')}
-                      aria-label={t('fileList.toggleFavorite')}
-                    >
-                      <Star className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`} />
-                    </button>
-
-                    {/* More Actions Menu */}
-                    <div className="relative" ref={openMenuId === template.key ? menuRef : undefined}>
-                      <button
-                        onClick={() => setOpenMenuId(openMenuId === template.key ? null : template.key)}
-                        disabled={isDeleting}
-                        className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={t('fileList.moreActions')}
-                        aria-label={t('fileList.moreActions')}
-                        aria-expanded={openMenuId === template.key}
-                        aria-haspopup="true"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {openMenuId === template.key && (
-                        <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
-                          <button
-                            onClick={() => {
-                              handleDownload(template);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                          >
-                            <Download className="w-4 h-4 text-green-500" />
-                            {t('fileList.downloadTemplate')}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setTemplateToDuplicate(template);
-                              setOpenMenuId(null);
-                            }}
-                            disabled={duplicatingIds.has(template.key)}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
-                          >
-                            <Copy className="w-4 h-4 text-purple-500" />
-                            {t('fileList.duplicateTemplate')}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setTemplateToRename(template);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                          >
-                            <Pencil className="w-4 h-4 text-amber-500" />
-                            {t('fileList.renameTemplate')}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setTemplateToMove(template);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                          >
-                            <Move className="w-4 h-4 text-blue-500" />
-                            {t('fileList.moveTemplate')}
-                          </button>
-
-                          <div className="border-t border-slate-200 dark:border-slate-700 my-1" />
-
-                          <button
-                            onClick={() => {
-                              handleDelete(template);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            {t('fileList.deleteTemplate')}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <FileListItem
+                    template={template}
+                    index={virtualItem.index}
+                    isSelected={selectedTemplateIds.has(template.key)}
+                    isDeleting={deletingIds.has(template.key)}
+                    isDuplicating={duplicatingIds.has(template.key)}
+                    isMenuOpen={openMenuId === template.key}
+                    onSelect={handleItemSelect}
+                    onRowClick={handleItemRowClick}
+                    onToggleFavorite={handleToggleFavorite}
+                    onDownload={handleDownload}
+                    onDuplicate={handleItemDuplicate}
+                    onRename={handleItemRename}
+                    onMove={handleItemMove}
+                    onDelete={handleDelete}
+                    onMenuToggle={handleMenuToggle}
+                    menuRef={menuRef}
+                  />
                 </div>
               );
             })}
+          </div>
+        ) : (
+          /* Non-virtualized list for few items */
+          <div className="space-y-1 pb-4" role="list" aria-label={t('fileList.title')}>
+            {paginatedTemplates.map((template, index) => (
+              <FileListItem
+                key={template.key}
+                template={template}
+                index={index}
+                isSelected={selectedTemplateIds.has(template.key)}
+                isDeleting={deletingIds.has(template.key)}
+                isDuplicating={duplicatingIds.has(template.key)}
+                isMenuOpen={openMenuId === template.key}
+                onSelect={handleItemSelect}
+                onRowClick={handleItemRowClick}
+                onToggleFavorite={handleToggleFavorite}
+                onDownload={handleDownload}
+                onDuplicate={handleItemDuplicate}
+                onRename={handleItemRename}
+                onMove={handleItemMove}
+                onDelete={handleDelete}
+                onMenuToggle={handleMenuToggle}
+                menuRef={menuRef}
+              />
+            ))}
           </div>
         )}
       </div>

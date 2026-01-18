@@ -1,4 +1,5 @@
 import PizZip from "pizzip";
+import { escapeXml, escapeRegex } from "./xmlUtils";
 
 export interface CustomProperty {
   name: string;
@@ -86,18 +87,6 @@ function createCustomPropertiesXml(properties: Record<string, string>): string {
 }
 
 /**
- * Escape special XML characters
- */
-function escapeXml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-/**
  * Update document fields after changing custom properties
  * This updates DOCPROPERTY field values in the document
  */
@@ -167,11 +156,4 @@ export function updateDocumentFields(zip: PizZip, properties: Record<string, str
     // Save changes
     zip.file(fileName, xmlContent);
   });
-}
-
-/**
- * Escape special characters for use in regular expressions
- */
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

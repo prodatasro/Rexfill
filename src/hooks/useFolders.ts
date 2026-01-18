@@ -178,21 +178,25 @@ export const useFolders = (templates: Doc<any>[] = []) => {
           },
         });
 
-        // Update all subfolders' paths
+        // Update all subfolders' paths in parallel
         const subfolders = folders.filter((f) => f.data.parentId === folderId);
-        for (const subfolder of subfolders) {
-          const newSubPath = subfolder.data.path.replace(oldPath, newPath);
-          await setDocWithTimeout({
-            collection: 'folders',
-            doc: {
-              ...subfolder,
-              data: {
-                ...subfolder.data,
-                path: newSubPath,
-                updatedAt: Date.now(),
-              },
-            },
-          });
+        if (subfolders.length > 0) {
+          await Promise.all(
+            subfolders.map((subfolder) => {
+              const newSubPath = subfolder.data.path.replace(oldPath, newPath);
+              return setDocWithTimeout({
+                collection: 'folders',
+                doc: {
+                  ...subfolder,
+                  data: {
+                    ...subfolder.data,
+                    path: newSubPath,
+                    updatedAt: Date.now(),
+                  },
+                },
+              });
+            })
+          );
         }
 
         // Note: Templates will be updated by the component that calls this
@@ -230,12 +234,16 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         // Get all subfolders
         const subfolders = folders.filter((f) => f.data.parentId === folderId);
 
-        // Delete all subfolders
-        for (const subfolder of subfolders) {
-          await deleteDocWithTimeout({
-            collection: 'folders',
-            doc: subfolder,
-          });
+        // Delete all subfolders in parallel
+        if (subfolders.length > 0) {
+          await Promise.all(
+            subfolders.map((subfolder) =>
+              deleteDocWithTimeout({
+                collection: 'folders',
+                doc: subfolder,
+              })
+            )
+          );
         }
 
         // Delete the folder itself

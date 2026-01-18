@@ -3,7 +3,7 @@ import { FC, useEffect, useCallback, useState } from "react";
 import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { useProcessor } from "../contexts/ProcessorContext";
 import { useWordTemplateProcessor } from "../hooks/useWordTemplateProcessor";
 import { useMultiFileProcessor } from "../hooks/useMultiFileProcessor";
@@ -381,7 +381,12 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                           </h3>
                         </div>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: allFields.length }) }}>
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                        <Trans
+                          i18nKey="templateProcessor.customizationDesc"
+                          values={{ count: allFields.length }}
+                          components={{ strong: <strong /> }}
+                        />
                       </p>
                     </div>
                   )}

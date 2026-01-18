@@ -347,28 +347,32 @@ const Dashboard: FC = () => {
       const success = await renameFolder(folder.key, name);
 
       if (success) {
-        // Update all templates in this folder with new paths
+        // Update all templates in this folder with new paths in parallel
         const templatesInFolder = allTemplates.filter(t => t.data.folderId === folder.key);
         const updatedFolder = getFolderById(folder.key);
 
         if (updatedFolder) {
           const newPath = updatedFolder.data.path;
 
-          for (const template of templatesInFolder) {
-            const oldFullPath = template.data.fullPath || `${oldPath}/${template.data.name}`;
-            const newFullPath = updateTemplatePathAfterRename(oldFullPath, oldPath, newPath);
+          if (templatesInFolder.length > 0) {
+            await Promise.all(
+              templatesInFolder.map((template) => {
+                const oldFullPath = template.data.fullPath || `${oldPath}/${template.data.name}`;
+                const newFullPath = updateTemplatePathAfterRename(oldFullPath, oldPath, newPath);
 
-            await setDocWithTimeout({
-              collection: 'templates_meta',
-              doc: {
-                ...template,
-                data: {
-                  ...template.data,
-                  folderPath: newPath,
-                  fullPath: newFullPath
-                }
-              }
-            });
+                return setDocWithTimeout({
+                  collection: 'templates_meta',
+                  doc: {
+                    ...template,
+                    data: {
+                      ...template.data,
+                      folderPath: newPath,
+                      fullPath: newFullPath
+                    }
+                  }
+                });
+              })
+            );
           }
 
           await refreshTemplates();

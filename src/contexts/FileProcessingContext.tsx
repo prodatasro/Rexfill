@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, FC, ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, useCallback, FC, ReactNode } from 'react';
 
 interface FileProcessingContextType {
   // Single file processing (legacy)
@@ -22,22 +22,24 @@ export const FileProcessingProvider: FC<{ children: ReactNode }> = ({ children }
   const [multiTemplateIds, setMultiTemplateIds] = useState<string[]>([]);
   const [multiFiles, setMultiFiles] = useState<File[]>([]);
 
-  const clearProcessingData = () => {
+  const clearProcessingData = useCallback(() => {
     setOneTimeFile(null);
     setMultiTemplateIds([]);
     setMultiFiles([]);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    oneTimeFile,
+    setOneTimeFile,
+    multiTemplateIds,
+    setMultiTemplateIds,
+    multiFiles,
+    setMultiFiles,
+    clearProcessingData
+  }), [oneTimeFile, multiTemplateIds, multiFiles, clearProcessingData]);
 
   return (
-    <FileProcessingContext.Provider value={{
-      oneTimeFile,
-      setOneTimeFile,
-      multiTemplateIds,
-      setMultiTemplateIds,
-      multiFiles,
-      setMultiFiles,
-      clearProcessingData
-    }}>
+    <FileProcessingContext.Provider value={value}>
       {children}
     </FileProcessingContext.Provider>
   );

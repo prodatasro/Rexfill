@@ -5,25 +5,10 @@
 
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import { escapeXml, unescapeXml, escapeRegex } from "./xmlUtils";
 
-/**
- * Escape special XML characters
- */
-export function escapeXml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-/**
- * Escape special characters for use in regular expressions
- */
-export function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+// Re-export for backwards compatibility
+export { escapeXml, escapeRegex };
 
 /**
  * Get all document file paths that might contain fields
@@ -241,18 +226,6 @@ export function fixSplitPlaceholdersOptimized(xmlContent: string, placeholders: 
   }
 
   return result;
-}
-
-/**
- * Unescape XML entities back to characters
- */
-function unescapeXml(text: string): string {
-  return text
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
 }
 
 /**

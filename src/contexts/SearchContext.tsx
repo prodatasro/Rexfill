@@ -1,4 +1,4 @@
-import { createContext, useContext, FC, ReactNode, useState, useCallback } from 'react';
+import { createContext, useContext, FC, ReactNode, useState, useCallback, useMemo } from 'react';
 import type { Doc } from '@junobuild/core';
 import type { WordTemplateData } from '../types/word_template';
 import type { FolderTreeNode } from '../types/folder';
@@ -50,22 +50,34 @@ export const SearchProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setIsSearchOpen(false);
   }, []);
 
+  const value = useMemo(() => ({
+    allTemplates,
+    folderTree,
+    setAllTemplates,
+    setFolderTree,
+    onSelectTemplate,
+    onSelectFolder,
+    setOnSelectTemplate,
+    setOnSelectFolder,
+    isSearchOpen,
+    openSearch,
+    closeSearch,
+  }), [
+    allTemplates,
+    folderTree,
+    setAllTemplates,
+    setFolderTree,
+    onSelectTemplate,
+    onSelectFolder,
+    setOnSelectTemplate,
+    setOnSelectFolder,
+    isSearchOpen,
+    openSearch,
+    closeSearch,
+  ]);
+
   return (
-    <SearchContext.Provider
-      value={{
-        allTemplates,
-        folderTree,
-        setAllTemplates,
-        setFolderTree,
-        onSelectTemplate,
-        onSelectFolder,
-        setOnSelectTemplate,
-        setOnSelectFolder,
-        isSearchOpen,
-        openSearch,
-        closeSearch,
-      }}
-    >
+    <SearchContext.Provider value={value}>
       {children}
     </SearchContext.Provider>
   );

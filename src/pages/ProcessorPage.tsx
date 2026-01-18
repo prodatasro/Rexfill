@@ -8,6 +8,7 @@ import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
 import { useFileProcessing } from '../contexts/FileProcessingContext';
 import { useProcessor } from '../contexts/ProcessorContext';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 const ProcessorPage: FC = () => {
   const navigate = useNavigate();
@@ -152,11 +153,13 @@ const ProcessorPage: FC = () => {
   // Multi-file mode
   if (isMultiFileMode) {
     return (
-      <WordTemplateProcessor
-        templates={templates}
-        onClose={handleClose}
-        folderTree={folderTree}
-      />
+      <ErrorBoundary>
+        <WordTemplateProcessor
+          templates={templates}
+          onClose={handleClose}
+          folderTree={folderTree}
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -166,13 +169,15 @@ const ProcessorPage: FC = () => {
   }
 
   return (
-    <WordTemplateProcessor
-      template={template || undefined}
-      file={file || undefined}
-      onClose={handleClose}
-      folderTree={folderTree}
-      onTemplateChange={handleTemplateChange}
-    />
+    <ErrorBoundary>
+      <WordTemplateProcessor
+        template={template || undefined}
+        file={file || undefined}
+        onClose={handleClose}
+        folderTree={folderTree}
+        onTemplateChange={handleTemplateChange}
+      />
+    </ErrorBoundary>
   );
 };
 
