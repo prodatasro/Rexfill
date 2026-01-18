@@ -186,7 +186,7 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
     return (
       <button
         onClick={openSearch}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-500 dark:text-slate-400 text-sm"
+        className="flex items-center gap-2 px-3 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-slate-500 dark:text-slate-400 text-sm"
         aria-label={t('globalSearch.placeholder')}
       >
         <Search className="w-4 h-4" />

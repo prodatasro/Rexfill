@@ -909,7 +909,7 @@ const FileList: FC<FileListProps> = ({
                   {/* File Icon */}
                   <FileText className="w-5 h-5 shrink-0 text-slate-400 dark:text-slate-600" />
 
-                  {/* File Name */}
+                  {/* File Name and Path */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm text-slate-900 dark:text-slate-50 truncate">
                       <span
@@ -920,6 +920,9 @@ const FileList: FC<FileListProps> = ({
                         {template.data.name}
                       </span>
                     </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {template.data.folderPath || '/'}
+                    </p>
                   </div>
 
                   {/* Placeholder Count Badge */}

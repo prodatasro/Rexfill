@@ -12,7 +12,7 @@ export function readCustomProperties(zip: PizZip): Record<string, string> {
   const customPropsFile = zip.file("docProps/custom.xml");
 
   if (!customPropsFile) {
-    return {}; // No custom properties in this document
+    return {}; // No custom properties in this document ds
   }
 
   const xmlContent = customPropsFile.asText();
