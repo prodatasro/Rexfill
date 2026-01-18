@@ -18,9 +18,6 @@ export interface WordTemplateData {
   // Placeholder metadata (extracted during upload)
   placeholderCount?: number;       // Number of {{}} placeholders in the template
   customPropertyCount?: number;    // Number of custom properties in docProps/custom.xml
-
-  // Default field values (saved by user for pre-filling forms)
-  defaultValues?: Record<string, string>;  // Map of placeholder name to default value
 }
 
 export type WordTemplate = Doc<WordTemplateData>;

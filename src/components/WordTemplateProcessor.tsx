@@ -1,6 +1,6 @@
 import { Doc } from "@junobuild/core";
 import { FC, useEffect, useCallback, useState } from "react";
-import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files, BookmarkPlus, BookmarkCheck, Trash2 } from 'lucide-react';
+import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
 import { useTranslation } from "react-i18next";
@@ -94,8 +94,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   // Multi-file specific properties
   const { fieldData, processingTemplates, savableTemplates, saveAllDocumentsAs, fileStatuses, getFailedFileIds, clearFileStatuses } = multiFileHook;
 
-  // Default values functions (single-file mode only)
-  const { saveDefaults, clearDefaults, loadDefaults, hasDefaults } = singleFileHook;
 
   // Expanded state for file sections in multi-file mode
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
@@ -382,41 +380,6 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                             {t('templateProcessor.customizationTitle')}
                           </h3>
                         </div>
-                        {/* Default values buttons - only for saved templates */}
-                        {template && (
-                          <div className="flex items-center gap-1">
-                            {hasDefaults && (
-                              <>
-                                <button
-                                  onClick={loadDefaults}
-                                  disabled={saving || processing}
-                                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/50 rounded-md transition-colors disabled:opacity-50"
-                                  title={t('templateProcessor.loadDefaults')}
-                                >
-                                  <BookmarkCheck className="w-3.5 h-3.5" />
-                                  <span className="hidden sm:inline">{t('templateProcessor.loadDefaults')}</span>
-                                </button>
-                                <button
-                                  onClick={clearDefaults}
-                                  disabled={saving || processing}
-                                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800/50 rounded-md transition-colors disabled:opacity-50"
-                                  title={t('templateProcessor.clearDefaults')}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={saveDefaults}
-                              disabled={saving || processing}
-                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 dark:hover:bg-purple-800/50 rounded-md transition-colors disabled:opacity-50"
-                              title={t('templateProcessor.saveDefaults')}
-                            >
-                              <BookmarkPlus className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">{t('templateProcessor.saveDefaults')}</span>
-                            </button>
-                          </div>
-                        )}
                       </div>
                       <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: t('templateProcessor.customizationDesc', { count: allFields.length }) }}>
                       </p>
