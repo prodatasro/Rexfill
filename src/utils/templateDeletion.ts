@@ -1,4 +1,5 @@
-import { deleteAsset, listAssets, deleteDoc, Doc } from '@junobuild/core';
+import { Doc } from '@junobuild/core';
+import { deleteAssetWithTimeout, listAssetsWithTimeout, deleteDocWithTimeout } from './junoWithTimeout';
 import { WordTemplateData } from '../types/word_template';
 import { FolderTreeNode } from '../types/folder';
 
@@ -31,7 +32,7 @@ export function getAllSubfolderIds(folderId: string, folderTree: FolderTreeNode[
  * Build a map of storage assets for efficient lookup by various path formats
  */
 export async function buildStorageAssetMap(): Promise<Map<string, { fullPath: string }>> {
-  const storageAssets = await listAssets({
+  const storageAssets = await listAssetsWithTimeout({
     collection: 'templates',
     filter: {}
   });
@@ -90,7 +91,7 @@ export async function deleteTemplate(
 
     if (storageAsset) {
       try {
-        await deleteAsset({
+        await deleteAssetWithTimeout({
           collection: 'templates',
           fullPath: storageAsset.fullPath
         });
@@ -109,7 +110,7 @@ export async function deleteTemplate(
   }
 
   // Always delete metadata
-  await deleteDoc({
+  await deleteDocWithTimeout({
     collection: 'templates_meta',
     doc: template
   });

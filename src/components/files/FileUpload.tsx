@@ -1,7 +1,6 @@
 import { FC, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
-import { uploadFile, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
@@ -9,6 +8,8 @@ import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import FolderSelector from '../folders/FolderSelector';
 import { useTranslation } from 'react-i18next';
+import { listDocsWithTimeout, uploadFileWithTimeout, setDocWithTimeout } from '../../utils/junoWithTimeout';
+import { TimeoutError } from '../../utils/fetchWithTimeout';
 
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;
@@ -43,7 +44,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
 
   const checkFileExists = async (filename: string, folderId: string | null): Promise<boolean> => {
     try {
-      const docs = await listDocs({
+      const docs = await listDocsWithTimeout({
         collection: 'templates_meta'
       });
 
@@ -198,7 +199,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             status: 'uploading'
           });
 
-          const result = await uploadFile({
+          const result = await uploadFileWithTimeout({
             data: file,
             collection: 'templates',
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
@@ -213,8 +214,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
           });
 
           // Store template metadata in datastore
-          const { setDoc } = await import('@junobuild/core');
-          await setDoc({
+          await setDocWithTimeout({
             collection: 'templates_meta',
             doc: {
               key: result.name, // Use the uploaded file name as key
@@ -263,7 +263,11 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
       }
     } catch (error) {
       console.error('Upload failed:', error);
-      showErrorToast(t('fileUpload.uploadFailed'));
+      if (error instanceof TimeoutError) {
+        showErrorToast(t('errors.timeout'));
+      } else {
+        showErrorToast(t('fileUpload.uploadFailed'));
+      }
     } finally {
       setUploading(false);
       setUploadProgress(null);

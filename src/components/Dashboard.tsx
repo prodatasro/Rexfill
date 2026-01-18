@@ -1,8 +1,10 @@
 import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent, ChangeEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Loader2, Upload, Download, Archive } from 'lucide-react';
-import { Doc, setDoc } from '@junobuild/core';
+import { Doc } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
+import { setDocWithTimeout, uploadFileWithTimeout, listDocsWithTimeout } from '../utils/junoWithTimeout';
 import type { Folder } from '../types/folder';
 import FileUpload from './files/FileUpload';
 import FileList from './files/FileList';
@@ -165,7 +167,7 @@ const Dashboard: FC = () => {
   const fetchTemplateBlob = useCallback(async (template: Doc<WordTemplateData>): Promise<Blob | null> => {
     if (!template.data.url) return null;
     try {
-      const response = await fetch(template.data.url);
+      const response = await fetchWithTimeout(template.data.url);
       return await response.blob();
     } catch (error) {
       console.error(`Failed to fetch template ${template.data.name}:`, error);
@@ -356,7 +358,7 @@ const Dashboard: FC = () => {
             const oldFullPath = template.data.fullPath || `${oldPath}/${template.data.name}`;
             const newFullPath = updateTemplatePathAfterRename(oldFullPath, oldPath, newPath);
 
-            await setDoc({
+            await setDocWithTimeout({
               collection: 'templates_meta',
               doc: {
                 ...template,
@@ -491,10 +493,8 @@ const Dashboard: FC = () => {
     let savedTemplateKey: string | null = null;
 
     try {
-      const { uploadFile, setDoc: setDocJuno, listDocs } = await import('@junobuild/core');
-
       // Get existing files to check for duplicates
-      const docs = await listDocs({ collection: 'templates_meta' });
+      const docs = await listDocsWithTimeout({ collection: 'templates_meta' });
       const existingFiles = new Set(
         docs.items
           .filter(doc => {
@@ -551,7 +551,7 @@ const Dashboard: FC = () => {
             status: 'uploading'
           });
 
-          const result = await uploadFile({
+          const result = await uploadFileWithTimeout({
             data: file,
             collection: 'templates',
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
@@ -565,7 +565,7 @@ const Dashboard: FC = () => {
             status: 'saving'
           });
 
-          await setDocJuno({
+          await setDocWithTimeout({
             collection: 'templates_meta',
             doc: {
               key: result.name,
@@ -640,10 +640,8 @@ const Dashboard: FC = () => {
     const failedFiles: string[] = [];
 
     try {
-      const { uploadFile, setDoc, listDocs } = await import('@junobuild/core');
-
       // Get existing files to check for duplicates
-      const docs = await listDocs({ collection: 'templates_meta' });
+      const docs = await listDocsWithTimeout({ collection: 'templates_meta' });
       const existingFiles = new Set(
         docs.items
           .filter(doc => {
@@ -702,7 +700,7 @@ const Dashboard: FC = () => {
             status: 'uploading'
           });
 
-          const result = await uploadFile({
+          const result = await uploadFileWithTimeout({
             data: file,
             collection: 'templates',
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
@@ -716,7 +714,7 @@ const Dashboard: FC = () => {
             status: 'saving'
           });
 
-          await setDoc({
+          await setDocWithTimeout({
             collection: 'templates_meta',
             doc: {
               key: result.name,

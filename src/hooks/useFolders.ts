@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
 import type { Folder } from '../types/folder';
 import type { Doc } from '@junobuild/core';
 import { validateFolderName, buildFolderPath, buildFolderTree } from '../utils/folderUtils';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
+import { listDocsWithTimeout, setDocWithTimeout, deleteDocWithTimeout } from '../utils/junoWithTimeout';
+import { TimeoutError } from '../utils/fetchWithTimeout';
 
 export const useFolders = (templates: Doc<any>[] = []) => {
   const { t } = useTranslation();
@@ -50,13 +51,17 @@ export const useFolders = (templates: Doc<any>[] = []) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await listDocs({ collection: 'folders' });
+      const result = await listDocsWithTimeout({ collection: 'folders' });
       const folderList = result.items as Folder[];
       setFolders(folderList);
     } catch (err) {
       console.error('Failed to load folders:', err);
       setError('Failed to load folders');
-      showErrorToast(t('folders.loadFailed') || 'Failed to load folders');
+      if (err instanceof TimeoutError) {
+        showErrorToast(t('errors.timeout'));
+      } else {
+        showErrorToast(t('folders.loadFailed') || 'Failed to load folders');
+      }
     } finally {
       setLoading(false);
     }
@@ -97,7 +102,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         // Create folder with generated key
         const key = `folder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-        await setDoc({
+        await setDocWithTimeout({
           collection: 'folders',
           doc: {
             key,
@@ -118,7 +123,11 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         return key;
       } catch (err) {
         console.error('Failed to create folder:', err);
-        showErrorToast(t('folders.createFailed') || 'Failed to create folder');
+        if (err instanceof TimeoutError) {
+          showErrorToast(t('errors.timeout'));
+        } else {
+          showErrorToast(t('folders.createFailed') || 'Failed to create folder');
+        }
         return null;
       } finally {
         setCreating(false);
@@ -156,7 +165,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
       setRenaming(true);
       try {
         // Update folder
-        await setDoc({
+        await setDocWithTimeout({
           collection: 'folders',
           doc: {
             ...folder,
@@ -173,7 +182,7 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         const subfolders = folders.filter((f) => f.data.parentId === folderId);
         for (const subfolder of subfolders) {
           const newSubPath = subfolder.data.path.replace(oldPath, newPath);
-          await setDoc({
+          await setDocWithTimeout({
             collection: 'folders',
             doc: {
               ...subfolder,
@@ -194,7 +203,11 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         return true;
       } catch (err) {
         console.error('Failed to rename folder:', err);
-        showErrorToast(t('folders.renameFailed') || 'Failed to rename folder');
+        if (err instanceof TimeoutError) {
+          showErrorToast(t('errors.timeout'));
+        } else {
+          showErrorToast(t('folders.renameFailed') || 'Failed to rename folder');
+        }
         return false;
       } finally {
         setRenaming(false);
@@ -219,14 +232,14 @@ export const useFolders = (templates: Doc<any>[] = []) => {
 
         // Delete all subfolders
         for (const subfolder of subfolders) {
-          await deleteDoc({
+          await deleteDocWithTimeout({
             collection: 'folders',
             doc: subfolder,
           });
         }
 
         // Delete the folder itself
-        await deleteDoc({
+        await deleteDocWithTimeout({
           collection: 'folders',
           doc: folder,
         });
@@ -239,7 +252,11 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         return true;
       } catch (err) {
         console.error('Failed to delete folder:', err);
-        showErrorToast(t('folders.deleteFailed') || 'Failed to delete folder');
+        if (err instanceof TimeoutError) {
+          showErrorToast(t('errors.timeout'));
+        } else {
+          showErrorToast(t('folders.deleteFailed') || 'Failed to delete folder');
+        }
         return false;
       } finally {
         setDeleting(false);

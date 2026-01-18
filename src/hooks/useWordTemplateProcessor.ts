@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Doc, uploadFile, setDoc, listDocs, getDoc } from "@junobuild/core";
+import { Doc } from "@junobuild/core";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word_template";
@@ -12,6 +12,7 @@ import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
 import { useTranslation } from "react-i18next";
 import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
+import { uploadFileWithTimeout, setDocWithTimeout, listDocsWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
 
 const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
 
@@ -114,7 +115,7 @@ export const useWordTemplateProcessor = ({
           if (file) {
             arrayBuffer = await file.arrayBuffer();
           } else if (template?.data.url) {
-            const response = await fetch(template.data.url);
+            const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
             if (!response.ok) {
               throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
             }
@@ -232,7 +233,7 @@ export const useWordTemplateProcessor = ({
     if (file) {
       arrayBuffer = await file.arrayBuffer();
     } else if (template?.data.url) {
-      const response = await fetch(template.data.url);
+      const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
       if (!response.ok) {
         throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
       }
@@ -270,7 +271,7 @@ export const useWordTemplateProcessor = ({
         if (file) {
           arrayBuffer = await file.arrayBuffer();
         } else if (template?.data.url) {
-          const response = await fetch(template.data.url);
+          const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
           if (!response.ok) {
             throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
           }
@@ -372,7 +373,7 @@ export const useWordTemplateProcessor = ({
         if (file) {
           arrayBuffer = await file.arrayBuffer();
         } else if (template?.data.url) {
-          const response = await fetch(template.data.url);
+          const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
           if (!response.ok) {
             throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
           }
@@ -453,13 +454,13 @@ export const useWordTemplateProcessor = ({
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
 
-      const result = await uploadFile({
+      const result = await uploadFileWithTimeout({
         data: fileToUpload,
         collection: 'templates',
         filename: storagePath
       });
 
-      await setDoc({
+      await setDocWithTimeout({
         collection: 'templates_meta',
         doc: {
           ...template,
@@ -473,7 +474,7 @@ export const useWordTemplateProcessor = ({
       });
 
       // Reload the template from Juno to get the updated version
-      const updatedTemplate = await getDoc<WordTemplateData>({
+      const updatedTemplate = await getDocWithTimeout<WordTemplateData>({
         collection: 'templates_meta',
         key: template.key
       });
@@ -527,7 +528,7 @@ export const useWordTemplateProcessor = ({
     try {
       const key = `folder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-      await setDoc({
+      await setDocWithTimeout({
         collection: 'folders',
         doc: {
           key,
@@ -585,7 +586,7 @@ export const useWordTemplateProcessor = ({
         ? trimmedFilename
         : `${trimmedFilename}.docx`;
 
-      const existingDocs = await listDocs<WordTemplateData>({
+      const existingDocs = await listDocsWithTimeout<WordTemplateData>({
         collection: 'templates_meta',
         filter: {}
       });
@@ -608,7 +609,7 @@ export const useWordTemplateProcessor = ({
         if (existingFolder) {
           folderPath = existingFolder.data.path;
         } else {
-          const result = await listDocs({ collection: 'folders' });
+          const result = await listDocsWithTimeout({ collection: 'folders' });
           const targetFolder = result.items.find((f) => f.key === targetFolderId);
           if (targetFolder && targetFolder.data && typeof targetFolder.data === 'object' && 'path' in targetFolder.data) {
             folderPath = (targetFolder.data as { path: string }).path;
@@ -623,7 +624,7 @@ export const useWordTemplateProcessor = ({
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
 
-      const result = await uploadFile({
+      const result = await uploadFileWithTimeout({
         data: fileToUpload,
         collection: 'templates',
         filename: storagePath
@@ -644,7 +645,7 @@ export const useWordTemplateProcessor = ({
         }
       };
 
-      await setDoc({
+      await setDocWithTimeout({
         collection: 'templates_meta',
         doc: newTemplateDoc
       });

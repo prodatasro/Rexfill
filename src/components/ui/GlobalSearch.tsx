@@ -252,9 +252,9 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
                 className="flex-1 flex items-center gap-3 text-left min-w-0"
               >
                 {result.type === 'template' ? (
-                  <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <FileText className="w-5 h-5 text-blue-500 shrink-0" />
                 ) : (
-                  <Folder className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                  <Folder className="w-5 h-5 text-amber-500 shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
@@ -271,7 +271,7 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
               {result.type === 'template' && (
                 <button
                   onClick={(e) => handleGoToFolder(e, result)}
-                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors flex-shrink-0"
+                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors shrink-0"
                   title={t('globalSearch.goToFolder')}
                   aria-label={t('globalSearch.goToFolder')}
                 >
@@ -279,7 +279,7 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
                 </button>
               )}
               {index === selectedIndex && (
-                <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
+                <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs text-slate-500 dark:text-slate-400 shrink-0">
                   ↵
                 </kbd>
               )}

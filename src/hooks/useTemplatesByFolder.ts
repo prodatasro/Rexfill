@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { listDocs } from '@junobuild/core';
 import type { Doc } from '@junobuild/core';
 import type { WordTemplateData } from '../types/word_template';
+import { listDocsWithTimeout } from '../utils/junoWithTimeout';
 
 export const useTemplatesByFolder = (selectedFolderId: string | null) => {
   const [templates, setTemplates] = useState<Doc<WordTemplateData>[]>([]);
@@ -14,7 +14,7 @@ export const useTemplatesByFolder = (selectedFolderId: string | null) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await listDocs({ collection: 'templates_meta' });
+      const result = await listDocsWithTimeout({ collection: 'templates_meta' });
       const templateList = result.items as Doc<WordTemplateData>[];
       setAllTemplates(templateList);
       return templateList;

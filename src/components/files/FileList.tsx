@@ -1,6 +1,6 @@
 import { FC, useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X, Loader2, Star, Copy, Pencil, MoreVertical } from 'lucide-react';
-import { setDoc, deleteDoc, deleteAsset, listAssets, Doc, listDocs } from '@junobuild/core';
+import { Doc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -12,6 +12,8 @@ import TemplateRenameDialog from './TemplateRenameDialog';
 import TemplateDuplicateDialog from './TemplateDuplicateDialog';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
+import { setDocWithTimeout, deleteDocWithTimeout, deleteAssetWithTimeout, listAssetsWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 
 type SortField = 'name' | 'size' | 'createdOn' | 'favorite';
 type SortDirection = 'asc' | 'desc';
@@ -68,7 +70,7 @@ const FileList: FC<FileListProps> = ({
       }
 
       // Fetch the file from the URL
-      const response = await fetch(template.data.url);
+      const response = await fetchWithTimeout(template.data.url);
       if (!response.ok) {
         throw new Error('Failed to fetch file');
       }
@@ -108,7 +110,7 @@ const FileList: FC<FileListProps> = ({
     try {
       // Get storage assets to find the correct fullPath
       // Juno storage fullPath includes collection prefix: /templates/folder/file.docx
-      const storageAssets = await listAssets({
+      const storageAssets = await listAssetsWithTimeout({
         collection: 'templates',
         filter: {}
       });
@@ -144,7 +146,7 @@ const FileList: FC<FileListProps> = ({
 
       if (storageAsset) {
         try {
-          await deleteAsset({
+          await deleteAssetWithTimeout({
             collection: 'templates',
             fullPath: storageAsset.fullPath
           });
@@ -157,7 +159,7 @@ const FileList: FC<FileListProps> = ({
       }
 
       // Delete metadata from datastore
-      await deleteDoc({
+      await deleteDocWithTimeout({
         collection: 'templates_meta',
         doc: template
       });
@@ -182,7 +184,7 @@ const FileList: FC<FileListProps> = ({
     try {
       // Check for duplicate in target folder
       const checkDuplicate = async (): Promise<boolean> => {
-        const docs = await listDocs({ collection: 'templates_meta' });
+        const docs = await listDocsWithTimeout({ collection: 'templates_meta' });
         return docs.items.some(doc => {
           const data = doc.data as WordTemplateData;
           return data.name === templateToMove.data.name && (data.folderId ?? null) === targetFolderId;
@@ -218,7 +220,7 @@ const FileList: FC<FileListProps> = ({
       const newFullPath = buildTemplatePath(newFolderPath, templateToMove.data.name);
 
       // Update template metadata
-      await setDoc({
+      await setDocWithTimeout({
         collection: 'templates_meta',
         doc: {
           ...templateToMove,
@@ -426,7 +428,7 @@ const FileList: FC<FileListProps> = ({
 
     try {
       // Get all storage assets once
-      const storageAssets = await listAssets({
+      const storageAssets = await listAssetsWithTimeout({
         collection: 'templates',
         filter: {}
       });
@@ -467,7 +469,7 @@ const FileList: FC<FileListProps> = ({
 
           if (storageAsset) {
             try {
-              await deleteAsset({
+              await deleteAssetWithTimeout({
                 collection: 'templates',
                 fullPath: storageAsset.fullPath
               });
@@ -477,7 +479,7 @@ const FileList: FC<FileListProps> = ({
           }
 
           // Delete metadata from datastore
-          await deleteDoc({
+          await deleteDocWithTimeout({
             collection: 'templates_meta',
             doc: template
           });
@@ -518,7 +520,7 @@ const FileList: FC<FileListProps> = ({
   const handleToggleFavorite = useCallback(async (template: Doc<WordTemplateData>) => {
     try {
       const newIsFavorite = !template.data.isFavorite;
-      await setDoc({
+      await setDocWithTimeout({
         collection: 'templates_meta',
         doc: {
           ...template,
@@ -566,7 +568,7 @@ const FileList: FC<FileListProps> = ({
 
       // Create new metadata entry with a new key
       const newKey = `${Date.now()}_${newName}`;
-      await setDoc({
+      await setDocWithTimeout({
         collection: 'templates_meta',
         doc: {
           key: newKey,
@@ -604,7 +606,7 @@ const FileList: FC<FileListProps> = ({
       const newFullPath = buildTemplatePath(templateToRename.data.folderPath || '/', newName);
 
       // Update template metadata with new name and fullPath
-      await setDoc({
+      await setDocWithTimeout({
         collection: 'templates_meta',
         doc: {
           ...templateToRename,

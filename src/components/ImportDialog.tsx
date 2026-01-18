@@ -1,8 +1,8 @@
 import { FC, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload, Loader2, X, Folder, FileText, AlertTriangle, Check } from 'lucide-react';
-import { setDoc, uploadFile } from '@junobuild/core';
 import type { Doc } from '@junobuild/core';
+import { setDocWithTimeout, uploadFileWithTimeout } from '../utils/junoWithTimeout';
 import PizZip from 'pizzip';
 import type { WordTemplateData } from '../types/word_template';
 import type { Folder as FolderType, FolderData } from '../types/folder';
@@ -185,7 +185,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
               continue;
             } else if (conflictResolution === 'overwrite') {
               // Update existing folder
-              await setDoc({
+              await setDocWithTimeout({
                 collection: 'folders',
                 doc: {
                   ...existingConflict.existingFolder,
@@ -227,7 +227,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
             ? folderKeyMapping.get(importFolder.data.parentId) || importFolder.data.parentId
             : null;
 
-          await setDoc({
+          await setDocWithTimeout({
             collection: 'folders',
             doc: {
               key: newKey,
@@ -282,14 +282,14 @@ const ImportDialog: FC<ImportDialogProps> = ({
                 existingConflict.existingTemplate.data.fullPath ||
                   existingConflict.existingTemplate.key
               );
-              const result = await uploadFile({
+              const result = await uploadFileWithTimeout({
                 data: file,
                 collection: 'templates',
                 filename: storagePath,
               });
 
               // Update metadata
-              await setDoc({
+              await setDocWithTimeout({
                 collection: 'templates_meta',
                 doc: {
                   ...existingConflict.existingTemplate,
@@ -353,7 +353,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
 
           // Upload file
           const renamedFile = new File([file], newName, { type: file.type });
-          const result = await uploadFile({
+          const result = await uploadFileWithTimeout({
             data: renamedFile,
             collection: 'templates',
             filename: storagePath,
@@ -361,7 +361,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
 
           // Create metadata
           const newKey = storagePath.replace(/\//g, '_').replace(/\./g, '_');
-          await setDoc({
+          await setDocWithTimeout({
             collection: 'templates_meta',
             doc: {
               key: newKey,
@@ -489,7 +489,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
       </div>
 
       <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl text-green-700 dark:text-green-400">
-        <Check className="w-5 h-5 flex-shrink-0" />
+        <Check className="w-5 h-5 shrink-0" />
         <span className="text-sm">{t('exportImport.noConflicts')}</span>
       </div>
     </div>
@@ -498,7 +498,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
   const renderConflictStep = () => (
     <div className="p-6 space-y-4">
       <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
-        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div>
           <p className="font-medium text-amber-800 dark:text-amber-300">
             {t('exportImport.conflictsDetected')}
