@@ -15,7 +15,8 @@
       "Bash(netstat:*)",
       "Bash(while read commit msg)",
       "Bash(do echo \"=== $msg ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(curl:*)"
     ]
   }
 }

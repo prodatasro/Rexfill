@@ -6,6 +6,11 @@
     "timeout": "Požiadavka vypršala. Skontrolujte pripojenie a skúste znova.",
     "networkError": "Chyba siete. Skontrolujte pripojenie."
   },
+  "notFound": {
+    "title": "Stránka nenájdená",
+    "message": "Stránka, ktorú hľadáte, neexistuje alebo bola presunutá.",
+    "goHome": "Prejsť na prehľad"
+  },
   "errorBoundary": {
     "title": "Niečo sa pokazilo",
     "message": "Nastala neočakávaná chyba. Vaša práca nemusela byť uložená.",
@@ -308,6 +313,19 @@
     "renaming": "Premenovávam...",
     "renameSuccess": "Šablóna bola premenovaná na \"{{filename}}\"",
     "renameFailed": "Nepodarilo sa premenovať šablónu",
+    "nameEmpty": "Názov súboru nemôže byť prázdny",
+    "nameTooLong": "Názov súboru je príliš dlhý (max 100 znakov)",
+    "invalidChars": "Nepovolené znaky: /\\:*?\"<>|",
+    "nameExists": "Súbor s týmto názvom už existuje v tomto priečinku"
+  },
+  "templateDuplicate": {
+    "title": "Duplikovať šablónu",
+    "originalName": "Pôvodný názov",
+    "newName": "Nový názov",
+    "placeholder": "Zadajte názov kópie...",
+    "duplicateButton": "Duplikovať",
+    "duplicating": "Duplikujem...",
+    "copySuffix": "Kópia",
     "nameEmpty": "Názov súboru nemôže byť prázdny",
     "nameTooLong": "Názov súboru je príliš dlhý (max 100 znakov)",
     "invalidChars": "Nepovolené znaky: /\\:*?\"<>|",

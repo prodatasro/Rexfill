@@ -9,6 +9,7 @@ import { useConfirm } from '../../contexts/ConfirmContext';
 import { useTranslation } from 'react-i18next';
 import TemplateMoveDialog from '../folders/TemplateMoveDialog';
 import TemplateRenameDialog from './TemplateRenameDialog';
+import TemplateDuplicateDialog from './TemplateDuplicateDialog';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
 
@@ -43,6 +44,7 @@ const FileList: FC<FileListProps> = ({
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
   const [templateToRename, setTemplateToRename] = useState<Doc<WordTemplateData> | null>(null);
+  const [templateToDuplicate, setTemplateToDuplicate] = useState<Doc<WordTemplateData> | null>(null);
   const { confirm } = useConfirm();
 
   // Multi-select state
@@ -554,38 +556,23 @@ const FileList: FC<FileListProps> = ({
     }
   }, [openMenuId]);
 
-  const handleDuplicate = useCallback(async (template: Doc<WordTemplateData>) => {
-    setDuplicatingIds(prev => new Set([...prev, template.key]));
+  const handleDuplicate = useCallback(async (newName: string) => {
+    if (!templateToDuplicate) return;
+
+    setDuplicatingIds(prev => new Set([...prev, templateToDuplicate.key]));
     try {
-      // Generate a unique name with " (Copy)" suffix
-      const baseName = template.data.name.replace(/\.docx$/i, '');
-      let copyName = `${baseName} (Copy).docx`;
-      let copyNumber = 1;
-
-      // Check if name already exists and increment number if needed
-      const existingNames = new Set(
-        allTemplates
-          .filter(t => t.data.folderId === template.data.folderId)
-          .map(t => t.data.name.toLowerCase())
-      );
-
-      while (existingNames.has(copyName.toLowerCase())) {
-        copyNumber++;
-        copyName = `${baseName} (Copy ${copyNumber}).docx`;
-      }
-
       // Build the new full path
-      const newFullPath = buildTemplatePath(template.data.folderPath || '/', copyName);
+      const newFullPath = buildTemplatePath(templateToDuplicate.data.folderPath || '/', newName);
 
       // Create new metadata entry with a new key
-      const newKey = `${Date.now()}_${copyName}`;
+      const newKey = `${Date.now()}_${newName}`;
       await setDoc({
         collection: 'templates_meta',
         doc: {
           key: newKey,
           data: {
-            ...template.data,
-            name: copyName,
+            ...templateToDuplicate.data,
+            name: newName,
             fullPath: newFullPath,
             uploadedAt: Date.now(),
             isFavorite: false, // Don't copy favorite status
@@ -593,19 +580,20 @@ const FileList: FC<FileListProps> = ({
         }
       });
 
-      showSuccessToast(t('fileList.duplicateSuccess', { filename: copyName }));
+      showSuccessToast(t('fileList.duplicateSuccess', { filename: newName }));
       onFileDeleted(); // Refresh the list
     } catch (error) {
       console.error('Failed to duplicate template:', error);
       showErrorToast(t('fileList.duplicateFailed'));
+      throw error; // Re-throw to let dialog handle error state
     } finally {
       setDuplicatingIds(prev => {
         const newSet = new Set(prev);
-        newSet.delete(template.key);
+        newSet.delete(templateToDuplicate.key);
         return newSet;
       });
     }
-  }, [allTemplates, onFileDeleted, t]);
+  }, [templateToDuplicate, onFileDeleted, t]);
 
   // Rename template handler
   const handleRename = useCallback(async (newName: string) => {
@@ -637,13 +625,21 @@ const FileList: FC<FileListProps> = ({
     }
   }, [templateToRename, onFileDeleted, t]);
 
-  // Get existing names in the same folder for duplicate validation
+  // Get existing names in the same folder for rename validation
   const existingNamesInFolder = useMemo(() => {
     if (!templateToRename) return [];
     return allTemplates
       .filter(t => t.data.folderId === templateToRename.data.folderId)
       .map(t => t.data.name);
   }, [templateToRename, allTemplates]);
+
+  // Get existing names in the same folder for duplicate validation
+  const existingNamesInFolderForDuplicate = useMemo(() => {
+    if (!templateToDuplicate) return [];
+    return allTemplates
+      .filter(t => t.data.folderId === templateToDuplicate.data.folderId)
+      .map(t => t.data.name);
+  }, [templateToDuplicate, allTemplates]);
 
   if (loading) {
     return (
@@ -975,7 +971,7 @@ const FileList: FC<FileListProps> = ({
                     </button>
 
                     <button
-                      onClick={() => handleDuplicate(template)}
+                      onClick={() => setTemplateToDuplicate(template)}
                       disabled={isDeleting || duplicatingIds.has(template.key)}
                       className="p-1.5 text-purple-500 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title={t('fileList.duplicateTemplate')}
@@ -1069,7 +1065,7 @@ const FileList: FC<FileListProps> = ({
 
                           <button
                             onClick={() => {
-                              handleDuplicate(template);
+                              setTemplateToDuplicate(template);
                               setOpenMenuId(null);
                             }}
                             disabled={duplicatingIds.has(template.key)}
@@ -1176,6 +1172,15 @@ const FileList: FC<FileListProps> = ({
         existingNames={existingNamesInFolder}
         onRename={handleRename}
         onCancel={() => setTemplateToRename(null)}
+      />
+
+      {/* Duplicate Template Dialog */}
+      <TemplateDuplicateDialog
+        isOpen={templateToDuplicate !== null}
+        template={templateToDuplicate}
+        existingNames={existingNamesInFolderForDuplicate}
+        onDuplicate={handleDuplicate}
+        onCancel={() => setTemplateToDuplicate(null)}
       />
     </div>
   );

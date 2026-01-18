@@ -6,6 +6,11 @@
     "timeout": "Request timed out. Please check your connection and try again.",
     "networkError": "Network error. Please check your connection."
   },
+  "notFound": {
+    "title": "Page Not Found",
+    "message": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go to Dashboard"
+  },
   "errorBoundary": {
     "title": "Something went wrong",
     "message": "An unexpected error occurred. Your work may not have been saved.",
@@ -306,6 +311,19 @@
     "renaming": "Renaming...",
     "renameSuccess": "Template renamed to \"{{filename}}\"",
     "renameFailed": "Failed to rename template",
+    "nameEmpty": "Filename cannot be empty",
+    "nameTooLong": "Filename too long (max 100 characters)",
+    "invalidChars": "Invalid characters: /\\:*?\"<>|",
+    "nameExists": "A file with this name already exists in this folder"
+  },
+  "templateDuplicate": {
+    "title": "Duplicate Template",
+    "originalName": "Original name",
+    "newName": "New name",
+    "placeholder": "Enter filename for copy...",
+    "duplicateButton": "Duplicate",
+    "duplicating": "Duplicating...",
+    "copySuffix": "Copy",
     "nameEmpty": "Filename cannot be empty",
     "nameTooLong": "Filename too long (max 100 characters)",
     "invalidChars": "Invalid characters: /\\:*?\"<>|",
