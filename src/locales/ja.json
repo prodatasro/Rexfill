@@ -112,7 +112,12 @@
     "showFavorites": "お気に入りのみ表示",
     "duplicateTemplate": "テンプレートを複製",
     "duplicateSuccess": "テンプレートが「{{filename}}」として複製されました",
-    "duplicateFailed": "テンプレートの複製に失敗しました"
+    "duplicateFailed": "テンプレートの複製に失敗しました",
+    "renameTemplate": "テンプレート名を変更",
+    "placeholder": "フィールド",
+    "placeholders": "フィールド",
+    "customProperty": "プロパティ",
+    "customProperties": "プロパティ"
   },
   "templateProcessor": {
     "title": "テンプレートを処理",

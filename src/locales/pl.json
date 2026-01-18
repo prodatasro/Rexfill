@@ -112,7 +112,12 @@
     "showFavorites": "Pokaż tylko ulubione",
     "duplicateTemplate": "Duplikuj szablon",
     "duplicateSuccess": "Szablon zduplikowany jako \"{{filename}}\"",
-    "duplicateFailed": "Nie udało się zduplikować szablonu"
+    "duplicateFailed": "Nie udało się zduplikować szablonu",
+    "renameTemplate": "Zmień nazwę szablonu",
+    "placeholder": "pole",
+    "placeholders": "pól",
+    "customProperty": "właściwość",
+    "customProperties": "właściwości"
   },
   "templateProcessor": {
     "title": "Przetwórz szablon",

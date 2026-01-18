@@ -1,6 +1,6 @@
 import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent, ChangeEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUpDown, Loader2, Upload, Download, Archive } from 'lucide-react';
+import { Menu, X, FolderPlus, Folder as FolderIcon, Search, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Loader2, Upload, Download, Archive } from 'lucide-react';
 import { Doc, setDoc } from '@junobuild/core';
 import { WordTemplateData } from '../types/word_template';
 import type { Folder } from '../types/folder';
@@ -20,6 +20,7 @@ import { useSearch } from '../contexts/SearchContext';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { updateTemplatePathAfterRename, buildTemplatePath } from '../utils/templatePathUtils';
 import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../utils/templateDeletion';
+import { extractMetadataFromFile } from '../utils/extractMetadata';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -81,6 +82,7 @@ const Dashboard: FC = () => {
   // Folder expansion triggers
   const [expandAllTrigger, setExpandAllTrigger] = useState(0);
   const [collapseAllTrigger, setCollapseAllTrigger] = useState(0);
+  const [foldersExpanded, setFoldersExpanded] = useState(true);
 
   // Folder sort state
   const [folderSortOrder, setFolderSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -526,6 +528,9 @@ const Dashboard: FC = () => {
         try {
           const fullPath = buildTemplatePath(folderPath, file.name);
 
+          // Extract placeholders and custom properties from the file
+          const { placeholderCount, customPropertyCount } = await extractMetadataFromFile(file);
+
           const templateData: WordTemplateData = {
             name: file.name,
             size: file.size,
@@ -533,7 +538,9 @@ const Dashboard: FC = () => {
             mimeType: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             folderId: selectedFolderId,
             folderPath: folderPath,
-            fullPath: fullPath
+            fullPath: fullPath,
+            placeholderCount,
+            customPropertyCount
           };
 
           // Update progress - uploading
@@ -672,6 +679,9 @@ const Dashboard: FC = () => {
         try {
           const fullPath = buildTemplatePath(folderPath, file.name);
 
+          // Extract placeholders and custom properties from the file
+          const { placeholderCount, customPropertyCount } = await extractMetadataFromFile(file);
+
           const templateData: WordTemplateData = {
             name: file.name,
             size: file.size,
@@ -679,7 +689,9 @@ const Dashboard: FC = () => {
             mimeType: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             folderId: uploadToFolderId,
             folderPath: folderPath,
-            fullPath: fullPath
+            fullPath: fullPath,
+            placeholderCount,
+            customPropertyCount
           };
 
           // Update progress - uploading
@@ -855,20 +867,19 @@ const Dashboard: FC = () => {
                   {/* Expand/Collapse/Sort/Export/Import buttons */}
                   <div className="flex gap-1 mt-2 justify-center">
                     <button
-                      onClick={() => setExpandAllTrigger(prev => prev + 1)}
+                      onClick={() => {
+                        if (foldersExpanded) {
+                          setCollapseAllTrigger(prev => prev + 1);
+                        } else {
+                          setExpandAllTrigger(prev => prev + 1);
+                        }
+                        setFoldersExpanded(prev => !prev);
+                      }}
                       className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
-                      title={t('folders.expandAll')}
-                      aria-label={t('folders.expandAll')}
+                      title={foldersExpanded ? t('folders.collapseAll') : t('folders.expandAll')}
+                      aria-label={foldersExpanded ? t('folders.collapseAll') : t('folders.expandAll')}
                     >
-                      <ChevronDown className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => setCollapseAllTrigger(prev => prev + 1)}
-                      className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
-                      title={t('folders.collapseAll')}
-                      aria-label={t('folders.collapseAll')}
-                    >
-                      <ChevronUp className="w-5 h-5" />
+                      {foldersExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                     </button>
                     <button
                       onClick={() => setFolderSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
@@ -876,7 +887,7 @@ const Dashboard: FC = () => {
                       title={folderSortOrder === 'asc' ? t('folders.sortAZ') : t('folders.sortZA')}
                       aria-label={folderSortOrder === 'asc' ? t('folders.sortAZ') : t('folders.sortZA')}
                     >
-                      <ArrowUpDown className="w-5 h-5" />
+                      {folderSortOrder === 'asc' ? <ArrowUp className="w-5 h-5" /> : <ArrowDown className="w-5 h-5" />}
                     </button>
                     <div className="w-px bg-slate-300 dark:bg-slate-600 mx-1" />
                     <button

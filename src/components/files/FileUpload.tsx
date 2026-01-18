@@ -2,45 +2,13 @@ import { FC, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
 import { uploadFile, listDocs } from '@junobuild/core';
-import PizZip from 'pizzip';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
+import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import FolderSelector from '../folders/FolderSelector';
 import { useTranslation } from 'react-i18next';
-
-// Extract placeholders from a DOCX file
-const extractPlaceholdersFromFile = async (file: File): Promise<string[]> => {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const zip = new PizZip(arrayBuffer);
-    const documentXml = zip.file("word/document.xml");
-
-    if (!documentXml) {
-      return [];
-    }
-
-    const xmlContent = documentXml.asText();
-
-    // Extract all text content from <w:t> tags
-    const textTagRegex = /<w:t[^>]*>([^<]*)<\/w:t>/gi;
-    let reconstructedText = "";
-    let match;
-
-    while ((match = textTagRegex.exec(xmlContent)) !== null) {
-      reconstructedText += match[1];
-    }
-
-    // Find all placeholders
-    const placeholderRegex = /\{\{([^}]+)\}\}/g;
-    const matches = reconstructedText.match(placeholderRegex) || [];
-    return [...new Set(matches.map(m => m.slice(2, -2).trim()))];
-  } catch (error) {
-    console.error('Failed to extract placeholders:', error);
-    return [];
-  }
-};
 
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;
@@ -207,8 +175,8 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
 
           const fullPath = buildTemplatePath(folderPath, file.name);
 
-          // Extract placeholders from the file
-          const placeholders = await extractPlaceholdersFromFile(file);
+          // Extract placeholders and custom properties from the file
+          const { placeholderCount, customPropertyCount } = await extractMetadataFromFile(file);
 
           const templateData: WordTemplateData = {
             name: file.name,
@@ -218,8 +186,8 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             folderId: uploadFolderId,
             folderPath: folderPath,
             fullPath: fullPath,
-            placeholderCount: placeholders.length,
-            placeholderNames: placeholders
+            placeholderCount,
+            customPropertyCount
           };
 
           // Update progress - uploading

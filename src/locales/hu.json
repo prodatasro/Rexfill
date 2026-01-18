@@ -112,7 +112,12 @@
     "showFavorites": "Csak kedvencek megjelenítése",
     "duplicateTemplate": "Sablon másolása",
     "duplicateSuccess": "Sablon másolva \"{{filename}}\" néven",
-    "duplicateFailed": "A sablon másolása sikertelen"
+    "duplicateFailed": "A sablon másolása sikertelen",
+    "renameTemplate": "Sablon átnevezése",
+    "placeholder": "mező",
+    "placeholders": "mező",
+    "customProperty": "tulajdonság",
+    "customProperties": "tulajdonság"
   },
   "templateProcessor": {
     "title": "Sablon feldolgozása",

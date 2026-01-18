@@ -112,7 +112,12 @@
     "showFavorites": "Afficher uniquement les favoris",
     "duplicateTemplate": "Dupliquer le modèle",
     "duplicateSuccess": "Modèle dupliqué sous \"{{filename}}\"",
-    "duplicateFailed": "Échec de la duplication du modèle"
+    "duplicateFailed": "Échec de la duplication du modèle",
+    "renameTemplate": "Renommer le modèle",
+    "placeholder": "champ",
+    "placeholders": "champs",
+    "customProperty": "propriété",
+    "customProperties": "propriétés"
   },
   "templateProcessor": {
     "title": "Traiter le modèle",

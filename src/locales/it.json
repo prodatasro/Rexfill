@@ -112,7 +112,12 @@
     "showFavorites": "Mostra solo i preferiti",
     "duplicateTemplate": "Duplica modello",
     "duplicateSuccess": "Modello duplicato come \"{{filename}}\"",
-    "duplicateFailed": "Impossibile duplicare il modello"
+    "duplicateFailed": "Impossibile duplicare il modello",
+    "renameTemplate": "Rinomina modello",
+    "placeholder": "campo",
+    "placeholders": "campi",
+    "customProperty": "proprietà",
+    "customProperties": "proprietà"
   },
   "templateProcessor": {
     "title": "Elabora modello",

@@ -103,6 +103,9 @@ export const useMultiFileProcessor = ({
           if (!template.data.url) return null;
 
           const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
+          if (!response.ok) {
+            throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+          }
           const arrayBuffer = await response.arrayBuffer();
           const { placeholders, customProperties } = await extractPlaceholdersFromBuffer(arrayBuffer);
 
@@ -283,6 +286,9 @@ export const useMultiFileProcessor = ({
       arrayBuffer = await pt.file.arrayBuffer();
     } else if (pt.template?.data.url) {
       const response = await fetchWithTimeout(pt.template.data.url, { timeout: FETCH_TIMEOUT });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+      }
       arrayBuffer = await response.arrayBuffer();
     } else {
       throw new Error(`No file or template URL for ${pt.fileName}`);

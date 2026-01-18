@@ -112,7 +112,12 @@
     "showFavorites": "Mostrar solo favoritos",
     "duplicateTemplate": "Duplicar plantilla",
     "duplicateSuccess": "Plantilla duplicada como \"{{filename}}\"",
-    "duplicateFailed": "Error al duplicar la plantilla"
+    "duplicateFailed": "Error al duplicar la plantilla",
+    "renameTemplate": "Renombrar plantilla",
+    "placeholder": "campo",
+    "placeholders": "campos",
+    "customProperty": "propiedad",
+    "customProperties": "propiedades"
   },
   "templateProcessor": {
     "title": "Procesar plantilla",

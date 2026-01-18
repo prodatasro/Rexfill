@@ -112,7 +112,12 @@
     "showFavorites": "Zobrazit pouze oblíbené",
     "duplicateTemplate": "Duplikovat šablonu",
     "duplicateSuccess": "Šablona byla duplikována jako \"{{filename}}\"",
-    "duplicateFailed": "Nepodařilo se duplikovat šablonu"
+    "duplicateFailed": "Nepodařilo se duplikovat šablonu",
+    "renameTemplate": "Přejmenovat šablonu",
+    "placeholder": "pole",
+    "placeholders": "polí",
+    "customProperty": "proměnná",
+    "customProperties": "proměnných"
   },
   "templateProcessor": {
     "title": "Zpracovat šablonu",

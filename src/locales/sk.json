@@ -134,8 +134,11 @@
     "duplicateSuccess": "Šablóna bola duplikovaná ako \"{{filename}}\"",
     "duplicateFailed": "Nepodarilo sa duplikovať šablónu",
     "renameTemplate": "Premenovať šablónu",
+    "moreActions": "Ďalšie akcie",
     "placeholder": "pole",
-    "placeholders": "polí"
+    "placeholders": "polí",
+    "customProperty": "premenná",
+    "customProperties": "premenných"
   },
   "templateProcessor": {
     "title": "Spracovať šablónu",

@@ -16,8 +16,8 @@ export interface WordTemplateData {
   isFavorite?: boolean;            // Whether template is marked as favorite
 
   // Placeholder metadata (extracted during upload)
-  placeholderCount?: number;       // Number of placeholders in the template
-  placeholderNames?: string[];     // Array of placeholder names (e.g., ["name", "date", "address"])
+  placeholderCount?: number;       // Number of {{}} placeholders in the template
+  customPropertyCount?: number;    // Number of custom properties in docProps/custom.xml
 
   // Default field values (saved by user for pre-filling forms)
   defaultValues?: Record<string, string>;  // Map of placeholder name to default value

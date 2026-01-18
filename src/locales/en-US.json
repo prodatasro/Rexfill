@@ -134,8 +134,11 @@
     "duplicateSuccess": "Template duplicated as \"{{filename}}\"",
     "duplicateFailed": "Failed to duplicate template",
     "renameTemplate": "Rename template",
+    "moreActions": "More actions",
     "placeholder": "field",
-    "placeholders": "fields"
+    "placeholders": "fields",
+    "customProperty": "property",
+    "customProperties": "properties"
   },
   "templateProcessor": {
     "title": "Process Template",

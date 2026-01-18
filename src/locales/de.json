@@ -112,7 +112,12 @@
     "showFavorites": "Nur Favoriten anzeigen",
     "duplicateTemplate": "Vorlage duplizieren",
     "duplicateSuccess": "Vorlage als \"{{filename}}\" dupliziert",
-    "duplicateFailed": "Vorlage konnte nicht dupliziert werden"
+    "duplicateFailed": "Vorlage konnte nicht dupliziert werden",
+    "renameTemplate": "Vorlage umbenennen",
+    "placeholder": "Feld",
+    "placeholders": "Felder",
+    "customProperty": "Eigenschaft",
+    "customProperties": "Eigenschaften"
   },
   "templateProcessor": {
     "title": "Vorlage verarbeiten",

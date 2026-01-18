@@ -1,5 +1,5 @@
-import { FC, useState, useMemo, useRef, useCallback } from 'react';
-import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X, Loader2, Star, Copy, Pencil } from 'lucide-react';
+import { FC, useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { FileText, ClipboardList, Move, Trash2, Search, ChevronLeft, ChevronRight, Download, CheckSquare, Square, X, Loader2, Star, Copy, Pencil, MoreVertical } from 'lucide-react';
 import { setDoc, deleteDoc, deleteAsset, listAssets, Doc, listDocs } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word_template';
 import type { FolderTreeNode } from '../../types/folder';
@@ -536,6 +536,24 @@ const FileList: FC<FileListProps> = ({
   // Duplicate template handler
   const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
 
+  // Mobile action menu state
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openMenuId]);
+
   const handleDuplicate = useCallback(async (template: Doc<WordTemplateData>) => {
     setDuplicatingIds(prev => new Set([...prev, template.key]));
     try {
@@ -910,16 +928,17 @@ const FileList: FC<FileListProps> = ({
 
                   {/* Placeholder Count Badge */}
                   {template.data.placeholderCount !== undefined && template.data.placeholderCount > 0 && (
-                    <div
-                      className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium shrink-0 cursor-help"
-                      title={
-                        template.data.placeholderNames && template.data.placeholderNames.length > 0
-                          ? `${t('fileList.placeholders')}: ${template.data.placeholderNames.slice(0, 5).join(', ')}${template.data.placeholderNames.length > 5 ? ` +${template.data.placeholderNames.length - 5}` : ''}`
-                          : t('fileList.placeholders')
-                      }
-                    >
+                    <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium shrink-0">
                       <span>{template.data.placeholderCount}</span>
                       <span>{template.data.placeholderCount === 1 ? t('fileList.placeholder') : t('fileList.placeholders')}</span>
+                    </div>
+                  )}
+
+                  {/* Custom Property Count Badge */}
+                  {template.data.customPropertyCount !== undefined && template.data.customPropertyCount > 0 && (
+                    <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium shrink-0">
+                      <span>{template.data.customPropertyCount}</span>
+                      <span>{template.data.customPropertyCount === 1 ? t('fileList.customProperty') : t('fileList.customProperties')}</span>
                     </div>
                   )}
 
@@ -929,8 +948,8 @@ const FileList: FC<FileListProps> = ({
                     <span>{formatDate(template.data.uploadedAt)}</span>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {/* Action Buttons - Desktop */}
+                  <div className="hidden sm:flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => handleToggleFavorite(template)}
                       disabled={isDeleting}
@@ -1002,6 +1021,101 @@ const FileList: FC<FileListProps> = ({
                         <Trash2 className="w-4 h-4" />
                       )}
                     </button>
+                  </div>
+
+                  {/* Action Buttons - Mobile: Favorite + Dropdown Menu */}
+                  <div className="flex sm:hidden gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => handleToggleFavorite(template)}
+                      disabled={isDeleting}
+                      className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        template.data.isFavorite
+                          ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-slate-700'
+                          : 'text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-slate-700'
+                      }`}
+                      title={t('fileList.toggleFavorite')}
+                      aria-label={t('fileList.toggleFavorite')}
+                    >
+                      <Star className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`} />
+                    </button>
+
+                    {/* More Actions Menu */}
+                    <div className="relative" ref={openMenuId === template.key ? menuRef : undefined}>
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === template.key ? null : template.key)}
+                        disabled={isDeleting}
+                        className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={t('fileList.moreActions')}
+                        aria-label={t('fileList.moreActions')}
+                        aria-expanded={openMenuId === template.key}
+                        aria-haspopup="true"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {openMenuId === template.key && (
+                        <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
+                          <button
+                            onClick={() => {
+                              handleDownload(template);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          >
+                            <Download className="w-4 h-4 text-green-500" />
+                            {t('fileList.downloadTemplate')}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              handleDuplicate(template);
+                              setOpenMenuId(null);
+                            }}
+                            disabled={duplicatingIds.has(template.key)}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
+                          >
+                            <Copy className="w-4 h-4 text-purple-500" />
+                            {t('fileList.duplicateTemplate')}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setTemplateToRename(template);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          >
+                            <Pencil className="w-4 h-4 text-amber-500" />
+                            {t('fileList.renameTemplate')}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setTemplateToMove(template);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          >
+                            <Move className="w-4 h-4 text-blue-500" />
+                            {t('fileList.moveTemplate')}
+                          </button>
+
+                          <div className="border-t border-slate-200 dark:border-slate-700 my-1" />
+
+                          <button
+                            onClick={() => {
+                              handleDelete(template);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            {t('fileList.deleteTemplate')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

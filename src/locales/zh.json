@@ -112,7 +112,12 @@
     "showFavorites": "仅显示收藏",
     "duplicateTemplate": "复制模板",
     "duplicateSuccess": "模板已复制为 \"{{filename}}\"",
-    "duplicateFailed": "复制模板失败"
+    "duplicateFailed": "复制模板失败",
+    "renameTemplate": "重命名模板",
+    "placeholder": "字段",
+    "placeholders": "字段",
+    "customProperty": "属性",
+    "customProperties": "属性"
   },
   "templateProcessor": {
     "title": "处理模板",

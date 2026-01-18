@@ -70,6 +70,9 @@ export const useWordTemplateProcessor = ({
       } else if (template?.data.url) {
         try {
           const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
+          if (!response.ok) {
+            throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+          }
           arrayBuffer = await response.arrayBuffer();
         } catch (error) {
           if (error instanceof TimeoutError) {
@@ -121,12 +124,28 @@ export const useWordTemplateProcessor = ({
             arrayBuffer = await file.arrayBuffer();
           } else if (template?.data.url) {
             const response = await fetch(template.data.url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+            }
             arrayBuffer = await response.arrayBuffer();
           }
         }
       }
 
       // Fallback: synchronous extraction
+      // Validate that arrayBuffer looks like a ZIP file before attempting to parse
+      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+        throw new Error('Empty or invalid file data received');
+      }
+      const uint8 = new Uint8Array(arrayBuffer);
+      // ZIP files start with "PK" signature (0x50, 0x4B)
+      if (uint8.length < 4 || uint8[0] !== 0x50 || uint8[1] !== 0x4B) {
+        // Try to decode as text to show what we received
+        const decoder = new TextDecoder('utf-8', { fatal: false });
+        const preview = decoder.decode(arrayBuffer.slice(0, 200));
+        console.error('Invalid file data received. First 200 chars:', preview);
+        throw new Error('File does not appear to be a valid DOCX (ZIP) file');
+      }
       const zip = new PizZip(arrayBuffer);
 
       const docCustomProperties = readCustomProperties(zip);
@@ -232,6 +251,9 @@ export const useWordTemplateProcessor = ({
       arrayBuffer = await file.arrayBuffer();
     } else if (template?.data.url) {
       const response = await fetch(template.data.url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+      }
       arrayBuffer = await response.arrayBuffer();
     } else {
       throw new Error("No file or template provided");
@@ -267,6 +289,9 @@ export const useWordTemplateProcessor = ({
           arrayBuffer = await file.arrayBuffer();
         } else if (template?.data.url) {
           const response = await fetch(template.data.url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+          }
           arrayBuffer = await response.arrayBuffer();
         }
       }
@@ -366,6 +391,9 @@ export const useWordTemplateProcessor = ({
           arrayBuffer = await file.arrayBuffer();
         } else if (template?.data.url) {
           const response = await fetch(template.data.url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+          }
           arrayBuffer = await response.arrayBuffer();
         } else {
           throw new Error("No file or template provided");
