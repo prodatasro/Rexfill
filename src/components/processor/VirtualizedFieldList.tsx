@@ -64,7 +64,7 @@ const FieldInput: FC<{
   const IconComponent = isCustomProperty ? FileText : Tag;
 
   return (
-    <div className="mb-4">
+    <div>
       <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide mb-1.5">
         <span className="inline-flex items-center gap-1.5">
           <IconComponent className={`w-3.5 h-3.5 ${colors.icon}`} />
@@ -140,97 +140,55 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
   });
 
   // Multi-file mode: render original layout (no virtualization for sections)
+  // Always use fixed height container for consistent layout with sticky header/buttons
   if (isMultiFileMode) {
     const allFieldCount = (sharedFields?.length || 0) +
       Array.from(fileFields?.values() || []).reduce((sum, f) => sum + f.fields.length, 0);
 
     return (
-      <div className="space-y-4">
-        {/* Info banner */}
-        <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4">
-          <div className="flex items-center gap-2">
-            <Files className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
-              {t('templateProcessor.multiFileDesc', { fileCount, fieldCount: allFieldCount })}
-            </h3>
+      <div className="h-[60vh] overflow-auto">
+        <div className="space-y-4">
+          {/* Info banner */}
+          <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border border-blue-200 dark:border-slate-600 rounded-lg p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <Files className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50">
+                {t('templateProcessor.multiFileDesc', { fileCount, fieldCount: allFieldCount })}
+              </h3>
+            </div>
           </div>
-        </div>
 
-        {/* Shared Fields Section */}
-        {sharedFields && sharedFields.length > 0 && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden border-l-4 border-l-green-500 dark:border-l-green-600">
-            <button
-              onClick={onToggleSharedFields}
-              className="w-full px-4 py-3 flex items-center justify-between hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors"
-            >
-              <span className="font-medium text-green-800 dark:text-green-300 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                {t('templateProcessor.sharedFields')}
-                <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
-                  {sharedFields.length}
-                </span>
-              </span>
-              {sharedFieldsExpanded ? (
-                <ChevronDown className="w-5 h-5 text-green-600 dark:text-green-400" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-green-600 dark:text-green-400" />
-              )}
-            </button>
-
-            {sharedFieldsExpanded && (
-              <div className="px-4 pb-4 border-t border-green-200 dark:border-green-800 bg-white/50 dark:bg-slate-800/30">
-                <div className="grid grid-cols-1 gap-6 pt-3">
-                  {sharedFields.map((fieldName) => (
-                    <FieldInput
-                      key={fieldName}
-                      fieldName={fieldName}
-                      value={formData[fieldName] || ''}
-                      isCustomProperty={getIsCustomProperty(fieldName)}
-                      colorVariant="green"
-                      onChange={handleInputChange}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Per-file Unique Fields Sections */}
-        {fileFields && Array.from(fileFields.entries()).map(([fileId, fileInfo]) => {
-          if (fileInfo.fields.length === 0) return null;
-          const isExpanded = expandedFiles?.has(fileId) ?? true;
-
-          return (
-            <div key={fileId} className="bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg overflow-hidden border-l-4 border-l-amber-400 dark:border-l-amber-600">
+          {/* Shared Fields Section */}
+          {sharedFields && sharedFields.length > 0 && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden border-l-4 border-l-green-500 dark:border-l-green-600">
               <button
-                onClick={() => onToggleSection?.(fileId)}
-                className="w-full px-4 py-3 flex items-center justify-between hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors"
+                onClick={onToggleSharedFields}
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors"
               >
-                <span className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  {fileInfo.fileName}
-                  <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                    {fileInfo.fields.length} {t('templateProcessor.uniqueFields')}
+                <span className="font-medium text-green-800 dark:text-green-300 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  {t('templateProcessor.sharedFields')}
+                  <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
+                    {sharedFields.length}
                   </span>
                 </span>
-                {isExpanded ? (
-                  <ChevronDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                {sharedFieldsExpanded ? (
+                  <ChevronDown className="w-5 h-5 text-green-600 dark:text-green-400" />
                 ) : (
-                  <ChevronRight className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  <ChevronRight className="w-5 h-5 text-green-600 dark:text-green-400" />
                 )}
               </button>
 
-              {isExpanded && (
-                <div className="px-4 pb-4 border-t border-amber-200 dark:border-amber-800/50 bg-white/50 dark:bg-slate-800/30">
-                  <div className="grid grid-cols-1 gap-6 pt-3">
-                    {fileInfo.fields.map((fieldName) => (
+              {sharedFieldsExpanded && (
+                <div className="px-4 pb-4 border-t border-green-200 dark:border-green-800 bg-white/50 dark:bg-slate-800/30">
+                  <div className="grid grid-cols-1 gap-2 pt-3">
+                    {sharedFields.map((fieldName) => (
                       <FieldInput
                         key={fieldName}
                         fieldName={fieldName}
                         value={formData[fieldName] || ''}
                         isCustomProperty={getIsCustomProperty(fieldName)}
-                        colorVariant="amber"
+                        colorVariant="green"
                         onChange={handleInputChange}
                       />
                     ))}
@@ -238,8 +196,53 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
                 </div>
               )}
             </div>
-          );
-        })}
+          )}
+
+          {/* Per-file Unique Fields Sections */}
+          {fileFields && Array.from(fileFields.entries()).map(([fileId, fileInfo]) => {
+            if (fileInfo.fields.length === 0) return null;
+            const isExpanded = expandedFiles?.has(fileId) ?? true;
+
+            return (
+              <div key={fileId} className="bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-lg overflow-hidden border-l-4 border-l-amber-400 dark:border-l-amber-600">
+                <button
+                  onClick={() => onToggleSection?.(fileId)}
+                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors"
+                >
+                  <span className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    {fileInfo.fileName}
+                    <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                      {fileInfo.fields.length} {t('templateProcessor.uniqueFields')}
+                    </span>
+                  </span>
+                  {isExpanded ? (
+                    <ChevronDown className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  )}
+                </button>
+
+                {isExpanded && (
+                  <div className="px-4 pb-4 border-t border-amber-200 dark:border-amber-800/50 bg-white/50 dark:bg-slate-800/30">
+                    <div className="grid grid-cols-1 gap-2 pt-3">
+                      {fileInfo.fields.map((fieldName) => (
+                        <FieldInput
+                          key={fieldName}
+                          fieldName={fieldName}
+                          value={formData[fieldName] || ''}
+                          isCustomProperty={getIsCustomProperty(fieldName)}
+                          colorVariant="amber"
+                          onChange={handleInputChange}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -289,19 +292,23 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
     );
   }
 
-  // Single-file mode with few fields: no virtualization
+  // Single-file mode with few fields: no virtualization but same layout
+  // Always use fixed height container for consistent layout with sticky header/buttons
+  // Note: FormField component has mb-4 built-in, so no gap needed
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {fields?.map((fieldName) => (
-        <FormField
-          key={fieldName}
-          fieldName={fieldName}
-          value={formData[fieldName] || ''}
-          isCustomProperty={getIsCustomProperty(fieldName)}
-          colorVariant="default"
-          onChange={handleInputChange}
-        />
-      ))}
+    <div className="h-[60vh] overflow-auto">
+      <div className="grid grid-cols-1">
+        {fields?.map((fieldName) => (
+          <FormField
+            key={fieldName}
+            fieldName={fieldName}
+            value={formData[fieldName] || ''}
+            isCustomProperty={getIsCustomProperty(fieldName)}
+            colorVariant="default"
+            onChange={handleInputChange}
+          />
+        ))}
+      </div>
     </div>
   );
 };

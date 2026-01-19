@@ -93,7 +93,7 @@ const FormFieldComponent: FC<FormFieldProps> = ({
   const IconComponent = isCustomProperty ? FileText : Tag;
 
   return (
-    <div className="mb-4">
+    <div className="mb-2">
       <label className="block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1.5">
         <span className="inline-flex items-center gap-1.5">
           <IconComponent className={`w-3.5 h-3.5 ${colors.icon || 'text-violet-500 dark:text-violet-400'}`} />
