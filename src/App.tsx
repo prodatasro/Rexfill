@@ -39,6 +39,7 @@ const App: FC = () => {
       }))();
   }, []);
 
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
