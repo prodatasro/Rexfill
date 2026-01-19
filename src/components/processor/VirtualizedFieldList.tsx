@@ -1,8 +1,9 @@
-import { FC, useCallback, useRef, useEffect } from 'react';
+import { FC, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, FileText, ChevronDown, ChevronRight, Files, Tag, Check } from 'lucide-react';
 import { FormField, ColorVariant } from './FormField';
+import { SortOption, sortFields } from './FieldSorting';
 
 interface VirtualizedFieldListProps {
   // Single-file mode - customPropertiesRecord maps fieldName to value (presence = is custom property)
@@ -28,6 +29,8 @@ interface VirtualizedFieldListProps {
   // Scroll to field index for virtualized mode
   scrollToFieldIndex?: number;
   onScrollComplete?: () => void;
+  // Sorting
+  sortOption?: SortOption;
 }
 
 // Reusable field input component for non-virtualized rendering
@@ -119,9 +122,32 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
   highlightedSectionId,
   scrollToFieldIndex,
   onScrollComplete,
+  sortOption = 'default',
 }) => {
   const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // Apply sorting to fields
+  const sortedFields = useMemo(() => {
+    return fields ? sortFields(fields, sortOption) : undefined;
+  }, [fields, sortOption]);
+
+  const sortedSharedFields = useMemo(() => {
+    return sharedFields ? sortFields(sharedFields, sortOption) : undefined;
+  }, [sharedFields, sortOption]);
+
+  // Sort file fields within each section
+  const sortedFileFields = useMemo(() => {
+    if (!fileFields) return undefined;
+    const sorted = new Map<string, { fileName: string; fields: string[] }>();
+    fileFields.forEach((fileInfo, fileId) => {
+      sorted.set(fileId, {
+        fileName: fileInfo.fileName,
+        fields: sortFields(fileInfo.fields, sortOption),
+      });
+    });
+    return sorted;
+  }, [fileFields, sortOption]);
 
   // Stable onChange callback for memoized FormField
   const handleInputChange = useCallback(
@@ -143,7 +169,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
   );
 
   // Calculate total field count for single-file mode virtualization
-  const totalFields = fields?.length || 0;
+  const totalFields = sortedFields?.length || 0;
 
   // Single-file mode with virtualization for many fields
   const rowVirtualizer = useVirtualizer({
@@ -160,7 +186,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
       rowVirtualizer.scrollToIndex(scrollToFieldIndex, { align: 'center', behavior: 'smooth' });
       // After scrolling, focus the input
       setTimeout(() => {
-        const fieldName = fields?.[scrollToFieldIndex];
+        const fieldName = sortedFields?.[scrollToFieldIndex];
         if (fieldName) {
           const element = document.getElementById(`field-single-${fieldName}`);
           const input = element?.querySelector('input');
@@ -171,7 +197,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
         onScrollComplete?.();
       }, 150);
     }
-  }, [scrollToFieldIndex, isMultiFileMode, totalFields, rowVirtualizer, fields, onScrollComplete]);
+  }, [scrollToFieldIndex, isMultiFileMode, totalFields, rowVirtualizer, sortedFields, onScrollComplete]);
 
   // Multi-file mode: render original layout (no virtualization for sections)
   // Always use fixed height container for consistent layout with sticky header/buttons
@@ -193,7 +219,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
           </div>
 
           {/* Shared Fields Section */}
-          {sharedFields && sharedFields.length > 0 && (
+          {sortedSharedFields && sortedSharedFields.length > 0 && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg overflow-hidden border-l-4 border-l-green-500 dark:border-l-green-600">
               <button
                 onClick={onToggleSharedFields}
@@ -203,7 +229,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
                   <Sparkles className="w-4 h-4" />
                   {t('templateProcessor.sharedFields')}
                   <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
-                    {sharedFields.length}
+                    {sortedSharedFields.length}
                   </span>
                 </span>
                 {sharedFieldsExpanded ? (
@@ -216,7 +242,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
               {sharedFieldsExpanded && (
                 <div className="px-4 pb-4 border-t border-green-200 dark:border-green-800 bg-white/50 dark:bg-slate-800/30">
                   <div className="grid grid-cols-1 gap-2 pt-3">
-                    {sharedFields.map((fieldName) => (
+                    {sortedSharedFields.map((fieldName) => (
                       <FieldInput
                         key={fieldName}
                         fieldName={fieldName}
@@ -235,7 +261,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
           )}
 
           {/* Per-file Unique Fields Sections */}
-          {fileFields && Array.from(fileFields.entries()).map(([fileId, fileInfo]) => {
+          {sortedFileFields && Array.from(sortedFileFields.entries()).map(([fileId, fileInfo]) => {
             if (fileInfo.fields.length === 0) return null;
             const isExpanded = expandedFiles?.has(fileId) ?? true;
 
@@ -287,7 +313,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
 
   // Single-file mode: flat list of all fields
   // Use virtualization only for many fields (> 20)
-  if (fields && totalFields > 20) {
+  if (sortedFields && totalFields > 20) {
     return (
       <div
         ref={parentRef}
@@ -302,7 +328,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-            const fieldName = fields[virtualItem.index];
+            const fieldName = sortedFields[virtualItem.index];
             return (
               <div
                 key={fieldName}
@@ -338,7 +364,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
   return (
     <div className="h-[60vh] overflow-auto">
       <div className="grid grid-cols-1">
-        {fields?.map((fieldName) => (
+        {sortedFields?.map((fieldName) => (
           <FormField
             key={fieldName}
             fieldName={fieldName}

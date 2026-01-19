@@ -15,6 +15,7 @@ import { DraftRecoveryDialog } from "./modals/DraftRecoveryDialog";
 import { VirtualizedFieldList } from "./processor/VirtualizedFieldList";
 import { BatchStatusPanel } from "./processor/BatchStatusPanel";
 import { FieldSearch } from "./processor/FieldSearch";
+import { FieldSorting, SortOption } from "./processor/FieldSorting";
 
 interface WordTemplateProcessorProps {
   // Single file mode
@@ -110,6 +111,9 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const [highlightedSectionId, setHighlightedSectionId] = useState<string | undefined>();
   const [scrollToFieldIndex, setScrollToFieldIndex] = useState<number | undefined>();
   const highlightTimeoutRef = useRef<number | null>(null);
+
+  // Sorting state
+  const [sortOption, setSortOption] = useState<SortOption>('default');
 
   // Initialize all files as expanded (only when IDs change)
   const processingTemplateIds = processingTemplates.map(pt => pt.id).join(',');
@@ -468,15 +472,18 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     </div>
                   )}
 
-                  {/* Search bar */}
-                  <div className="mb-4">
-                    <FieldSearch
-                      fields={allFields}
-                      sharedFields={isMultiFileMode ? fieldData.sharedFields : undefined}
-                      fileFields={isMultiFileMode ? fieldData.fileFields : undefined}
-                      isMultiFileMode={isMultiFileMode}
-                      onNavigateToField={handleNavigateToField}
-                    />
+                  {/* Search bar and sorting */}
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex-1">
+                      <FieldSearch
+                        fields={allFields}
+                        sharedFields={isMultiFileMode ? fieldData.sharedFields : undefined}
+                        fileFields={isMultiFileMode ? fieldData.fileFields : undefined}
+                        isMultiFileMode={isMultiFileMode}
+                        onNavigateToField={handleNavigateToField}
+                      />
+                    </div>
+                    <FieldSorting value={sortOption} onChange={setSortOption} />
                   </div>
 
                   {/* Virtualized field list - handles both single and multi-file modes */}
@@ -498,6 +505,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     highlightedSectionId={highlightedSectionId}
                     scrollToFieldIndex={scrollToFieldIndex}
                     onScrollComplete={handleScrollComplete}
+                    sortOption={sortOption}
                   />
                 </>
               )}

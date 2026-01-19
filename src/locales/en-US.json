@@ -230,6 +230,11 @@
       "results": "{{count}} result(s)",
       "noResults": "No fields found",
       "navigateHint": "Click to navigate"
+    },
+    "sort": {
+      "default": "Default order",
+      "asc": "Sort A-Z",
+      "desc": "Sort Z-A"
     }
   },
   "confirmDialog": {

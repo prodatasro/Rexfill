@@ -232,6 +232,11 @@
       "results": "{{count}} výsledok(-ky)",
       "noResults": "Žiadne polia nenájdené",
       "navigateHint": "Kliknite pre navigáciu"
+    },
+    "sort": {
+      "default": "Predvolené poradie",
+      "asc": "Zoradiť A-Z",
+      "desc": "Zoradiť Z-A"
     }
   },
   "confirmDialog": {

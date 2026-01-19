@@ -16,7 +16,8 @@
       "Bash(while read commit msg)",
       "Bash(do echo \"=== $msg ===\")",
       "Bash(done)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }
