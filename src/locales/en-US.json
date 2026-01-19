@@ -38,7 +38,8 @@
     "select": "to select",
     "close": "to close",
     "hint": "Start typing to search templates and folders",
-    "goToFolder": "Go to folder"
+    "goToFolder": "Go to folder",
+    "showMore": "Show {{remaining}} more results"
   },
   "login": {
     "title": "Rexfill",

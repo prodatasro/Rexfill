@@ -34,6 +34,7 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
   const { isSearchOpen, openSearch, closeSearch } = useSearch();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(10);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -58,8 +59,8 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
     return results;
   }, []);
 
-  // Search results
-  const results = useMemo(() => {
+  // Search results (all matching results, sorted)
+  const allResults = useMemo(() => {
     if (!query.trim()) return [];
 
     const lowerQuery = query.toLowerCase();
@@ -99,8 +100,18 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
         return a.type === 'template' ? -1 : 1;
       }
       return a.name.localeCompare(b.name);
-    }).slice(0, 10); // Limit to 10 results
+    });
   }, [query, allTemplates, folderTree, flattenFolders]);
+
+  // Displayed results (limited by visibleCount)
+  const results = useMemo(() => {
+    return allResults.slice(0, visibleCount);
+  }, [allResults, visibleCount]);
+
+  // Reset visibleCount when query changes
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [query]);
 
   // Handle keyboard shortcut (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -175,6 +186,11 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
     }
   }, [onSelectFolder, navigate, closeSearch]);
 
+  // Handle "Show more" click
+  const handleShowMore = useCallback(() => {
+    setVisibleCount(prev => prev + 10);
+  }, []);
+
   // Format file size
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -199,12 +215,16 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm"
+      onClick={closeSearch}
+    >
       <div
         className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-xl mx-4 overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-label={t('globalSearch.title')}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
@@ -285,6 +305,16 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
               )}
             </div>
           ))}
+
+          {/* Show more button */}
+          {allResults.length > visibleCount && (
+            <button
+              onClick={handleShowMore}
+              className="w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-t border-slate-200 dark:border-slate-700 transition-colors"
+            >
+              {t('globalSearch.showMore', { remaining: allResults.length - visibleCount })}
+            </button>
+          )}
         </div>
 
         {/* Footer hints */}

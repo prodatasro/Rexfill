@@ -38,7 +38,8 @@
     "select": "na výber",
     "close": "na zatvorenie",
     "hint": "Začnite písať pre vyhľadávanie šablón a priečinkov",
-    "goToFolder": "Prejsť do priečinka"
+    "goToFolder": "Prejsť do priečinka",
+    "showMore": "Zobraziť ďalších {{remaining}} výsledkov"
   },
   "login": {
     "title": "Rexfill",
