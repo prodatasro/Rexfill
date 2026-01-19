@@ -1,4 +1,4 @@
-import { FC, useCallback, useRef } from 'react';
+import { FC, useCallback, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, FileText, ChevronDown, ChevronRight, Files, Tag, Check } from 'lucide-react';
@@ -22,6 +22,12 @@ interface VirtualizedFieldListProps {
   // Mode indicator
   isMultiFileMode: boolean;
   fileCount?: number;
+  // Search/navigation
+  highlightedField?: string;
+  highlightedSectionId?: string;
+  // Scroll to field index for virtualized mode
+  scrollToFieldIndex?: number;
+  onScrollComplete?: () => void;
 }
 
 // Reusable field input component for non-virtualized rendering
@@ -31,7 +37,9 @@ const FieldInput: FC<{
   isCustomProperty: boolean;
   colorVariant: ColorVariant;
   onChange: (fieldName: string, value: string) => void;
-}> = ({ fieldName, value, isCustomProperty, colorVariant, onChange }) => {
+  id?: string;
+  highlight?: boolean;
+}> = ({ fieldName, value, isCustomProperty, colorVariant, onChange, id, highlight }) => {
   const { t } = useTranslation();
 
   const colorClasses: Record<ColorVariant, {
@@ -64,7 +72,10 @@ const FieldInput: FC<{
   const IconComponent = isCustomProperty ? FileText : Tag;
 
   return (
-    <div>
+    <div
+      id={id}
+      className={`transition-all duration-300 ${highlight ? 'ring-2 ring-blue-500 ring-offset-2 rounded-lg' : ''}`}
+    >
       <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide mb-1.5">
         <span className="inline-flex items-center gap-1.5">
           <IconComponent className={`w-3.5 h-3.5 ${colors.icon}`} />
@@ -104,6 +115,10 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
   onToggleSharedFields,
   isMultiFileMode,
   fileCount = 0,
+  highlightedField,
+  highlightedSectionId,
+  scrollToFieldIndex,
+  onScrollComplete,
 }) => {
   const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -138,6 +153,25 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
     overscan: 5,
     enabled: !isMultiFileMode && totalFields > 20,
   });
+
+  // Handle scroll to field index for virtualized mode
+  useEffect(() => {
+    if (scrollToFieldIndex !== undefined && scrollToFieldIndex >= 0 && !isMultiFileMode && totalFields > 20) {
+      rowVirtualizer.scrollToIndex(scrollToFieldIndex, { align: 'center', behavior: 'smooth' });
+      // After scrolling, focus the input
+      setTimeout(() => {
+        const fieldName = fields?.[scrollToFieldIndex];
+        if (fieldName) {
+          const element = document.getElementById(`field-single-${fieldName}`);
+          const input = element?.querySelector('input');
+          if (input) {
+            input.focus();
+          }
+        }
+        onScrollComplete?.();
+      }, 150);
+    }
+  }, [scrollToFieldIndex, isMultiFileMode, totalFields, rowVirtualizer, fields, onScrollComplete]);
 
   // Multi-file mode: render original layout (no virtualization for sections)
   // Always use fixed height container for consistent layout with sticky header/buttons
@@ -190,6 +224,8 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
                         isCustomProperty={getIsCustomProperty(fieldName)}
                         colorVariant="green"
                         onChange={handleInputChange}
+                        id={`field-shared-${fieldName}`}
+                        highlight={highlightedField === fieldName && highlightedSectionId === 'shared'}
                       />
                     ))}
                   </div>
@@ -234,6 +270,8 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
                           isCustomProperty={getIsCustomProperty(fieldName)}
                           colorVariant="amber"
                           onChange={handleInputChange}
+                          id={`field-${fileId}-${fieldName}`}
+                          highlight={highlightedField === fieldName && highlightedSectionId === fileId}
                         />
                       ))}
                     </div>
@@ -283,6 +321,8 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
                   isCustomProperty={getIsCustomProperty(fieldName)}
                   colorVariant="default"
                   onChange={handleInputChange}
+                  id={`field-single-${fieldName}`}
+                  highlight={highlightedField === fieldName && !highlightedSectionId}
                 />
               </div>
             );
@@ -306,6 +346,8 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
             isCustomProperty={getIsCustomProperty(fieldName)}
             colorVariant="default"
             onChange={handleInputChange}
+            id={`field-single-${fieldName}`}
+            highlight={highlightedField === fieldName && !highlightedSectionId}
           />
         ))}
       </div>

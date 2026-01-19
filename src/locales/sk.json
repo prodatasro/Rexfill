@@ -226,6 +226,12 @@
       "rendering": "Vykresľujem šablónu...",
       "generating": "Generujem dokument...",
       "processing": "Spracúvam súbory..."
+    },
+    "search": {
+      "placeholder": "Hľadať polia...",
+      "results": "{{count}} výsledok(-ky)",
+      "noResults": "Žiadne polia nenájdené",
+      "navigateHint": "Kliknite pre navigáciu"
     }
   },
   "confirmDialog": {

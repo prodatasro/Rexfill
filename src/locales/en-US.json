@@ -224,6 +224,12 @@
       "rendering": "Rendering template...",
       "generating": "Generating document...",
       "processing": "Processing files..."
+    },
+    "search": {
+      "placeholder": "Search fields...",
+      "results": "{{count}} result(s)",
+      "noResults": "No fields found",
+      "navigateHint": "Click to navigate"
     }
   },
   "confirmDialog": {

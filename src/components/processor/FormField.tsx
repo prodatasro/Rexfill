@@ -10,6 +10,8 @@ interface FormFieldProps {
   isCustomProperty: boolean;
   colorVariant: ColorVariant;
   onChange: (fieldName: string, value: string) => void;
+  id?: string;
+  highlight?: boolean;
 }
 
 const colorClasses: Record<ColorVariant, {
@@ -44,6 +46,8 @@ const FormFieldComponent: FC<FormFieldProps> = ({
   isCustomProperty,
   colorVariant,
   onChange,
+  id,
+  highlight,
 }) => {
   const { t } = useTranslation();
 
@@ -93,7 +97,10 @@ const FormFieldComponent: FC<FormFieldProps> = ({
   const IconComponent = isCustomProperty ? FileText : Tag;
 
   return (
-    <div className="mb-2">
+    <div
+      id={id}
+      className={`mb-2 transition-all duration-300 ${highlight ? 'ring-2 ring-blue-500 ring-offset-2 rounded-lg' : ''}`}
+    >
       <label className="block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1.5">
         <span className="inline-flex items-center gap-1.5">
           <IconComponent className={`w-3.5 h-3.5 ${colors.icon || 'text-violet-500 dark:text-violet-400'}`} />
@@ -127,6 +134,8 @@ export const FormField = memo(FormFieldComponent, (prevProps, nextProps) => {
     prevProps.fieldName === nextProps.fieldName &&
     prevProps.value === nextProps.value &&
     prevProps.isCustomProperty === nextProps.isCustomProperty &&
-    prevProps.colorVariant === nextProps.colorVariant
+    prevProps.colorVariant === nextProps.colorVariant &&
+    prevProps.id === nextProps.id &&
+    prevProps.highlight === nextProps.highlight
   );
 });

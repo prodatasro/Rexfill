@@ -1,5 +1,5 @@
 import { Doc } from "@junobuild/core";
-import { FC, useEffect, useCallback, useState } from "react";
+import { FC, useEffect, useCallback, useState, useRef } from "react";
 import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files } from 'lucide-react';
 import { WordTemplateData } from "../types/word_template";
 import { FolderTreeNode } from "../types/folder";
@@ -14,6 +14,7 @@ import { MultiSaveAsDialog } from "./modals/MultiSaveAsDialog";
 import { DraftRecoveryDialog } from "./modals/DraftRecoveryDialog";
 import { VirtualizedFieldList } from "./processor/VirtualizedFieldList";
 import { BatchStatusPanel } from "./processor/BatchStatusPanel";
+import { FieldSearch } from "./processor/FieldSearch";
 
 interface WordTemplateProcessorProps {
   // Single file mode
@@ -104,6 +105,12 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   const [showMultiSaveAsDialog, setShowMultiSaveAsDialog] = useState(false);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
 
+  // Search/navigation state
+  const [highlightedField, setHighlightedField] = useState<string | undefined>();
+  const [highlightedSectionId, setHighlightedSectionId] = useState<string | undefined>();
+  const [scrollToFieldIndex, setScrollToFieldIndex] = useState<number | undefined>();
+  const highlightTimeoutRef = useRef<number | null>(null);
+
   // Initialize all files as expanded (only when IDs change)
   const processingTemplateIds = processingTemplates.map(pt => pt.id).join(',');
   useEffect(() => {
@@ -123,6 +130,76 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
       return newSet;
     });
   };
+
+  // Handle navigation to field from search
+  const handleNavigateToField = useCallback((fieldName: string, sectionId?: string) => {
+    // Clear any existing highlight timeout
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+
+    // For multi-file mode, ensure the section is expanded
+    if (isMultiFileMode && sectionId) {
+      if (sectionId === 'shared') {
+        setSharedFieldsExpanded(true);
+      } else {
+        setExpandedFiles(prev => new Set([...prev, sectionId]));
+      }
+    }
+
+    // Set highlight
+    setHighlightedField(fieldName);
+    setHighlightedSectionId(sectionId);
+
+    // For single-file mode with virtualization (20+ fields), use scrollToIndex
+    if (!isMultiFileMode && allFields.length > 20) {
+      const fieldIndex = allFields.indexOf(fieldName);
+      if (fieldIndex >= 0) {
+        setScrollToFieldIndex(fieldIndex);
+      }
+    } else {
+      // Build the element ID based on mode
+      let elementId: string;
+      if (isMultiFileMode && sectionId) {
+        elementId = `field-${sectionId}-${fieldName}`;
+      } else {
+        elementId = `field-single-${fieldName}`;
+      }
+
+      // Wait a bit for sections to expand, then scroll and focus
+      setTimeout(() => {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Focus the input inside
+          const input = element.querySelector('input');
+          if (input) {
+            input.focus();
+          }
+        }
+      }, 100);
+    }
+
+    // Clear highlight after 2 seconds
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightedField(undefined);
+      setHighlightedSectionId(undefined);
+    }, 2000);
+  }, [isMultiFileMode, allFields]);
+
+  // Cleanup highlight timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reset scrollToFieldIndex after scroll completes
+  const handleScrollComplete = useCallback(() => {
+    setScrollToFieldIndex(undefined);
+  }, []);
 
   // Track changes in context
   useEffect(() => {
@@ -391,6 +468,17 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     </div>
                   )}
 
+                  {/* Search bar */}
+                  <div className="mb-4">
+                    <FieldSearch
+                      fields={allFields}
+                      sharedFields={isMultiFileMode ? fieldData.sharedFields : undefined}
+                      fileFields={isMultiFileMode ? fieldData.fileFields : undefined}
+                      isMultiFileMode={isMultiFileMode}
+                      onNavigateToField={handleNavigateToField}
+                    />
+                  </div>
+
                   {/* Virtualized field list - handles both single and multi-file modes */}
                   <VirtualizedFieldList
                     fields={!isMultiFileMode ? allFields : undefined}
@@ -406,6 +494,10 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     onToggleSharedFields={() => setSharedFieldsExpanded(!sharedFieldsExpanded)}
                     isMultiFileMode={isMultiFileMode}
                     fileCount={processingTemplates.length}
+                    highlightedField={highlightedField}
+                    highlightedSectionId={highlightedSectionId}
+                    scrollToFieldIndex={scrollToFieldIndex}
+                    onScrollComplete={handleScrollComplete}
                   />
                 </>
               )}
