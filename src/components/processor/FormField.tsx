@@ -93,10 +93,10 @@ const FormFieldComponent: FC<FormFieldProps> = ({
   const IconComponent = isCustomProperty ? FileText : Tag;
 
   return (
-    <div className="space-y-1">
-      <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
+    <div className="mb-4">
+      <label className="block text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1.5">
         <span className="inline-flex items-center gap-1.5">
-          <IconComponent className={`w-3.5 h-3.5 ${colors.icon}`} />
+          <IconComponent className={`w-3.5 h-3.5 ${colors.icon || 'text-violet-500 dark:text-violet-400'}`} />
           {fieldName}
         </span>
       </label>
@@ -106,7 +106,7 @@ const FormFieldComponent: FC<FormFieldProps> = ({
           value={localValue}
           onChange={handleChange}
           onBlur={handleBlur}
-          className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 ${colors.border} text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 ${colors.focus} placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 ${colors.hover}`}
+          className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border ${colors.border} text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-0 ${colors.focus} placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 ${colors.hover}`}
           placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
           autoComplete="off"
         />

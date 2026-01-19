@@ -64,8 +64,8 @@ const FieldInput: FC<{
   const IconComponent = isCustomProperty ? FileText : Tag;
 
   return (
-    <div className="space-y-1">
-      <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide">
+    <div className="mb-4">
+      <label className="block text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-50 uppercase tracking-wide mb-1.5">
         <span className="inline-flex items-center gap-1.5">
           <IconComponent className={`w-3.5 h-3.5 ${colors.icon}`} />
           {fieldName}
@@ -76,7 +76,7 @@ const FieldInput: FC<{
           type="text"
           value={value}
           onChange={(e) => onChange(fieldName, e.target.value)}
-          className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 ${colors.border} text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 ${colors.focus} placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 ${colors.hover}`}
+          className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 pr-10 bg-white dark:bg-slate-800 border ${colors.border} text-slate-900 dark:text-slate-50 text-sm sm:text-base rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-0 ${colors.focus} placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 ${colors.hover}`}
           placeholder={t('templateProcessor.enterValue', { placeholder: fieldName })}
           autoComplete="off"
         />
@@ -134,7 +134,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: totalFields,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 72, // Field height estimate
+    estimateSize: () => 84, // Field height estimate (input ~42px + label ~18px + padding 24px)
     overscan: 5,
     enabled: !isMultiFileMode && totalFields > 20,
   });
@@ -179,7 +179,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
 
             {sharedFieldsExpanded && (
               <div className="px-4 pb-4 border-t border-green-200 dark:border-green-800 bg-white/50 dark:bg-slate-800/30">
-                <div className="grid grid-cols-1 gap-3 pt-3">
+                <div className="grid grid-cols-1 gap-6 pt-3">
                   {sharedFields.map((fieldName) => (
                     <FieldInput
                       key={fieldName}
@@ -223,7 +223,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
 
               {isExpanded && (
                 <div className="px-4 pb-4 border-t border-amber-200 dark:border-amber-800/50 bg-white/50 dark:bg-slate-800/30">
-                  <div className="grid grid-cols-1 gap-3 pt-3">
+                  <div className="grid grid-cols-1 gap-6 pt-3">
                     {fileInfo.fields.map((fieldName) => (
                       <FieldInput
                         key={fieldName}
@@ -271,7 +271,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
                   left: 0,
                   width: '100%',
                   transform: `translateY(${virtualItem.start}px)`,
-                  paddingBottom: '12px',
+                  paddingBottom: '24px',
                 }}
               >
                 <FormField
@@ -291,7 +291,7 @@ export const VirtualizedFieldList: FC<VirtualizedFieldListProps> = ({
 
   // Single-file mode with few fields: no virtualization
   return (
-    <div className="grid grid-cols-1 gap-3">
+    <div className="grid grid-cols-1 gap-6">
       {fields?.map((fieldName) => (
         <FormField
           key={fieldName}
