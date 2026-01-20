@@ -182,7 +182,7 @@ const Dashboard: FC = () => {
     // Add to recent templates
     addRecentTemplate(template.key, template.data.name);
     // Navigate to processor page with template ID
-    navigate(`/process?id=${template.key}`);
+    navigate(`/app/process?id=${template.key}`);
   }, [navigate, addRecentTemplate]);
 
   // Sync data with search context for global search
@@ -207,18 +207,18 @@ const Dashboard: FC = () => {
   const handleOneTimeProcess = (file: File) => {
     // Store file in context and navigate to processor
     setOneTimeFile(file);
-    navigate('/process');
+    navigate('/app/process');
   };
 
   const handleSaveAndProcess = (templateKey: string) => {
     // Navigate to processor page with template ID (for Save & Process mode)
-    navigate(`/process?id=${templateKey}`);
+    navigate(`/app/process?id=${templateKey}`);
   };
 
   const handleMultiTemplateSelect = (templates: Doc<WordTemplateData>[]) => {
     // Navigate to processor page with multiple template IDs
     const ids = templates.map(t => t.key).join(',');
-    navigate(`/process?ids=${ids}`);
+    navigate(`/app/process?ids=${ids}`);
   };
 
   // Folder operations
@@ -508,7 +508,7 @@ const Dashboard: FC = () => {
       const fileToProcess = draggedFiles[0];
       setDraggedFiles([]);
       setOneTimeFile(fileToProcess);
-      navigate('/process');
+      navigate('/app/process');
       return;
     }
 
@@ -627,7 +627,7 @@ const Dashboard: FC = () => {
       setDraggedFiles([]);
 
       if (mode === 'saveAndProcess' && savedTemplateKey) {
-        navigate(`/process?id=${savedTemplateKey}`);
+        navigate(`/app/process?id=${savedTemplateKey}`);
       }
     } catch (error) {
       console.error('Upload failed:', error);

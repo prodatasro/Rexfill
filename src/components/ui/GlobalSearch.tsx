@@ -172,7 +172,7 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
       onSelectTemplate(result.template);
     } else if (result.type === 'folder') {
       onSelectFolder(result.folderId ?? null);
-      navigate('/');
+      navigate('/app');
     }
   }, [onSelectTemplate, onSelectFolder, navigate, closeSearch]);
 
@@ -182,7 +182,7 @@ export const GlobalSearch: FC<GlobalSearchProps> = ({
     closeSearch();
     if (result.type === 'template' && result.template) {
       onSelectFolder(result.template.data.folderId ?? null);
-      navigate('/');
+      navigate('/app');
     }
   }, [onSelectFolder, navigate, closeSearch]);
 

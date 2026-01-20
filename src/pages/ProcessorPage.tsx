@@ -46,7 +46,7 @@ const ProcessorPage: FC = () => {
         try {
           const ids = templateIds.split(',').filter(id => id.trim());
           if (ids.length === 0) {
-            navigate('/');
+            navigate('/app');
             return;
           }
 
@@ -61,7 +61,7 @@ const ProcessorPage: FC = () => {
             .filter((t): t is Doc<WordTemplateData> => t !== undefined);
 
           if (foundTemplates.length === 0) {
-            navigate('/');
+            navigate('/app');
             return;
           }
 
@@ -77,7 +77,7 @@ const ProcessorPage: FC = () => {
           }
         } catch (error) {
           console.error('Failed to load templates:', error);
-          navigate('/');
+          navigate('/app');
         } finally {
           setLoading(false);
         }
@@ -86,7 +86,7 @@ const ProcessorPage: FC = () => {
 
       // Single template mode (backward compatible)
       if (!templateId) {
-        navigate('/');
+        navigate('/app');
         return;
       }
 
@@ -102,11 +102,11 @@ const ProcessorPage: FC = () => {
           setTemplate(foundTemplate);
           setCurrentFolderId(foundTemplate.data.folderId || null);
         } else {
-          navigate('/');
+          navigate('/app');
         }
       } catch (error) {
         console.error('Failed to load template:', error);
-        navigate('/');
+        navigate('/app');
       } finally {
         setLoading(false);
       }
@@ -122,9 +122,9 @@ const ProcessorPage: FC = () => {
     // Navigate back to dashboard, preserving the folder context if available
     const folderId = template?.data.folderId || templates[0]?.data.folderId;
     if (folderId) {
-      navigate(`/?folder=${folderId}`);
+      navigate(`/app?folder=${folderId}`);
     } else {
-      navigate('/');
+      navigate('/app');
     }
 
     // Clear folder ID from context after navigation
@@ -137,7 +137,7 @@ const ProcessorPage: FC = () => {
     setTemplates([]); // Clear multi-template mode
     setFile(null); // Clear file if it was a one-time file
     // Update the URL to reflect the new template
-    navigate(`/process?id=${newTemplate.key}`, { replace: true });
+    navigate(`/app/process?id=${newTemplate.key}`, { replace: true });
     // Update context with new folder
     setCurrentFolderId(newTemplate.data.folderId || null);
   };

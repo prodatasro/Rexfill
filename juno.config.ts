@@ -11,7 +11,10 @@ export default defineConfig({
     collections: {
       datastore: [
         { collection: 'templates_meta', read: 'private', write: 'private', memory: 'stable' },
-        { collection: 'folders', read: 'private', write: 'private', memory: 'stable' }
+        { collection: 'folders', read: 'private', write: 'private', memory: 'stable' },
+        { collection: 'subscriptions', read: 'private', write: 'private', memory: 'stable' },
+        { collection: 'usage', read: 'private', write: 'private', memory: 'stable' },
+        { collection: 'contact_submissions', read: 'managed', write: 'public', memory: 'stable' },
       ],
       storage: [
         { collection: 'templates', read: 'private', write: 'private', memory: 'stable'}

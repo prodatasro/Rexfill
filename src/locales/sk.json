@@ -47,6 +47,14 @@
     "signIn": "Prihlásiť sa cez Internet Identity",
     "secureNote": "Vaše šablóny sú bezpečne uložené na Internet Computeri"
   },
+  "loginDialog": {
+    "title": "Prihlásiť sa",
+    "subtitle": "Vyberte spôsob prihlásenia",
+    "internetIdentity": "Internet Identity",
+    "internetIdentityDesc": "Bezpečné prihlásenie cez blockchain",
+    "google": "Google",
+    "comingSoon": "Čoskoro"
+  },
   "dashboard": {
     "title": "Vaše Word šablóny",
     "subtitle": "Nahrajte DOCX súbory s premennými ako {{name}} a vypĺňajte ich dynamicky.",
@@ -246,16 +254,7 @@
   },
   "language": {
     "sk": "Slovenčina",
-    "en-US": "English",
-    "cs": "Čeština",
-    "pl": "Polski",
-    "hu": "Magyar",
-    "de": "Deutsch",
-    "es": "Español",
-    "it": "Italiano",
-    "fr": "Français",
-    "zh": "中文",
-    "ja": "日本語"
+    "en-US": "English"
   },
   "folders": {
     "title": "Priečinky",
@@ -395,5 +394,335 @@
     "invalidFileType": "Prosím vyberte .zip súbor",
     "invalidZipFile": "Neplatný alebo poškodený ZIP súbor",
     "parseError": "Nepodarilo sa spracovať záložný súbor"
+  },
+  "navigation": {
+    "features": "Funkcie",
+    "pricing": "Cenník",
+    "guides": "Návody",
+    "contact": "Kontakt",
+    "signIn": "Prihlásiť sa",
+    "getStarted": "Začať",
+    "dashboard": "Prehľad"
+  },
+  "footer": {
+    "description": "Vypĺňajte Word šablóny dynamickými údajmi za pár sekúnd. Jednoduché, rýchle a bezpečné.",
+    "product": "Produkt",
+    "company": "Spoločnosť",
+    "legal": "Právne informácie",
+    "privacy": "Ochrana súkromia",
+    "terms": "Podmienky služby",
+    "rights": "Všetky práva vyhradené."
+  },
+  "landing": {
+    "hero": {
+      "badge": "Teraz s dávkovým spracovaním",
+      "title": "Vyplňte Word šablóny za pár sekúnd",
+      "subtitle": "Nahrajte DOCX šablóny s {{premennými}}, vyplňte ich údajmi a okamžite stiahnite personalizované dokumenty. Žiadne zložité nastavovanie.",
+      "cta": {
+        "primary": "Začať zadarmo",
+        "secondary": "Pozrite sa ako to funguje"
+      },
+      "trust": "Dôverujú nám tímy po celom svete",
+      "trustItems": {
+        "noCard": "Nevyžaduje sa kreditná karta",
+        "freeTier": "Dostupná bezplatná verzia",
+        "secure": "Bezpečné a súkromné"
+      }
+    },
+    "features": {
+      "title": "Všetko čo potrebujete na spracovanie šablón",
+      "subtitle": "Výkonné funkcie na zefektívnenie vašich dokumentov",
+      "templateProcessing": {
+        "title": "Inteligentné spracovanie šablón",
+        "description": "Nahrajte DOCX súbory s {{premennými}} a dynamicky ich vyplňte vašimi údajmi. Podporuje komplexné dokumenty s viacerými poliami."
+      },
+      "folderOrganization": {
+        "title": "Organizácia do priečinkov",
+        "description": "Organizujte šablóny v 2-úrovňovej hierarchii priečinkov. Udržujte dokumenty štruktúrované a ľahko nájditeľné."
+      },
+      "batchProcessing": {
+        "title": "Dávkové spracovanie",
+        "description": "Spracujte viacero šablón naraz so zdieľanými hodnotami polí. Ušetrite hodiny na opakujúcich sa úlohách."
+      },
+      "customProperties": {
+        "title": "Vlastné vlastnosti",
+        "description": "Podpora pre vlastné vlastnosti dokumentov Word a automaticky aktualizované polia. Profesionálna správa dokumentov."
+      },
+      "darkMode": {
+        "title": "Tmavý režim",
+        "description": "Pracujte pohodlne vo dne aj v noci s plnou podporou tmavého režimu. Šetrné k očiam, krásne rozhranie."
+      },
+      "multiLanguage": {
+        "title": "Viacjazyčné",
+        "description": "Dostupné v angličtine a slovenčine. Rozhranie sa automaticky prispôsobí vášmu preferovanému jazyku."
+      }
+    },
+    "howItWorks": {
+      "title": "Ako to funguje",
+      "subtitle": "Začnite v troch jednoduchých krokoch",
+      "step1": {
+        "title": "Nahrajte šablónu",
+        "description": "Nahrajte váš DOCX súbor s {{premennými}} na miestach, kde chcete dynamický obsah."
+      },
+      "step2": {
+        "title": "Vyplňte polia",
+        "description": "Zadajte hodnoty pre každú premennú. Pred generovaním si pozrite náhľad zmien v reálnom čase."
+      },
+      "step3": {
+        "title": "Stiahnite",
+        "description": "Získajte personalizovaný dokument okamžite. Pripravený na použitie, zdieľanie alebo tlač."
+      }
+    },
+    "cta": {
+      "title": "Pripravení zefektívniť vaše dokumenty?",
+      "subtitle": "Začnite spracovávať šablóny za pár minút. Pre bezplatnú verziu nie je potrebná kreditná karta.",
+      "button": "Začať zadarmo"
+    }
+  },
+  "pricing": {
+    "title": "Jednoduchý a transparentný cenník",
+    "subtitle": "Vyberte si plán podľa vašich potrieb. Kedykoľvek môžete zmeniť.",
+    "monthly": "Mesačne",
+    "annual": "Ročne",
+    "annualDiscount": "Ušetrite 17%",
+    "perMonth": "/mesiac",
+    "free": "Zadarmo",
+    "popular": "Najpopulárnejší",
+    "plans": {
+      "free": {
+        "name": "Zadarmo",
+        "description": "Ideálne na vyskúšanie Rexfill",
+        "cta": "Začať"
+      },
+      "starter": {
+        "name": "Štartovací",
+        "description": "Pre jednotlivcov a malé tímy",
+        "cta": "Začať skúšobnú verziu"
+      },
+      "professional": {
+        "name": "Profesionálny",
+        "description": "Pre rastúce firmy",
+        "cta": "Začať skúšobnú verziu"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "Pre veľké organizácie",
+        "cta": "Kontaktovať predaj"
+      }
+    },
+    "features": {
+      "documentsPerDay": "{{value}} dokumentov/deň",
+      "documentsPerMonth": "{{value}} dokumentov/mesiac",
+      "maxTemplates": "{{value}} šablón",
+      "maxFileSize": "{{size}}MB max veľkosť súboru",
+      "batchProcessing": "Dávkové spracovanie",
+      "prioritySupport": "Prioritná podpora",
+      "unlimited": "Neobmedzene"
+    },
+    "questions": "Máte otázky?",
+    "contactUs": "Kontaktujte nás"
+  },
+  "guides": {
+    "title": "Návod na prípravu šablón",
+    "subtitle": "Naučte sa vytvárať Word šablóny, ktoré perfektne fungujú s Rexfill",
+    "sections": {
+      "placeholders": {
+        "title": "Používanie premenných",
+        "intro": "Premenné sú špeciálne značky vo vašom Word dokumente, ktoré Rexfill nahradí vašimi údajmi. Používajú syntax s dvojitými zátvorkami.",
+        "example1": "Vážený {{meno_zakaznika}}, ďakujeme za vašu objednávku #{{cislo_objednavky}}.",
+        "description": "Keď spracujete túto šablónu, Rexfill deteguje tieto premenné a vytvorí pre vás formulárové polia na vyplnenie.",
+        "correct": "Správny formát",
+        "incorrect": "Vyhnite sa týmto",
+        "singleBrace": "jednoduché zátvorky",
+        "spaces": "medzery vnútri",
+        "caseSensitive": "záleží na veľkosti písmen"
+      },
+      "customProperties": {
+        "title": "Vlastné vlastnosti dokumentu",
+        "intro": "Vlastné vlastnosti Wordu umožňujú ukladať metadáta, ktoré je možné použiť v celom dokumente s automaticky aktualizovanými poliami.",
+        "howTo": "Ako pridať vlastné vlastnosti vo Worde:",
+        "step1": "Prejdite na Súbor > Informácie > Vlastnosti > Rozšírené vlastnosti",
+        "step2": "Kliknite na záložku Vlastné",
+        "step3": "Pridajte názov a hodnotu pre vašu vlastnosť",
+        "step4": "Kliknite Pridať, potom OK",
+        "benefit": "Rexfill deteguje tieto vlastnosti a umožní vám ich aktualizovať spolu s premennými."
+      },
+      "bestPractices": {
+        "title": "Osvedčené postupy",
+        "tip1": "Používajte popisné názvy premenných ako {{meno_zakaznika}} namiesto {{m}}",
+        "tip2": "Názvy premenných píšte malými písmenami s podčiarkovníkmi pre konzistentnosť",
+        "tip3": "Najprv otestujte šablónu s malým dokumentom pred dávkovým spracovaním",
+        "tip4": "Vyhnite sa komplexnému formátovaniu vo vnútri textu premennej (tučné, kurzíva v {{}})",
+        "tip5": "Uložte šablónu vo formáte .docx (nie .doc ani iné formáty)"
+      },
+      "troubleshooting": {
+        "title": "Riešenie problémov",
+        "issue1": {
+          "title": "Premenné neboli detegované",
+          "solution": "Uistite sa, že používate dvojité zátvorky {{takto}} bez medzier. Niekedy Word rozdelí text na viacero častí - skúste premennú prepísať naraz."
+        },
+        "issue2": {
+          "title": "Problémy s formátovaním po spracovaní",
+          "solution": "Komplexné formátovanie v rámci premenných môže spôsobiť problémy. Aplikujte formátovanie na celý text premennej, nie len na časti."
+        },
+        "issue3": {
+          "title": "Súbor sa nenahráva",
+          "solution": "Uistite sa, že váš súbor je vo formáte .docx a neprekračuje limit veľkosti pre váš plán. Skúste dokument znova uložiť vo Worde."
+        }
+      }
+    }
+  },
+  "contact": {
+    "title": "Kontaktujte nás",
+    "subtitle": "Máte otázky? Radi vám pomôžeme. Napíšte nám a odpovieme čo najskôr.",
+    "form": {
+      "name": "Vaše meno",
+      "namePlaceholder": "Ján Novák",
+      "email": "Emailová adresa",
+      "emailPlaceholder": "jan@example.com",
+      "subject": "Predmet",
+      "subjectPlaceholder": "Vyberte tému...",
+      "message": "Správa",
+      "messagePlaceholder": "Ako vám môžeme pomôcť?",
+      "submit": "Odoslať správu",
+      "sending": "Odosielam..."
+    },
+    "subjects": {
+      "general": "Všeobecný dotaz",
+      "support": "Technická podpora",
+      "billing": "Otázky k fakturácii",
+      "enterprise": "Enterprise plány",
+      "feedback": "Spätná väzba a návrhy"
+    },
+    "info": {
+      "email": {
+        "title": "Email",
+        "description": "Napíšte nám kedykoľvek"
+      },
+      "response": {
+        "title": "Čas odozvy",
+        "description": "Zvyčajne odpovedáme do 24 hodín počas pracovných dní."
+      }
+    },
+    "success": "Ďakujeme za vašu správu! Čoskoro vám odpovieme.",
+    "error": "Niečo sa pokazilo. Skúste to znova alebo nám napíšte priamo."
+  },
+  "privacy": {
+    "title": "Ochrana súkromia",
+    "lastUpdated": "Posledná aktualizácia: {{date}}",
+    "sections": {
+      "introduction": {
+        "title": "Úvod",
+        "content": "V Rexfill berieme vaše súkromie vážne. Tieto zásady ochrany súkromia vysvetľujú, ako zhromažďujeme, používame, zverejňujeme a chránime vaše informácie pri používaní našej služby."
+      },
+      "dataCollection": {
+        "title": "Informácie, ktoré zhromažďujeme",
+        "content": "Zhromažďujeme informácie, ktoré nám priamo poskytnete:",
+        "item1": "Informácie o účte (autentifikácia cez Internet Identity alebo Google)",
+        "item2": "Dokumenty, ktoré nahráte na spracovanie (bezpečne uložené)",
+        "item3": "Údaje o používaní (spracované dokumenty, použité funkcie)"
+      },
+      "dataUsage": {
+        "title": "Ako používame vaše informácie",
+        "content": "Informácie, ktoré zhromažďujeme, používame na:",
+        "item1": "Poskytovanie a údržbu našej služby",
+        "item2": "Spracovanie vašich dokumentov podľa požiadaviek",
+        "item3": "Zlepšovanie a optimalizáciu našej služby"
+      },
+      "dataStorage": {
+        "title": "Ukladanie a bezpečnosť údajov",
+        "content": "Vaše dokumenty a údaje sú bezpečne uložené na blockchaine Internet Computer prostredníctvom Juno. Táto decentralizovaná architektúra zabezpečuje, že vaše údaje sú šifrované a prístupné len vám."
+      },
+      "rights": {
+        "title": "Vaše práva (GDPR)",
+        "content": "Podľa GDPR máte nasledujúce práva:",
+        "item1": "Právo na prístup k vašim osobným údajom",
+        "item2": "Právo na opravu nepresných údajov",
+        "item3": "Právo na vymazanie ('právo byť zabudnutý')",
+        "item4": "Právo na prenosnosť údajov"
+      },
+      "cookies": {
+        "title": "Cookies",
+        "content": "Používame minimálne množstvo cookies len pre základnú funkčnosť, ako je zapamätanie vašej jazykovej preferencie a stavu autentifikácie. Nepoužívame sledovacie cookies ani cookies tretích strán."
+      },
+      "thirdParties": {
+        "title": "Služby tretích strán",
+        "content": "Používame Paddle ako nášho platobného sprostredkovateľa pre správu predplatného. Keď si predplatíte, Paddle spracuje vaše platobné údaje podľa ich zásad ochrany súkromia. Údaje o kreditnej karte nikdy priamo neukladáme."
+      },
+      "contact": {
+        "title": "Kontaktujte nás",
+        "content": "Ak máte otázky k týmto zásadám ochrany súkromia alebo chcete uplatniť vaše práva podľa GDPR, kontaktujte nás na privacy@rexfill.com."
+      }
+    }
+  },
+  "terms": {
+    "title": "Podmienky služby",
+    "lastUpdated": "Posledná aktualizácia: {{date}}",
+    "sections": {
+      "acceptance": {
+        "title": "Prijatie podmienok",
+        "content": "Prístupom alebo používaním Rexfill súhlasíte s týmito Podmienkami služby. Ak s týmito podmienkami nesúhlasíte, nepoužívajte našu službu."
+      },
+      "service": {
+        "title": "Popis služby",
+        "content": "Rexfill je služba na spracovanie dokumentových šablón, ktorá vám umožňuje nahrávať Word dokumenty s premennými a vypĺňať ich dynamickými údajmi. Služba je poskytovaná 'ako je' a vyhradzujeme si právo kedykoľvek upraviť alebo ukončiť funkcie."
+      },
+      "accounts": {
+        "title": "Používateľské účty",
+        "content": "Na používanie Rexfill sa musíte autentifikovať pomocou Internet Identity alebo Google. Ste zodpovední za:",
+        "item1": "Udržiavanie bezpečnosti vašich prihlasovacích údajov",
+        "item2": "Všetky aktivity, ktoré sa uskutočnia pod vaším účtom",
+        "item3": "Okamžité nahlásenie akéhokoľvek neoprávneného prístupu"
+      },
+      "payments": {
+        "title": "Predplatné a platby",
+        "content": "Platené predplatné je spracované cez Paddle, nášho obchodného zástupcu:",
+        "item1": "Predplatné sa automaticky obnovuje, pokiaľ nie je zrušené",
+        "item2": "Môžete zrušiť kedykoľvek; prístup pokračuje do konca fakturačného obdobia",
+        "item3": "Vrátenie peňazí sa riadi politikou vrátenia Paddle"
+      },
+      "acceptableUse": {
+        "title": "Prijateľné používanie",
+        "content": "Súhlasíte, že nebudete používať Rexfill na:",
+        "item1": "Nahrávanie alebo spracovanie nelegálneho, škodlivého alebo urážlivého obsahu",
+        "item2": "Pokus o neoprávnený prístup k našim systémom",
+        "item3": "Narúšanie služby alebo prístupu iných používateľov",
+        "item4": "Používanie automatizovaných systémov na prístup k službe nad rámec bežného používania"
+      },
+      "intellectualProperty": {
+        "title": "Duševné vlastníctvo",
+        "content": "Zachovávate si všetky práva k dokumentom, ktoré nahráte a spracujete. Rexfill a jeho pôvodný obsah, funkcie a funkcionalita sú naším vlastníctvom a sú chránené medzinárodnými zákonmi o autorských právach a ochranných známkach."
+      },
+      "liability": {
+        "title": "Obmedzenie zodpovednosti",
+        "content": "V maximálnom rozsahu povolenom zákonom, Rexfill nenesie zodpovednosť za žiadne nepriame, náhodné, špeciálne, následné alebo trestné škody vyplývajúce z vášho používania služby."
+      },
+      "termination": {
+        "title": "Ukončenie",
+        "content": "Môžeme ukončiť alebo pozastaviť váš účet kedykoľvek za porušenie týchto podmienok. Po ukončení vaše právo používať službu okamžite zaniká, hoci si môžete vyžiadať export vašich údajov."
+      },
+      "changes": {
+        "title": "Zmeny podmienok",
+        "content": "Vyhradzujeme si právo kedykoľvek upraviť tieto podmienky. O podstatných zmenách budeme používateľov informovať e-mailom alebo oznámením v aplikácii. Pokračovaním v používaní po zmenách vyjadrujete súhlas."
+      },
+      "contact": {
+        "title": "Kontakt",
+        "content": "Pre otázky k týmto Podmienkam služby nás kontaktujte na legal@rexfill.com."
+      }
+    }
+  },
+  "subscription": {
+    "currentPlan": "Aktuálny plán",
+    "usage": {
+      "title": "Použitie tento mesiac",
+      "documentsProcessed": "{{used}} z {{limit}} dokumentov",
+      "unlimited": "Neobmedzene"
+    },
+    "upgrade": {
+      "title": "Vylepšite váš plán",
+      "limitReached": "Dosiahli ste denný limit",
+      "nearLimit": "Blížite sa k limitu",
+      "upgradeNow": "Vylepšiť teraz"
+    }
   }
 }

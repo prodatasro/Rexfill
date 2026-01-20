@@ -47,6 +47,14 @@
     "signIn": "Sign in with Internet Identity",
     "secureNote": "Your templates are stored securely on the Internet Computer"
   },
+  "loginDialog": {
+    "title": "Sign In",
+    "subtitle": "Choose your sign-in method",
+    "internetIdentity": "Internet Identity",
+    "internetIdentityDesc": "Secure blockchain authentication",
+    "google": "Google",
+    "comingSoon": "Coming soon"
+  },
   "dashboard": {
     "title": "Your Word Templates",
     "subtitle": "Upload DOCX files with placeholders like {{name}} and fill them dynamically.",
@@ -244,16 +252,7 @@
   },
   "language": {
     "sk": "Slovenčina",
-    "en-US": "English",
-    "cs": "Čeština",
-    "pl": "Polski",
-    "hu": "Magyar",
-    "de": "Deutsch",
-    "es": "Español",
-    "it": "Italiano",
-    "fr": "Français",
-    "zh": "中文",
-    "ja": "日本語"
+    "en-US": "English"
   },
   "folders": {
     "title": "Folders",
@@ -393,5 +392,335 @@
     "invalidFileType": "Please select a .zip file",
     "invalidZipFile": "Invalid or corrupted ZIP file",
     "parseError": "Failed to parse backup file"
+  },
+  "navigation": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "guides": "Guides",
+    "contact": "Contact",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "dashboard": "Dashboard"
+  },
+  "footer": {
+    "description": "Fill Word templates with dynamic data in seconds. Simple, fast, and secure.",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "rights": "All rights reserved."
+  },
+  "landing": {
+    "hero": {
+      "badge": "Now with batch processing",
+      "title": "Fill Word Templates in Seconds",
+      "subtitle": "Upload your DOCX templates with {{placeholders}}, fill them with data, and download personalized documents instantly. No complex setup required.",
+      "cta": {
+        "primary": "Start Free",
+        "secondary": "See How It Works"
+      },
+      "trust": "Trusted by teams worldwide",
+      "trustItems": {
+        "noCard": "No credit card required",
+        "freeTier": "Free tier available",
+        "secure": "Secure & private"
+      }
+    },
+    "features": {
+      "title": "Everything You Need for Template Processing",
+      "subtitle": "Powerful features to streamline your document workflow",
+      "templateProcessing": {
+        "title": "Smart Template Processing",
+        "description": "Upload DOCX files with {{placeholders}} and fill them dynamically with your data. Supports complex documents with multiple fields."
+      },
+      "folderOrganization": {
+        "title": "Folder Organization",
+        "description": "Organize templates in a 2-level folder hierarchy. Keep your documents structured and easy to find."
+      },
+      "batchProcessing": {
+        "title": "Batch Processing",
+        "description": "Process multiple templates at once with shared field values. Save hours on repetitive document tasks."
+      },
+      "customProperties": {
+        "title": "Custom Properties",
+        "description": "Support for Word custom document properties and auto-updating fields. Professional document management."
+      },
+      "darkMode": {
+        "title": "Dark Mode",
+        "description": "Work comfortably day or night with full dark mode support. Easy on the eyes, beautiful interface."
+      },
+      "multiLanguage": {
+        "title": "Multi-Language",
+        "description": "Available in English and Slovak. Interface adapts to your preferred language automatically."
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "Get started in three simple steps",
+      "step1": {
+        "title": "Upload Template",
+        "description": "Upload your DOCX file with {{placeholder}} markers where you want dynamic content."
+      },
+      "step2": {
+        "title": "Fill Fields",
+        "description": "Enter values for each placeholder. Preview changes in real-time before generating."
+      },
+      "step3": {
+        "title": "Download",
+        "description": "Get your personalized document instantly. Ready to use, share, or print."
+      }
+    },
+    "cta": {
+      "title": "Ready to Streamline Your Documents?",
+      "subtitle": "Start processing templates in minutes. No credit card required for the free tier.",
+      "button": "Get Started Free"
+    }
+  },
+  "pricing": {
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Choose the plan that fits your needs. Upgrade or downgrade anytime.",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "annualDiscount": "Save 17%",
+    "perMonth": "/month",
+    "free": "Free",
+    "popular": "Most Popular",
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect for trying out Rexfill",
+        "cta": "Get Started"
+      },
+      "starter": {
+        "name": "Starter",
+        "description": "For individuals and small teams",
+        "cta": "Start Trial"
+      },
+      "professional": {
+        "name": "Professional",
+        "description": "For growing businesses",
+        "cta": "Start Trial"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For large organizations",
+        "cta": "Contact Sales"
+      }
+    },
+    "features": {
+      "documentsPerDay": "{{value}} documents/day",
+      "documentsPerMonth": "{{value}} documents/month",
+      "maxTemplates": "{{value}} templates",
+      "maxFileSize": "{{size}}MB max file size",
+      "batchProcessing": "Batch processing",
+      "prioritySupport": "Priority support",
+      "unlimited": "Unlimited"
+    },
+    "questions": "Have questions?",
+    "contactUs": "Contact us"
+  },
+  "guides": {
+    "title": "Template Preparation Guide",
+    "subtitle": "Learn how to create Word templates that work perfectly with Rexfill",
+    "sections": {
+      "placeholders": {
+        "title": "Using Placeholders",
+        "intro": "Placeholders are special markers in your Word document that Rexfill replaces with your data. They use double curly braces syntax.",
+        "example1": "Dear {{customer_name}}, thank you for your order #{{order_number}}.",
+        "description": "When you process this template, Rexfill will detect these placeholders and create form fields for you to fill in.",
+        "correct": "Correct Format",
+        "incorrect": "Avoid These",
+        "singleBrace": "single braces",
+        "spaces": "spaces inside",
+        "caseSensitive": "case matters"
+      },
+      "customProperties": {
+        "title": "Custom Document Properties",
+        "intro": "Word custom properties allow you to store metadata that can be used throughout your document with auto-updating fields.",
+        "howTo": "How to add custom properties in Word:",
+        "step1": "Go to File > Info > Properties > Advanced Properties",
+        "step2": "Click the Custom tab",
+        "step3": "Add a name and value for your property",
+        "step4": "Click Add, then OK",
+        "benefit": "Rexfill will detect these properties and allow you to update them along with placeholders."
+      },
+      "bestPractices": {
+        "title": "Best Practices",
+        "tip1": "Use descriptive placeholder names like {{customer_name}} instead of {{n}}",
+        "tip2": "Keep placeholder names in lowercase with underscores for consistency",
+        "tip3": "Test your template with a small document first before batch processing",
+        "tip4": "Avoid complex formatting inside placeholder text (bold, italic within {{}})",
+        "tip5": "Save your template as .docx format (not .doc or other formats)"
+      },
+      "troubleshooting": {
+        "title": "Troubleshooting",
+        "issue1": {
+          "title": "Placeholders not detected",
+          "solution": "Make sure you're using double curly braces {{like_this}} with no spaces. Sometimes Word splits text across multiple runs - try retyping the placeholder in one go."
+        },
+        "issue2": {
+          "title": "Formatting issues after processing",
+          "solution": "Complex formatting within placeholders can cause issues. Apply formatting to the entire placeholder text, not just parts of it."
+        },
+        "issue3": {
+          "title": "File won't upload",
+          "solution": "Ensure your file is in .docx format and under the size limit for your plan. Try saving the document again in Word."
+        }
+      }
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.",
+    "form": {
+      "name": "Your Name",
+      "namePlaceholder": "John Doe",
+      "email": "Email Address",
+      "emailPlaceholder": "john@example.com",
+      "subject": "Subject",
+      "subjectPlaceholder": "Select a topic...",
+      "message": "Message",
+      "messagePlaceholder": "How can we help you?",
+      "submit": "Send Message",
+      "sending": "Sending..."
+    },
+    "subjects": {
+      "general": "General Inquiry",
+      "support": "Technical Support",
+      "billing": "Billing Question",
+      "enterprise": "Enterprise Plans",
+      "feedback": "Feedback & Suggestions"
+    },
+    "info": {
+      "email": {
+        "title": "Email",
+        "description": "Drop us an email anytime"
+      },
+      "response": {
+        "title": "Response Time",
+        "description": "We typically respond within 24 hours during business days."
+      }
+    },
+    "success": "Thank you for your message! We'll get back to you soon.",
+    "error": "Something went wrong. Please try again or email us directly."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: {{date}}",
+    "sections": {
+      "introduction": {
+        "title": "Introduction",
+        "content": "At Rexfill, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service."
+      },
+      "dataCollection": {
+        "title": "Information We Collect",
+        "content": "We collect information that you provide directly to us:",
+        "item1": "Account information (authentication via Internet Identity or Google)",
+        "item2": "Documents you upload for processing (stored securely)",
+        "item3": "Usage data (documents processed, features used)"
+      },
+      "dataUsage": {
+        "title": "How We Use Your Information",
+        "content": "We use the information we collect to:",
+        "item1": "Provide and maintain our service",
+        "item2": "Process your documents as requested",
+        "item3": "Improve and optimize our service"
+      },
+      "dataStorage": {
+        "title": "Data Storage & Security",
+        "content": "Your documents and data are stored securely on the Internet Computer blockchain through Juno. This decentralized architecture ensures your data is encrypted and only accessible by you."
+      },
+      "rights": {
+        "title": "Your Rights (GDPR)",
+        "content": "Under GDPR, you have the following rights:",
+        "item1": "Right to access your personal data",
+        "item2": "Right to rectification of inaccurate data",
+        "item3": "Right to erasure ('right to be forgotten')",
+        "item4": "Right to data portability"
+      },
+      "cookies": {
+        "title": "Cookies",
+        "content": "We use minimal cookies only for essential functionality like remembering your language preference and authentication state. We do not use tracking cookies or third-party analytics cookies."
+      },
+      "thirdParties": {
+        "title": "Third-Party Services",
+        "content": "We use Paddle as our payment processor for subscription management. When you subscribe, Paddle processes your payment information according to their privacy policy. We never store your credit card details directly."
+      },
+      "contact": {
+        "title": "Contact Us",
+        "content": "If you have questions about this Privacy Policy or want to exercise your GDPR rights, please contact us at privacy@rexfill.com."
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: {{date}}",
+    "sections": {
+      "acceptance": {
+        "title": "Acceptance of Terms",
+        "content": "By accessing or using Rexfill, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our service."
+      },
+      "service": {
+        "title": "Service Description",
+        "content": "Rexfill is a document template processing service that allows you to upload Word documents with placeholders and fill them with dynamic data. The service is provided 'as is' and we reserve the right to modify or discontinue features at any time."
+      },
+      "accounts": {
+        "title": "User Accounts",
+        "content": "To use Rexfill, you must authenticate using Internet Identity or Google. You are responsible for:",
+        "item1": "Maintaining the security of your authentication credentials",
+        "item2": "All activities that occur under your account",
+        "item3": "Notifying us immediately of any unauthorized access"
+      },
+      "payments": {
+        "title": "Subscriptions & Payments",
+        "content": "Paid subscriptions are processed through Paddle, our merchant of record:",
+        "item1": "Subscriptions renew automatically unless cancelled",
+        "item2": "You may cancel at any time; access continues until the end of the billing period",
+        "item3": "Refunds are handled according to Paddle's refund policy"
+      },
+      "acceptableUse": {
+        "title": "Acceptable Use",
+        "content": "You agree not to use Rexfill to:",
+        "item1": "Upload or process illegal, harmful, or offensive content",
+        "item2": "Attempt to gain unauthorized access to our systems",
+        "item3": "Interfere with the service or other users' access",
+        "item4": "Use automated systems to access the service beyond normal use"
+      },
+      "intellectualProperty": {
+        "title": "Intellectual Property",
+        "content": "You retain all rights to the documents you upload and process. Rexfill and its original content, features, and functionality are owned by us and protected by international copyright and trademark laws."
+      },
+      "liability": {
+        "title": "Limitation of Liability",
+        "content": "To the maximum extent permitted by law, Rexfill shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service."
+      },
+      "termination": {
+        "title": "Termination",
+        "content": "We may terminate or suspend your account at any time for violations of these terms. Upon termination, your right to use the service ceases immediately, though you may request export of your data."
+      },
+      "changes": {
+        "title": "Changes to Terms",
+        "content": "We reserve the right to modify these terms at any time. We will notify users of material changes via email or in-app notification. Continued use after changes constitutes acceptance."
+      },
+      "contact": {
+        "title": "Contact",
+        "content": "For questions about these Terms of Service, please contact us at legal@rexfill.com."
+      }
+    }
+  },
+  "subscription": {
+    "currentPlan": "Current Plan",
+    "usage": {
+      "title": "Usage This Month",
+      "documentsProcessed": "{{used}} of {{limit}} documents",
+      "unlimited": "Unlimited"
+    },
+    "upgrade": {
+      "title": "Upgrade Your Plan",
+      "limitReached": "You've reached your daily limit",
+      "nearLimit": "You're approaching your limit",
+      "upgradeNow": "Upgrade Now"
+    }
   }
 }

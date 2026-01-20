@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, FC } from 'react';
-import { onAuthStateChange, signIn, signOut, User, SignInUserInterruptError } from '@junobuild/core';
+import { initSatellite, onAuthStateChange, signIn, signOut, User, SignInUserInterruptError } from '@junobuild/core';
 import { showErrorToast } from '../utils/toast';
 
 interface AuthContextType {
@@ -20,10 +20,23 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChange((user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    let unsubscribe: (() => void) | undefined;
+
+    const initAuth = async () => {
+      // Initialize satellite first, then listen for auth changes
+      await initSatellite({
+        workers: {
+          auth: true,
+        },
+      });
+
+      unsubscribe = onAuthStateChange((user) => {
+        setUser(user);
+        setLoading(false);
+      });
+    };
+
+    initAuth();
 
     return () => unsubscribe?.();
   }, []);
@@ -55,6 +68,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     try {
       await signOut({ windowReload: false });
       setUser(null);
+      // Redirect to landing page after logout
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout failed:', error);
     }

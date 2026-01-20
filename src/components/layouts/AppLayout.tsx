@@ -1,18 +1,17 @@
 import { FC, useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useProcessor } from '../contexts/ProcessorContext';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useProcessor } from '../../contexts/ProcessorContext';
 import { handleRedirectCallback } from '@junobuild/core';
-import Header from './Header';
-import LoginScreen from './auth/LoginScreen';
-import LoadingSpinner from './ui/LoadingSpinner';
+import Header from '../Header';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 // Lazy load pages to reduce initial bundle size
-const Dashboard = lazy(() => import('./Dashboard'));
-const ProcessorPage = lazy(() => import('../pages/ProcessorPage'));
-const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
+const Dashboard = lazy(() => import('../Dashboard'));
+const ProcessorPage = lazy(() => import('../../pages/ProcessorPage'));
+const NotFoundPage = lazy(() => import('../../pages/NotFoundPage'));
 
-const Layout: FC = () => {
+const AppLayout: FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,22 +36,18 @@ const Layout: FC = () => {
   }, []);
 
   const handleLogoClick = () => {
-    const isProcessorPage = location.pathname === '/process';
-    console.log('Logo clicked, isProcessorPage:', isProcessorPage, 'hasUnsavedChanges:', hasUnsavedChanges);
+    const isProcessorPage = location.pathname === '/app/process';
 
     if (isProcessorPage && hasUnsavedChanges) {
       // Trigger the cancel handler in WordTemplateProcessor
       // The dialog will be shown, and navigation only happens if user confirms
-      console.log('Calling requestNavigation');
       requestNavigation();
     } else {
       // Navigate directly to dashboard, preserving folder context if on processor page
       if (isProcessorPage && currentFolderId) {
-        console.log('Navigating to / with folder:', currentFolderId);
-        navigate(`/?folder=${currentFolderId}`);
+        navigate(`/app?folder=${currentFolderId}`);
       } else {
-        console.log('Navigating to /');
-        navigate('/');
+        navigate('/app');
       }
     }
   };
@@ -66,7 +61,8 @@ const Layout: FC = () => {
   }
 
   if (!user) {
-    return <LoginScreen />;
+    // Redirect unauthenticated users to landing page
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -85,4 +81,4 @@ const Layout: FC = () => {
   );
 };
 
-export default Layout;
+export default AppLayout;

@@ -1,18 +1,10 @@
 import { FC, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// Simplified language list for SaaS version (EN + SK only)
 const languages = [
-  { code: 'sk', countryCode: 'sk' },
   { code: 'en-US', countryCode: 'us' },
-  { code: 'cs', countryCode: 'cz' },
-  { code: 'pl', countryCode: 'pl' },
-  { code: 'hu', countryCode: 'hu' },
-  { code: 'de', countryCode: 'de' },
-  { code: 'es', countryCode: 'es' },
-  { code: 'it', countryCode: 'it' },
-  { code: 'fr', countryCode: 'fr' },
-  { code: 'zh', countryCode: 'cn' },
-  { code: 'ja', countryCode: 'jp' }
+  { code: 'sk', countryCode: 'sk' },
 ];
 
 const FlagIcon: FC<{ countryCode: string }> = ({ countryCode }) => (

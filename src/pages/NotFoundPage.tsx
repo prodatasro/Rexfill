@@ -1,11 +1,16 @@
 import { FC } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileQuestion, Home } from 'lucide-react';
 
 const NotFoundPage: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine if we're in the app context
+  const isAppContext = location.pathname.startsWith('/app');
+  const homeRoute = isAppContext ? '/app' : '/';
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -20,7 +25,7 @@ const NotFoundPage: FC = () => {
         {t('notFound.message')}
       </p>
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate(homeRoute)}
         className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
       >
         <Home className="w-5 h-5" />
