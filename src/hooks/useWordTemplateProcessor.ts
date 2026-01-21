@@ -10,6 +10,7 @@ import { buildTemplatePath } from "../utils/templatePathUtils";
 import { validateFolderName, buildFolderPath } from "../utils/folderUtils";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
+import { extractMetadataFromBlob } from "../utils/extractMetadata";
 import { useTranslation } from "react-i18next";
 import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
 import { uploadFileWithTimeout, setDocWithTimeout, listDocsWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
@@ -227,7 +228,7 @@ export const useWordTemplateProcessor = ({
     };
   }, []);
 
-  const generateProcessedBlob = async (): Promise<{ blob: Blob; fileName: string }> => {
+  const generateProcessedBlob = async (skipProcessing: boolean = false): Promise<{ blob: Blob; fileName: string }> => {
     let arrayBuffer: ArrayBuffer;
 
     if (file) {
@@ -242,6 +243,16 @@ export const useWordTemplateProcessor = ({
       throw new Error("No file or template provided");
     }
 
+    const fileName = file ? file.name : template?.data.name || 'document.docx';
+
+    // If no changes were made, return the original file as-is to preserve size and compression
+    if (skipProcessing) {
+      const blob = new Blob([arrayBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      return { blob, fileName };
+    }
+
     const placeholderData: Record<string, string> = {};
     const customPropsData: Record<string, string> = {};
 
@@ -252,8 +263,6 @@ export const useWordTemplateProcessor = ({
         placeholderData[key] = value;
       }
     });
-
-    const fileName = file ? file.name : template?.data.name || 'document.docx';
 
     // Try to use worker if available
     if (isWorkerReady) {
@@ -314,6 +323,8 @@ export const useWordTemplateProcessor = ({
       const blob = zip.generate({
         type: "blob",
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
       }) as Blob;
 
       return { blob, fileName };
@@ -345,6 +356,8 @@ export const useWordTemplateProcessor = ({
       const blob = zip.generate({
         type: "blob",
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
       }) as Blob;
 
       return { blob, fileName };
@@ -417,6 +430,8 @@ export const useWordTemplateProcessor = ({
         const output = zip.generate({
           type: "blob",
           mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          compression: 'DEFLATE',
+          compressionOptions: { level: 6 },
         });
 
         const url = window.URL.createObjectURL(output);
@@ -444,7 +459,8 @@ export const useWordTemplateProcessor = ({
 
     setSaving(true);
     try {
-      const { blob, fileName } = await generateProcessedBlob();
+      // Skip processing if no changes were made - preserves original file size and compression
+      const { blob, fileName } = await generateProcessedBlob(!hasChanges);
 
       const storagePath = template.data.fullPath?.startsWith('/')
         ? template.data.fullPath.substring(1)
@@ -460,6 +476,9 @@ export const useWordTemplateProcessor = ({
         filename: storagePath
       });
 
+      // Extract metadata from the blob to preserve/update placeholder counts
+      const { placeholderCount, customPropertyCount } = await extractMetadataFromBlob(blob);
+
       await setDocWithTimeout({
         collection: 'templates_meta',
         doc: {
@@ -468,7 +487,9 @@ export const useWordTemplateProcessor = ({
             ...template.data,
             url: result.downloadUrl,
             size: blob.size,
-            uploadedAt: Date.now()
+            uploadedAt: Date.now(),
+            placeholderCount,
+            customPropertyCount
           }
         }
       });
@@ -601,7 +622,8 @@ export const useWordTemplateProcessor = ({
         return false;
       }
 
-      const { blob } = await generateProcessedBlob();
+      // Skip processing if no changes were made - preserves original file size and compression
+      const { blob } = await generateProcessedBlob(!hasChanges);
 
       let folderPath = createdFolderPath;
       if (!folderPath && targetFolderId) {
@@ -630,6 +652,9 @@ export const useWordTemplateProcessor = ({
         filename: storagePath
       });
 
+      // Extract metadata from the blob to store placeholder/custom property counts
+      const { placeholderCount, customPropertyCount } = await extractMetadataFromBlob(blob);
+
       const key = storagePath.replace(/\//g, '_').replace(/\./g, '_');
       const newTemplateDoc: Doc<WordTemplateData> = {
         key,
@@ -641,7 +666,9 @@ export const useWordTemplateProcessor = ({
           mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           folderId: targetFolderId,
           folderPath,
-          fullPath
+          fullPath,
+          placeholderCount,
+          customPropertyCount
         }
       };
 

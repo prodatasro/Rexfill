@@ -361,6 +361,8 @@ export function processDocumentSync(
   const blob = zip.generate({
     type: "blob",
     mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 },
   }) as Blob;
   onProgress?.('generating', 100);
 
