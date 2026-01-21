@@ -223,66 +223,80 @@ const FolderTree: FC<FolderTreeProps> = ({
   return (
     <div className="h-full overflow-y-auto pb-2">
       {/* Virtual Folders Section */}
-      {(favoritesCount > 0 || recentCount > 0) && (
-        <>
-          {/* Favorites Virtual Folder */}
-          {favoritesCount > 0 && (
-            <div
-              className={`
-                flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 mb-1 border-l-4
-                ${
-                  selectedFolderId === VIRTUAL_FOLDER_FAVORITES
-                    ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100 border-l-yellow-500 dark:border-l-yellow-400 font-semibold'
-                    : 'hover:bg-yellow-50/50 dark:hover:bg-yellow-900/10 text-slate-700 dark:text-slate-300 hover:shadow-sm border-l-transparent'
-                }
-              `}
-              onClick={() => onSelectFolder(VIRTUAL_FOLDER_FAVORITES)}
-            >
-              <Star className={`w-5 h-5 shrink-0 ${selectedFolderId === VIRTUAL_FOLDER_FAVORITES ? 'text-yellow-600 fill-current' : 'text-yellow-500'}`} />
-              <span className="flex-1 font-medium text-sm">
-                {t('folders.favorites')}
-              </span>
-              <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${
-                selectedFolderId === VIRTUAL_FOLDER_FAVORITES
-                  ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100'
-                  : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-              }`}>
-                {favoritesCount}
-              </span>
-            </div>
-          )}
+      <>
+        {/* Favorites Virtual Folder */}
+        <div
+          className={`
+            flex items-center gap-2 py-2 px-3 rounded-lg transition-all duration-200 mb-1 border-l-4
+            ${
+              favoritesCount === 0
+                ? 'cursor-not-allowed text-slate-400 dark:text-slate-500 border-l-transparent'
+                : selectedFolderId === VIRTUAL_FOLDER_FAVORITES
+                  ? 'cursor-pointer bg-yellow-50 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100 border-l-yellow-500 dark:border-l-yellow-400 font-semibold'
+                  : 'cursor-pointer hover:bg-yellow-50/50 dark:hover:bg-yellow-900/10 text-slate-700 dark:text-slate-300 hover:shadow-sm border-l-transparent'
+            }
+          `}
+          onClick={() => favoritesCount > 0 && onSelectFolder(VIRTUAL_FOLDER_FAVORITES)}
+        >
+          <Star className={`w-5 h-5 shrink-0 ${
+            favoritesCount === 0
+              ? 'text-slate-300 dark:text-slate-600'
+              : selectedFolderId === VIRTUAL_FOLDER_FAVORITES
+                ? 'text-yellow-600 fill-current'
+                : 'text-yellow-500'
+          }`} />
+          <span className="flex-1 font-medium text-sm">
+            {t('folders.favorites')}
+          </span>
+          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${
+            favoritesCount === 0
+              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
+              : selectedFolderId === VIRTUAL_FOLDER_FAVORITES
+                ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100'
+                : 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
+          }`}>
+            {favoritesCount}
+          </span>
+        </div>
 
-          {/* Recent Virtual Folder */}
-          {recentCount > 0 && (
-            <div
-              className={`
-                flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 mb-1 border-l-4
-                ${
-                  selectedFolderId === VIRTUAL_FOLDER_RECENT
-                    ? 'bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 border-l-slate-500 dark:border-l-slate-400 font-semibold'
-                    : 'hover:bg-slate-100/50 dark:hover:bg-slate-700/30 text-slate-700 dark:text-slate-300 hover:shadow-sm border-l-transparent'
-                }
-              `}
-              onClick={() => onSelectFolder(VIRTUAL_FOLDER_RECENT)}
-            >
-              <Clock className={`w-5 h-5 shrink-0 ${selectedFolderId === VIRTUAL_FOLDER_RECENT ? 'text-slate-600 dark:text-slate-300' : 'text-slate-500'}`} />
-              <span className="flex-1 font-medium text-sm">
-                {t('folders.recent')}
-              </span>
-              <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${
-                selectedFolderId === VIRTUAL_FOLDER_RECENT
-                  ? 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-slate-100'
-                  : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-              }`}>
-                {recentCount}
-              </span>
-            </div>
-          )}
+        {/* Recent Virtual Folder */}
+        <div
+          className={`
+            flex items-center gap-2 py-2 px-3 rounded-lg transition-all duration-200 mb-1 border-l-4
+            ${
+              recentCount === 0
+                ? 'cursor-not-allowed text-slate-400 dark:text-slate-500 border-l-transparent'
+                : selectedFolderId === VIRTUAL_FOLDER_RECENT
+                  ? 'cursor-pointer bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 border-l-slate-500 dark:border-l-slate-400 font-semibold'
+                  : 'cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-700/30 text-slate-700 dark:text-slate-300 hover:shadow-sm border-l-transparent'
+            }
+          `}
+          onClick={() => recentCount > 0 && onSelectFolder(VIRTUAL_FOLDER_RECENT)}
+        >
+          <Clock className={`w-5 h-5 shrink-0 ${
+            recentCount === 0
+              ? 'text-slate-300 dark:text-slate-600'
+              : selectedFolderId === VIRTUAL_FOLDER_RECENT
+                ? 'text-slate-600 dark:text-slate-300'
+                : 'text-slate-500'
+          }`} />
+          <span className="flex-1 font-medium text-sm">
+            {t('folders.recent')}
+          </span>
+          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${
+            recentCount === 0
+              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
+              : selectedFolderId === VIRTUAL_FOLDER_RECENT
+                ? 'bg-slate-300 dark:bg-slate-600 text-slate-900 dark:text-slate-100'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+          }`}>
+            {recentCount}
+          </span>
+        </div>
 
-          {/* Divider after virtual folders */}
-          <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
-        </>
-      )}
+        {/* Divider after virtual folders */}
+        <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
+      </>
 
       {/* All Templates (Root) */}
       <div

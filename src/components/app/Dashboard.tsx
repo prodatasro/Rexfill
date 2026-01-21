@@ -110,7 +110,7 @@ const Dashboard: FC = () => {
   const { folders, folderTree, loading: foldersLoading, loadFolders, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
 
   // Recent templates
-  const { recentTemplates, addRecentTemplate } = useRecentTemplates();
+  const { recentTemplates, addRecentTemplate, removeRecentTemplate } = useRecentTemplates();
 
   // Get actual template objects for recent templates
   const recentTemplateObjects = useMemo(() => {
@@ -267,6 +267,9 @@ const Dashboard: FC = () => {
       const storageAssetMap = await buildStorageAssetMap();
       await deleteTemplates(templatesInFolders, storageAssetMap);
 
+      // Remove deleted templates from recent list
+      templatesInFolders.forEach(t => removeRecentTemplate(t.key));
+
       // Delete the folder (this also deletes subfolders)
       await deleteFolder(folder.key);
 
@@ -285,7 +288,7 @@ const Dashboard: FC = () => {
     } finally {
       setIsDeletingFolder(false);
     }
-  }, [allTemplates, confirm, deleteFolder, folderTree, refreshTemplates, selectedFolderId, t]);
+  }, [allTemplates, confirm, deleteFolder, folderTree, refreshTemplates, removeRecentTemplate, selectedFolderId, t]);
 
   const handleDeleteFolderFiles = useCallback(async (folder: Folder) => {
     // Get all folder IDs (folder + all subfolders)
@@ -320,6 +323,9 @@ const Dashboard: FC = () => {
       const storageAssetMap = await buildStorageAssetMap();
       await deleteTemplates(templatesInFolders, storageAssetMap);
 
+      // Remove deleted templates from recent list
+      templatesInFolders.forEach(t => removeRecentTemplate(t.key));
+
       // Refresh templates
       await refreshTemplates();
 
@@ -330,7 +336,7 @@ const Dashboard: FC = () => {
     } finally {
       setIsDeletingFolder(false);
     }
-  }, [allTemplates, confirm, folderTree, refreshTemplates, t]);
+  }, [allTemplates, confirm, folderTree, refreshTemplates, removeRecentTemplate, t]);
 
   const handleFolderDialogConfirm = useCallback(async (name: string) => {
     if (folderDialogState.mode === 'create') {
@@ -890,6 +896,7 @@ const Dashboard: FC = () => {
                 onTemplateSelect={handleTemplateSelect}
                 onMultiTemplateSelect={handleMultiTemplateSelect}
                 onFileDeleted={refreshTemplates}
+                onRemoveFromRecent={removeRecentTemplate}
                 onFolderSelect={setSelectedFolderId}
                 selectedFolderId={selectedFolderId}
                 folderTree={folderTree}

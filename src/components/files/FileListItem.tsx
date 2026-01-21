@@ -10,6 +10,7 @@ import {
   CheckSquare,
   Square,
   MoreVertical,
+  Loader2,
 } from 'lucide-react';
 import { Doc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word-template';
@@ -39,6 +40,7 @@ export interface FileListItemProps {
   isSelected: boolean;
   isDeleting: boolean;
   isDuplicating: boolean;
+  isTogglingFavorite: boolean;
   isMenuOpen: boolean;
   onSelect: (template: Doc<WordTemplateData>, selected: boolean) => void;
   onRowClick: (template: Doc<WordTemplateData>, index: number, e: React.MouseEvent) => void;
@@ -63,6 +65,7 @@ const FileListItem: FC<FileListItemProps> = memo(
     isSelected,
     isDeleting,
     isDuplicating,
+    isTogglingFavorite,
     isMenuOpen,
     onSelect,
     onRowClick,
@@ -164,7 +167,7 @@ const FileListItem: FC<FileListItemProps> = memo(
         >
           <button
             onClick={() => onToggleFavorite(template)}
-            disabled={isDeleting}
+            disabled={isDeleting || isTogglingFavorite}
             className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               template.data.isFavorite
                 ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-slate-700'
@@ -173,9 +176,13 @@ const FileListItem: FC<FileListItemProps> = memo(
             title={t('fileList.toggleFavorite')}
             aria-label={t('fileList.toggleFavorite')}
           >
-            <Star
-              className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`}
-            />
+            {isTogglingFavorite ? (
+              <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+            ) : (
+              <Star
+                className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`}
+              />
+            )}
           </button>
 
           <button
@@ -244,7 +251,7 @@ const FileListItem: FC<FileListItemProps> = memo(
         >
           <button
             onClick={() => onToggleFavorite(template)}
-            disabled={isDeleting}
+            disabled={isDeleting || isTogglingFavorite}
             className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               template.data.isFavorite
                 ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-slate-700'
@@ -253,9 +260,13 @@ const FileListItem: FC<FileListItemProps> = memo(
             title={t('fileList.toggleFavorite')}
             aria-label={t('fileList.toggleFavorite')}
           >
-            <Star
-              className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`}
-            />
+            {isTogglingFavorite ? (
+              <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+            ) : (
+              <Star
+                className={`w-4 h-4 ${template.data.isFavorite ? 'fill-current' : ''}`}
+              />
+            )}
           </button>
 
           {/* More Actions Menu */}
@@ -357,6 +368,7 @@ const FileListItem: FC<FileListItemProps> = memo(
       prevProps.isSelected === nextProps.isSelected &&
       prevProps.isDeleting === nextProps.isDeleting &&
       prevProps.isDuplicating === nextProps.isDuplicating &&
+      prevProps.isTogglingFavorite === nextProps.isTogglingFavorite &&
       prevProps.isMenuOpen === nextProps.isMenuOpen
     );
   }

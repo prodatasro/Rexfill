@@ -32,6 +32,7 @@ interface FileListProps {
   onTemplateSelect: (template: Doc<WordTemplateData>) => void;
   onMultiTemplateSelect?: (templates: Doc<WordTemplateData>[]) => void;
   onFileDeleted: () => void;
+  onRemoveFromRecent?: (id: string) => void;
   onFolderSelect?: (folderId: string | null) => void;
   selectedFolderId: string | null;
   folderTree: FolderTreeNode[];
@@ -44,12 +45,14 @@ const FileList: FC<FileListProps> = ({
   onTemplateSelect,
   onMultiTemplateSelect,
   onFileDeleted,
+  onRemoveFromRecent,
   onFolderSelect,
   selectedFolderId,
   folderTree
 }) => {
   const { t } = useTranslation();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [togglingFavoriteIds, setTogglingFavoriteIds] = useState<Set<string>>(new Set());
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
   const [templateToRename, setTemplateToRename] = useState<Doc<WordTemplateData> | null>(null);
@@ -170,6 +173,9 @@ const FileList: FC<FileListProps> = ({
         collection: 'templates_meta',
         doc: template
       });
+
+      // Remove from recent templates list
+      onRemoveFromRecent?.(template.key);
 
       showSuccessToast(t('fileList.deleteSuccess', { filename: template.data.name }));
       onFileDeleted();
@@ -473,6 +479,9 @@ const FileList: FC<FileListProps> = ({
             doc: template
           });
 
+          // Remove from recent templates list
+          onRemoveFromRecent?.(template.key);
+
           successCount++;
         } catch (error) {
           console.error('Delete failed for:', template.data.name, error);
@@ -498,7 +507,7 @@ const FileList: FC<FileListProps> = ({
         return newSet;
       });
     }
-  }, [selectedTemplateIds, templates, confirm, t, onFileDeleted]);
+  }, [selectedTemplateIds, templates, confirm, t, onFileDeleted, onRemoveFromRecent]);
 
   const handleSelectAll = useCallback(() => {
     const allKeys = paginatedTemplates.map(t => t.key);
@@ -507,6 +516,7 @@ const FileList: FC<FileListProps> = ({
 
   // Favorite toggle handler
   const handleToggleFavorite = useCallback(async (template: Doc<WordTemplateData>) => {
+    setTogglingFavoriteIds(prev => new Set([...prev, template.key]));
     try {
       const newIsFavorite = !template.data.isFavorite;
       await setDocWithTimeout({
@@ -523,6 +533,12 @@ const FileList: FC<FileListProps> = ({
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
       showErrorToast(t('fileList.favoriteFailed'));
+    } finally {
+      setTogglingFavoriteIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(template.key);
+        return newSet;
+      });
     }
   }, [onFileDeleted, t]);
 
@@ -721,31 +737,36 @@ const FileList: FC<FileListProps> = ({
         </div>
 
         {/* Favorites Filter */}
-        {favoritesCount > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (favoritesCount > 0) {
                 setShowFavoritesOnly(!showFavoritesOnly);
                 setCurrentPage(1);
-              }}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                showFavoritesOnly
+              }
+            }}
+            disabled={favoritesCount === 0}
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              favoritesCount === 0
+                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed'
+                : showFavoritesOnly
                   ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700'
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-              }`}
-            >
-              <Star className={`w-4 h-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-              <span>{t('fileList.favorites')}</span>
-              <span className={`px-1.5 py-0.5 text-xs rounded-full ${
-                showFavoritesOnly
+            }`}
+          >
+            <Star className={`w-4 h-4 ${showFavoritesOnly && favoritesCount > 0 ? 'fill-current' : ''}`} />
+            <span>{t('fileList.favorites')}</span>
+            <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+              favoritesCount === 0
+                ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
+                : showFavoritesOnly
                   ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
                   : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300'
-              }`}>
-                {favoritesCount}
-              </span>
-            </button>
-          </div>
-        )}
+            }`}>
+              {favoritesCount}
+            </span>
+          </button>
+        </div>
 
         {/* Sort and Items Per Page Controls */}
         <div className="flex flex-wrap gap-3 items-center justify-between">
@@ -754,13 +775,13 @@ const FileList: FC<FileListProps> = ({
             <span className="text-sm text-slate-600 dark:text-slate-400">{t('fileList.sortBy')}:</span>
             <button
               onClick={() => handleSortChange('favorite')}
-              className={`flex items-center gap-1 px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`flex items-center gap-1 px-3 py-1 text-sm rounded-md transition-colors h-7.5 ${
                 sortField === 'favorite'
                   ? 'bg-yellow-500 text-white'
                   : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
               }`}
             >
-              <Star className={`w-3.5 h-3.5 ${sortField === 'favorite' ? 'fill-current' : ''}`} />
+              <Star className={`w-4 h-4 ${sortField === 'favorite' ? 'fill-current' : ''}`} />
               {sortField === 'favorite' && (sortDirection === 'asc' ? '↓' : '↑')}
             </button>
             <button
@@ -937,6 +958,7 @@ const FileList: FC<FileListProps> = ({
                     isSelected={selectedTemplateIds.has(template.key)}
                     isDeleting={deletingIds.has(template.key)}
                     isDuplicating={duplicatingIds.has(template.key)}
+                    isTogglingFavorite={togglingFavoriteIds.has(template.key)}
                     isMenuOpen={openMenuId === template.key}
                     onSelect={handleItemSelect}
                     onRowClick={handleItemRowClick}
@@ -964,6 +986,7 @@ const FileList: FC<FileListProps> = ({
                 isSelected={selectedTemplateIds.has(template.key)}
                 isDeleting={deletingIds.has(template.key)}
                 isDuplicating={duplicatingIds.has(template.key)}
+                isTogglingFavorite={togglingFavoriteIds.has(template.key)}
                 isMenuOpen={openMenuId === template.key}
                 onSelect={handleItemSelect}
                 onRowClick={handleItemRowClick}
