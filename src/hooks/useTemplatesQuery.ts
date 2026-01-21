@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../types/word_template';
+import type { WordTemplateData } from '../types/word-template';
 import {
   listDocsWithTimeout,
   setDocWithTimeout,

@@ -3,7 +3,7 @@ import { Search, X, FileText, Folder, Command, FolderOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../../types/word_template';
+import type { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import { useSearch } from '../../contexts/SearchContext';
 

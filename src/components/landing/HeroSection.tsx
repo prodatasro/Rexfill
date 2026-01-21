@@ -9,7 +9,7 @@ const HeroSection: FC = () => {
   return (
     <section className="relative overflow-hidden">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800" />
 
       {/* Grid pattern overlay */}
       <div

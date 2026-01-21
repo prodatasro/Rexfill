@@ -30,7 +30,7 @@ export function DraftRecoveryDialog({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
         <div className="p-6">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center shrink-0">
               <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>

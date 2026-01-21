@@ -1,6 +1,6 @@
 import { listDocs } from '@junobuild/core';
 import type { Folder, FolderData, FolderTreeNode } from '../types/folder';
-import type { WordTemplateData } from '../types/word_template';
+import type { WordTemplateData } from '../types/word-template';
 import type { Doc } from '@junobuild/core';
 
 /**

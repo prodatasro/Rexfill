@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { Doc } from '@junobuild/core';
 import type { Folder } from '../types/folder';
-import type { WordTemplateData } from '../types/word_template';
+import type { WordTemplateData } from '../types/word-template';
 import {
   listDocsWithTimeout,
   setDocWithTimeout,

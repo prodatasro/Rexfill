@@ -1,14 +1,14 @@
 import { FC, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { listDocs, Doc } from '@junobuild/core';
-import { WordTemplateData } from '../types/word_template';
-import { WordTemplateProcessor } from '../components/WordTemplateProcessor';
-import { useFolders } from '../hooks/useFolders';
-import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
-import { useFileProcessing } from '../contexts/FileProcessingContext';
-import { useProcessor } from '../contexts/ProcessorContext';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
-import { ErrorBoundary } from '../components/ErrorBoundary';
+import { WordTemplateData } from '../../types/word-template';
+import { WordTemplateProcessor } from '../../components/processor/WordTemplateProcessor';
+import { useFolders } from '../../hooks/useFolders';
+import { useTemplatesByFolder } from '../../hooks/useTemplatesByFolder';
+import { useFileProcessing } from '../../contexts/FileProcessingContext';
+import { useProcessor } from '../../contexts/ProcessorContext';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 
 const ProcessorPage: FC = () => {
   const navigate = useNavigate();

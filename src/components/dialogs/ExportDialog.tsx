@@ -2,15 +2,15 @@ import { FC, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2, X, Folder, FileText, Check } from 'lucide-react';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../types/word_template';
-import type { Folder as FolderType, FolderTreeNode } from '../types/folder';
+import type { WordTemplateData } from '../../types/word-template';
+import type { Folder as FolderType, FolderTreeNode } from '../../types/folder';
 import {
   createExportZip,
   downloadBlob,
   generateExportFilename,
   formatFileSize,
-} from '../utils/exportImport';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
+} from '../../utils/exportImport';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -154,7 +154,7 @@ const ExportDialog: FC<ExportDialogProps> = ({
               disabled={includeAllTemplates || isExporting}
               className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500 disabled:opacity-50"
             />
-            <Folder className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <Folder className="w-4 h-4 text-blue-500 shrink-0" />
             <span className="text-sm text-slate-700 dark:text-slate-300 truncate flex-1">
               {node.folder.data.name}
             </span>

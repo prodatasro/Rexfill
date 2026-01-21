@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../types/word_template';
+import type { WordTemplateData } from '../types/word-template';
 import { listDocsWithTimeout } from '../utils/junoWithTimeout';
 
 export const useTemplatesByFolder = (selectedFolderId: string | null) => {

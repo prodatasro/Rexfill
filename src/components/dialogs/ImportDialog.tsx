@@ -2,10 +2,10 @@ import { FC, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload, Loader2, X, Folder, FileText, AlertTriangle, Check } from 'lucide-react';
 import type { Doc } from '@junobuild/core';
-import { setDocWithTimeout, uploadFileWithTimeout } from '../utils/junoWithTimeout';
+import { setDocWithTimeout, uploadFileWithTimeout } from '../../utils/junoWithTimeout';
 import PizZip from 'pizzip';
-import type { WordTemplateData } from '../types/word_template';
-import type { Folder as FolderType, FolderData } from '../types/folder';
+import type { WordTemplateData } from '../../types/word-template';
+import type { Folder as FolderType, FolderData } from '../../types/folder';
 import {
   parseImportZip,
   detectConflicts,
@@ -15,10 +15,10 @@ import {
   type ExportMetadata,
   type ConflictResolution,
   type ConflictInfo,
-} from '../utils/exportImport';
-import { buildStoragePath, buildTemplatePath } from '../utils/templatePathUtils';
-import { buildFolderPath } from '../utils/folderUtils';
-import { showSuccessToast, showErrorToast, showWarningToast } from '../utils/toast';
+} from '../../utils/exportImport';
+import { buildStoragePath, buildTemplatePath } from '../../utils/templatePathUtils';
+import { buildFolderPath } from '../../utils/folderUtils';
+import { showSuccessToast, showErrorToast, showWarningToast } from '../../utils/toast';
 
 interface ImportDialogProps {
   isOpen: boolean;

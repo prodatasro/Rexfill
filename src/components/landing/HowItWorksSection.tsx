@@ -43,7 +43,7 @@ const HowItWorksSection: FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-3 gap-8 lg:gap-12 relative">
             {/* Connection line - desktop only */}
-            <div className="hidden md:block absolute top-16 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-primary-200 via-primary-400 to-primary-200 dark:from-primary-800 dark:via-primary-600 dark:to-primary-800" />
+            <div className="hidden md:block absolute top-16 left-1/6 right-1/6 h-0.5 bg-linear-to-r from-primary-200 via-primary-400 to-primary-200 dark:from-primary-800 dark:via-primary-600 dark:to-primary-800" />
 
             {steps.map((step, index) => (
               <div key={index} className="relative text-center">

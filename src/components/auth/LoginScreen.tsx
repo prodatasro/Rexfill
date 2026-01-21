@@ -3,7 +3,7 @@ import { Sun, Moon, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
-import LanguageSelector from '../LanguageSelector';
+import LanguageSelector from '../ui/LanguageSelector';
 
 const LoginScreen: FC = () => {
   const { login } = useAuth();

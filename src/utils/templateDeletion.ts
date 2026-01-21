@@ -1,6 +1,6 @@
 import { Doc } from '@junobuild/core';
 import { deleteAssetWithTimeout, listAssetsWithTimeout, deleteDocWithTimeout } from './junoWithTimeout';
-import { WordTemplateData } from '../types/word_template';
+import { WordTemplateData } from '../types/word-template';
 import { FolderTreeNode } from '../types/folder';
 
 /**

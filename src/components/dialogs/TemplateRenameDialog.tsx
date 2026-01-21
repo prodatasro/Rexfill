@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../../types/word_template';
+import type { WordTemplateData } from '../../types/word-template';
 
 interface TemplateRenameDialogProps {
   isOpen: boolean;

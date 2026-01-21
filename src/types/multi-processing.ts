@@ -1,5 +1,5 @@
 import type { Doc } from "@junobuild/core";
-import type { WordTemplateData } from "./word_template";
+import type { WordTemplateData } from "./word-template";
 
 /**
  * Represents a single template being processed with its extracted fields

@@ -12,7 +12,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { Doc } from '@junobuild/core';
-import { WordTemplateData } from '../../types/word_template';
+import { WordTemplateData } from '../../types/word-template';
 import { useTranslation } from 'react-i18next';
 
 // Utility functions

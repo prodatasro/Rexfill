@@ -1,6 +1,6 @@
 import PizZip from 'pizzip';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../types/word_template';
+import type { WordTemplateData } from '../types/word-template';
 import type { Folder, FolderData } from '../types/folder';
 import { buildStoragePath } from './templatePathUtils';
 

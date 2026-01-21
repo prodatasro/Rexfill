@@ -1,7 +1,7 @@
 import { FC, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
-import { WordTemplateData } from '../../types/word_template';
+import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
 import { buildTemplatePath } from '../../utils/templatePathUtils';

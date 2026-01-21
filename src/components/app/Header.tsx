@@ -1,11 +1,11 @@
 import { FC } from 'react';
 import { Sun, Moon } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { useSearch } from '../contexts/SearchContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useSearch } from '../../contexts/SearchContext';
 import { useTranslation } from 'react-i18next';
-import LanguageSelector from './LanguageSelector';
-import { GlobalSearch } from './ui/GlobalSearch';
+import LanguageSelector from '../ui/LanguageSelector';
+import { GlobalSearch } from '../ui/GlobalSearch';
 
 interface HeaderProps {
   onLogoClick?: () => void | Promise<void>;

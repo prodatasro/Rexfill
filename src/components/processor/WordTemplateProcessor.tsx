@@ -1,21 +1,21 @@
 import { Doc } from "@junobuild/core";
 import { FC, useEffect, useCallback, useState, useRef } from "react";
 import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, Files } from 'lucide-react';
-import { WordTemplateData } from "../types/word_template";
-import { FolderTreeNode } from "../types/folder";
+import { WordTemplateData } from "../../types/word-template";
+import { FolderTreeNode } from "../../types/folder";
 import { useTranslation, Trans } from "react-i18next";
-import { useProcessor } from "../contexts/ProcessorContext";
-import { useWordTemplateProcessor } from "../hooks/useWordTemplateProcessor";
-import { useMultiFileProcessor } from "../hooks/useMultiFileProcessor";
-import { useDraftRecovery } from "../hooks/useDraftRecovery";
-import { UnsavedChangesDialog } from "./modals/UnsavedChangesDialog";
-import { SaveAsDialog } from "./modals/SaveAsDialog";
-import { MultiSaveAsDialog } from "./modals/MultiSaveAsDialog";
-import { DraftRecoveryDialog } from "./modals/DraftRecoveryDialog";
-import { VirtualizedFieldList } from "./processor/VirtualizedFieldList";
-import { BatchStatusPanel } from "./processor/BatchStatusPanel";
-import { FieldSearch } from "./processor/FieldSearch";
-import { FieldSorting, SortOption } from "./processor/FieldSorting";
+import { useProcessor } from "../../contexts/ProcessorContext";
+import { useWordTemplateProcessor } from "../../hooks/useWordTemplateProcessor";
+import { useMultiFileProcessor } from "../../hooks/useMultiFileProcessor";
+import { useDraftRecovery } from "../../hooks/useDraftRecovery";
+import { UnsavedChangesDialog } from "../dialogs/UnsavedChangesDialog";
+import { SaveAsDialog } from "../dialogs/SaveAsDialog";
+import { MultiSaveAsDialog } from "../dialogs/MultiSaveAsDialog";
+import { DraftRecoveryDialog } from "../dialogs/DraftRecoveryDialog";
+import { VirtualizedFieldList } from "./VirtualizedFieldList";
+import { BatchStatusPanel } from "./BatchStatusPanel";
+import { FieldSearch } from "./FieldSearch";
+import { FieldSorting, SortOption } from "./FieldSorting";
 
 interface WordTemplateProcessorProps {
   // Single file mode

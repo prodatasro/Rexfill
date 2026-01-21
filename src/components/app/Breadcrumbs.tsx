@@ -1,8 +1,8 @@
 import { FC } from 'react';
 import { ChevronRight, Home, Star, Clock } from 'lucide-react';
-import type { Folder } from '../types/folder';
+import type { Folder } from '../../types/folder';
 import { useTranslation } from 'react-i18next';
-import { VIRTUAL_FOLDER_FAVORITES, VIRTUAL_FOLDER_RECENT } from './folders/FolderTree';
+import { VIRTUAL_FOLDER_FAVORITES, VIRTUAL_FOLDER_RECENT } from '../folders/FolderTree';
 
 interface BreadcrumbsProps {
   selectedFolderId: string | null;

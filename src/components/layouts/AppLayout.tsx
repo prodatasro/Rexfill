@@ -3,12 +3,12 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import { useAuth } from '../../contexts/AuthContext';
 import { useProcessor } from '../../contexts/ProcessorContext';
 import { handleRedirectCallback } from '@junobuild/core';
-import Header from '../Header';
+import Header from '../app/Header';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 // Lazy load pages to reduce initial bundle size
-const Dashboard = lazy(() => import('../Dashboard'));
-const ProcessorPage = lazy(() => import('../../pages/ProcessorPage'));
+const Dashboard = lazy(() => import('../app/Dashboard'));
+const ProcessorPage = lazy(() => import('../../pages/app/ProcessorPage'));
 const NotFoundPage = lazy(() => import('../../pages/NotFoundPage'));
 
 const AppLayout: FC = () => {

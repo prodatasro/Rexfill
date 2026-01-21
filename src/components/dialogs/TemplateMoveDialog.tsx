@@ -1,9 +1,9 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../../types/word_template';
+import type { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
-import FolderSelector from './FolderSelector';
+import FolderSelector from '../folders/FolderSelector';
 
 interface TemplateMoveDialogProps {
   isOpen: boolean;

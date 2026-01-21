@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Doc } from "@junobuild/core";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
-import { WordTemplateData } from "../types/word_template";
+import { WordTemplateData } from "../types/word-template";
 import { ProcessingTemplate, MultiFileFieldData, ProcessedDocumentResult, FileStatusInfo } from "../types/multi-processing";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
 import { fixSplitPlaceholdersOptimized } from "../utils/documentProcessing";

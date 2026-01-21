@@ -2,36 +2,36 @@ import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent, Chang
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Menu, Folder as FolderIcon } from 'lucide-react';
 import { Doc } from '@junobuild/core';
-import { WordTemplateData } from '../types/word_template';
-import { fetchWithTimeout } from '../utils/fetchWithTimeout';
-import { setDocWithTimeout, uploadFileWithTimeout, listDocsWithTimeout } from '../utils/junoWithTimeout';
-import type { Folder } from '../types/folder';
-import FileList from './files/FileList';
-import { VIRTUAL_FOLDER_FAVORITES, VIRTUAL_FOLDER_RECENT } from './folders/FolderTree';
-import FolderDialog from './folders/FolderDialog';
+import { WordTemplateData } from '../../types/word-template';
+import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import { setDocWithTimeout, uploadFileWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
+import type { Folder } from '../../types/folder';
+import FileList from '../files/FileList';
+import { VIRTUAL_FOLDER_FAVORITES, VIRTUAL_FOLDER_RECENT } from '../folders/FolderTree';
+import FolderDialog from '../dialogs/FolderDialog';
 import Breadcrumbs from './Breadcrumbs';
-import ExportDialog from './ExportDialog';
-import ImportDialog from './ImportDialog';
+import ExportDialog from '../dialogs/ExportDialog';
+import ImportDialog from '../dialogs/ImportDialog';
+import Sidebar from './Sidebar';
+import DropModeDialog from '../dialogs/DropModeDialog';
 import {
-  DashboardSidebar,
-  DropModeDialog,
   UploadProgressOverlay,
   DeletingOverlay,
   DragDropOverlay,
   type UploadProgress,
-} from './dashboardComponents';
-import { useFolders } from '../hooks/useFolders';
-import { useTemplatesByFolder } from '../hooks/useTemplatesByFolder';
-import { useRecentTemplates } from '../hooks/useRecentTemplates';
-import { useConfirm } from '../contexts/ConfirmContext';
-import { useFileProcessing } from '../contexts/FileProcessingContext';
-import { useSearch } from '../contexts/SearchContext';
-import { showSuccessToast, showErrorToast } from '../utils/toast';
-import { updateTemplatePathAfterRename, buildTemplatePath } from '../utils/templatePathUtils';
-import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../utils/templateDeletion';
-import { extractMetadataFromFile } from '../utils/extractMetadata';
+} from '../overlays';
+import { useFolders } from '../../hooks/useFolders';
+import { useTemplatesByFolder } from '../../hooks/useTemplatesByFolder';
+import { useRecentTemplates } from '../../hooks/useRecentTemplates';
+import { useConfirm } from '../../contexts/ConfirmContext';
+import { useFileProcessing } from '../../contexts/FileProcessingContext';
+import { useSearch } from '../../contexts/SearchContext';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { updateTemplatePathAfterRename, buildTemplatePath } from '../../utils/templatePathUtils';
+import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../../utils/templateDeletion';
+import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import { useTranslation } from 'react-i18next';
-import { useDebounce } from '../hooks/useDebounce';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const Dashboard: FC = () => {
   const { t } = useTranslation();
@@ -460,7 +460,7 @@ const Dashboard: FC = () => {
     }
 
     if (validFiles.length < files.length) {
-      import('../utils/toast').then(({ showWarningToast }) => {
+      import('../../utils/toast').then(({ showWarningToast }) => {
         showWarningToast(t('fileUpload.someFilesInvalid'));
       });
     }
@@ -482,7 +482,7 @@ const Dashboard: FC = () => {
 
     // Warn about large (but acceptable) files
     if (largeFiles.length > 0) {
-      import('../utils/toast').then(({ showWarningToast }) => {
+      import('../../utils/toast').then(({ showWarningToast }) => {
         largeFiles.forEach(file => {
           showWarningToast(t('fileUpload.fileLargeWarning', {
             filename: file.name,
@@ -546,7 +546,7 @@ const Dashboard: FC = () => {
         });
 
         if (existingFiles.has(file.name)) {
-          const { showWarningToast } = await import('../utils/toast');
+          const { showWarningToast } = await import('../../utils/toast');
           showWarningToast(t('fileUpload.fileExists', { filename: file.name }));
           failedFiles.push(file.name);
           continue;
@@ -651,13 +651,13 @@ const Dashboard: FC = () => {
     const validFiles = files.filter(file => file.name.endsWith('.docx'));
 
     if (validFiles.length === 0) {
-      const { showWarningToast } = await import('../utils/toast');
+      const { showWarningToast } = await import('../../utils/toast');
       showWarningToast(t('fileUpload.invalidFileType'));
       return;
     }
 
     if (validFiles.length < files.length) {
-      const { showWarningToast } = await import('../utils/toast');
+      const { showWarningToast } = await import('../../utils/toast');
       showWarningToast(t('fileUpload.someFilesInvalid'));
     }
 
@@ -695,7 +695,7 @@ const Dashboard: FC = () => {
 
         // Check if file already exists in this folder
         if (existingFiles.has(file.name)) {
-          const { showWarningToast } = await import('../utils/toast');
+          const { showWarningToast } = await import('../../utils/toast');
           showWarningToast(t('fileUpload.fileExists', { filename: file.name }));
           failedFiles.push(file.name);
           continue;
@@ -816,7 +816,7 @@ const Dashboard: FC = () => {
       {/* Main Layout */}
       <div className="flex gap-6 relative h-[calc(100vh-9rem)]">
         {/* Sidebar */}
-        <DashboardSidebar
+        <Sidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           folderTree={folderTree}

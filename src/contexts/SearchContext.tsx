@@ -1,6 +1,6 @@
 import { createContext, useContext, FC, ReactNode, useState, useCallback, useMemo } from 'react';
 import type { Doc } from '@junobuild/core';
-import type { WordTemplateData } from '../types/word_template';
+import type { WordTemplateData } from '../types/word-template';
 import type { FolderTreeNode } from '../types/folder';
 
 interface SearchContextType {

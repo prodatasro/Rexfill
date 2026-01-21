@@ -9,7 +9,7 @@ import { SearchProvider } from "./contexts/SearchContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { Toaster } from "sonner";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import LoadingSpinner from "./components/ui/LoadingSpinner";
 
 // Lazy load layouts

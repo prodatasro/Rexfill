@@ -4,7 +4,7 @@ import { Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import LanguageSelector from '../LanguageSelector';
+import LanguageSelector from '../ui/LanguageSelector';
 import LoginDialog from '../auth/LoginDialog';
 
 const PublicHeader: FC = () => {
