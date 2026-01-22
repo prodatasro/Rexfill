@@ -151,7 +151,12 @@
     "renameTemplate": "Rename template",
     "moreActions": "More actions",
     "customProperty": "property",
-    "customProperties": "properties"
+    "customProperties": "properties",
+    "downloadLogs": "Download Logs",
+    "downloadingLogs": "Downloading logs...",
+    "downloadLogsSuccess": "Logs downloaded successfully",
+    "downloadLogsFailed": "Failed to download logs",
+    "noLogsAvailable": "No activity logs available for this file"
   },
   "templateProcessor": {
     "title": "Process Template",
@@ -710,6 +715,30 @@
       "limitReached": "You've reached your daily limit",
       "nearLimit": "You're approaching your limit",
       "upgradeNow": "Upgrade Now"
+    }
+  },
+  "logs": {
+    "columns": {
+      "timestamp": "Timestamp",
+      "action": "Action",
+      "status": "Status",
+      "resource": "Resource",
+      "details": "Details",
+      "createdBy": "Created By",
+      "modifiedBy": "Modified By",
+      "error": "Error"
+    },
+    "actions": {
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "renamed": "Renamed",
+      "moved": "Moved",
+      "downloaded": "Downloaded"
+    },
+    "status": {
+      "success": "Success",
+      "failed": "Failed"
     }
   }
 }

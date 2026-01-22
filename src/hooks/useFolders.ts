@@ -6,9 +6,12 @@ import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { listDocsWithTimeout, setDocWithTimeout, deleteDocWithTimeout } from '../utils/junoWithTimeout';
 import { TimeoutError } from '../utils/fetchWithTimeout';
+import { logActivity } from '../utils/activityLogger';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useFolders = (templates: Doc<any>[] = []) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,11 +121,37 @@ export const useFolders = (templates: Doc<any>[] = []) => {
           },
         });
 
+        // Log successful folder creation
+        await logActivity({
+          action: 'created',
+          resource_type: 'folder',
+          resource_id: key,
+          resource_name: name,
+          created_by: user?.key || 'unknown',
+          modified_by: user?.key || 'unknown',
+          success: true,
+          folder_path: path,
+        });
+
         showSuccessToast(t('folders.folderCreated', { name }) || `Folder "${name}" created`);
         await loadFolders();
         return key;
       } catch (err) {
         console.error('Failed to create folder:', err);
+        
+        // Log failed folder creation
+        await logActivity({
+          action: 'created',
+          resource_type: 'folder',
+          resource_id: 'unknown',
+          resource_name: name,
+          created_by: user?.key || 'unknown',
+          modified_by: user?.key || 'unknown',
+          success: false,
+          error_message: err instanceof Error ? err.message : 'Unknown error',
+          folder_path: path,
+        });
+        
         if (err instanceof TimeoutError) {
           showErrorToast(t('errors.timeout'));
         } else {
@@ -202,11 +231,39 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         // Note: Templates will be updated by the component that calls this
         // because it has access to the templates state
 
+        // Log successful folder rename
+        await logActivity({
+          action: 'renamed',
+          resource_type: 'folder',
+          resource_id: folderId,
+          resource_name: newName,
+          created_by: folder.owner || 'unknown',
+          modified_by: user?.key || folder.owner || 'unknown',
+          success: true,
+          old_value: folder.data.name,
+          new_value: newName,
+          folder_path: newPath,
+        });
+
         showSuccessToast(t('folders.folderRenamed', { name: newName }) || `Folder renamed to "${newName}"`);
         await loadFolders();
         return true;
       } catch (err) {
         console.error('Failed to rename folder:', err);
+        
+        // Log failed folder rename
+        await logActivity({
+          action: 'renamed',
+          resource_type: 'folder',
+          resource_id: folderId,
+          resource_name: folder.data.name,
+          created_by: folder.owner || 'unknown',
+          modified_by: user?.key || folder.owner || 'unknown',
+          success: false,
+          error_message: err instanceof Error ? err.message : 'Unknown error',
+          folder_path: folder.data.path,
+        });
+        
         if (err instanceof TimeoutError) {
           showErrorToast(t('errors.timeout'));
         } else {
@@ -255,11 +312,37 @@ export const useFolders = (templates: Doc<any>[] = []) => {
         // Note: Templates will be deleted by the component that calls this
         // because it has access to the templates state and needs to delete from storage
 
+        // Log successful folder deletion
+        await logActivity({
+          action: 'deleted',
+          resource_type: 'folder',
+          resource_id: folderId,
+          resource_name: folder.data.name,
+          created_by: folder.owner || 'unknown',
+          modified_by: user?.key || folder.owner || 'unknown',
+          success: true,
+          folder_path: folder.data.path,
+        });
+
         showSuccessToast(t('folders.folderDeleted', { name: folder.data.name }) || `Folder "${folder.data.name}" deleted`);
         await loadFolders();
         return true;
       } catch (err) {
         console.error('Failed to delete folder:', err);
+        
+        // Log failed folder deletion
+        await logActivity({
+          action: 'deleted',
+          resource_type: 'folder',
+          resource_id: folderId,
+          resource_name: folder.data.name,
+          created_by: folder.owner || 'unknown',
+          modified_by: user?.key || folder.owner || 'unknown',
+          success: false,
+          error_message: err instanceof Error ? err.message : 'Unknown error',
+          folder_path: folder.data.path,
+        });
+        
         if (err instanceof TimeoutError) {
           showErrorToast(t('errors.timeout'));
         } else {

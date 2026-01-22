@@ -41,6 +41,7 @@ export interface FileListItemProps {
   isDeleting: boolean;
   isDuplicating: boolean;
   isTogglingFavorite: boolean;
+  isDownloadingLogs: boolean;
   isMenuOpen: boolean;
   onSelect: (template: Doc<WordTemplateData>, selected: boolean) => void;
   onRowClick: (template: Doc<WordTemplateData>, index: number, e: React.MouseEvent) => void;
@@ -50,6 +51,7 @@ export interface FileListItemProps {
   onRename: (template: Doc<WordTemplateData>) => void;
   onMove: (template: Doc<WordTemplateData>) => void;
   onDelete: (template: Doc<WordTemplateData>) => void;
+  onDownloadLogs: (template: Doc<WordTemplateData>) => void;
   onMenuToggle: (templateKey: string | null) => void;
   menuRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -66,6 +68,7 @@ const FileListItem: FC<FileListItemProps> = memo(
     isDeleting,
     isDuplicating,
     isTogglingFavorite,
+    isDownloadingLogs,
     isMenuOpen,
     onSelect,
     onRowClick,
@@ -75,6 +78,7 @@ const FileListItem: FC<FileListItemProps> = memo(
     onRename,
     onMove,
     onDelete,
+    onDownloadLogs,
     onMenuToggle,
     menuRef,
   }) => {
@@ -217,6 +221,20 @@ const FileListItem: FC<FileListItemProps> = memo(
           </button>
 
           <button
+            onClick={() => onDownloadLogs(template)}
+            disabled={isDeleting || isDownloadingLogs}
+            className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={t('fileList.downloadLogs')}
+            aria-label={t('fileList.downloadLogs')}
+          >
+            {isDownloadingLogs ? (
+              <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+            ) : (
+              <FileText className="w-4 h-4" />
+            )}
+          </button>
+
+          <button
             onClick={() => onDelete(template)}
             disabled={isDeleting}
             className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -323,6 +341,18 @@ const FileListItem: FC<FileListItemProps> = memo(
                   {t('fileList.moveTemplate')}
                 </button>
 
+                <button
+                  onClick={() => {
+                    onDownloadLogs(template);
+                    onMenuToggle(null);
+                  }}
+                  disabled={isDownloadingLogs}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
+                >
+                  <FileText className="w-4 h-4 text-slate-500" />
+                  {t('fileList.downloadLogs')}
+                </button>
+
                 <div className="border-t border-slate-200 dark:border-slate-700 my-1" />
 
                 <button
@@ -355,6 +385,7 @@ const FileListItem: FC<FileListItemProps> = memo(
       prevProps.isDeleting === nextProps.isDeleting &&
       prevProps.isDuplicating === nextProps.isDuplicating &&
       prevProps.isTogglingFavorite === nextProps.isTogglingFavorite &&
+      prevProps.isDownloadingLogs === nextProps.isDownloadingLogs &&
       prevProps.isMenuOpen === nextProps.isMenuOpen
     );
   }

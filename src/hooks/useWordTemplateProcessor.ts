@@ -12,6 +12,8 @@ import { extractMetadataFromBlob } from "../utils/extractMetadata";
 import { useTranslation } from "react-i18next";
 import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
 import { uploadFileWithTimeout, setDocWithTimeout, listDocsWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
+import { logActivity } from "../utils/activityLogger";
+import { useAuth } from "../contexts/AuthContext";
 
 const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
 
@@ -29,6 +31,7 @@ export const useWordTemplateProcessor = ({
   onTemplateChange,
 }: UseWordTemplateProcessorProps) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { processDocument: workerProcessDocument, extractCustomProperties: workerExtractCustomProperties, progress: workerProgress, isWorkerReady } = useDocumentWorker();
 
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -340,10 +343,40 @@ export const useWordTemplateProcessor = ({
       changedFieldsRef.current = new Set();
       setHasChanges(false);
 
+      // Log successful template update
+      await logActivity({
+        action: 'updated',
+        resource_type: 'template',
+        resource_id: template.key,
+        resource_name: template.data.name,
+        created_by: template.owner || 'unknown',
+        modified_by: user?.key || template.owner || 'unknown',
+        success: true,
+        file_size: blob.size,
+        folder_path: template.data.folderPath,
+        mime_type: template.data.mimeType,
+      });
+
       showSuccessToast(t('templateProcessor.saveSuccess'));
       return true;
     } catch (error) {
       console.error('Save failed:', error);
+      
+      // Log failed template update
+      await logActivity({
+        action: 'updated',
+        resource_type: 'template',
+        resource_id: template.key,
+        resource_name: template.data.name,
+        created_by: template.owner || 'unknown',
+        modified_by: user?.key || template.owner || 'unknown',
+        success: false,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        file_size: template.data.size,
+        folder_path: template.data.folderPath,
+        mime_type: template.data.mimeType,
+      });
+      
       showErrorToast(t('templateProcessor.saveFailed'));
       return false;
     } finally {

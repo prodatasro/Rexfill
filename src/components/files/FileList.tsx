@@ -16,6 +16,8 @@ import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
 import { setDocWithTimeout, deleteDocWithTimeout, deleteAssetWithTimeout, listAssetsWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
+import { fetchLogsForResource, generateLogCSV, downloadLogCSV, logActivity } from '../../utils/activityLogger';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Threshold for enabling virtualization - only virtualize when we have many items
 const VIRTUALIZATION_THRESHOLD = 20;
@@ -51,8 +53,11 @@ const FileList: FC<FileListProps> = ({
   folderTree
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
   const [togglingFavoriteIds, setTogglingFavoriteIds] = useState<Set<string>>(new Set());
+  const [downloadingLogsIds, setDownloadingLogsIds] = useState<Set<string>>(new Set());
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
   const [templateToRename, setTemplateToRename] = useState<Doc<WordTemplateData> | null>(null);
@@ -98,9 +103,39 @@ const FileList: FC<FileListProps> = ({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
+      // Log successful download
+      await logActivity({
+        action: 'downloaded',
+        resource_type: 'template',
+        resource_id: template.key,
+        resource_name: template.data.name,
+        created_by: template.owner || 'unknown',
+        modified_by: user?.key || template.owner || 'unknown',
+        success: true,
+        file_size: template.data.size,
+        folder_path: template.data.folderPath,
+        mime_type: template.data.mimeType,
+      });
+
       showSuccessToast(t('fileList.downloadSuccess', { filename: template.data.name }));
     } catch (error) {
       console.error('Download failed:', error);
+      
+      // Log failed download
+      await logActivity({
+        action: 'downloaded',
+        resource_type: 'template',
+        resource_id: template.key,
+        resource_name: template.data.name,
+        created_by: template.owner || 'unknown',
+        modified_by: user?.key || template.owner || 'unknown',
+        success: false,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        file_size: template.data.size,
+        folder_path: template.data.folderPath,
+        mime_type: template.data.mimeType,
+      });
+      
       showErrorToast(t('fileList.downloadFailed'));
     }
   };
@@ -177,10 +212,40 @@ const FileList: FC<FileListProps> = ({
       // Remove from recent templates list
       onRemoveFromRecent?.(template.key);
 
+      // Log successful deletion
+      await logActivity({
+        action: 'deleted',
+        resource_type: 'template',
+        resource_id: template.key,
+        resource_name: template.data.name,
+        created_by: template.owner || 'unknown',
+        modified_by: user?.key || template.owner || 'unknown',
+        success: true,
+        file_size: template.data.size,
+        folder_path: template.data.folderPath,
+        mime_type: template.data.mimeType,
+      });
+
       showSuccessToast(t('fileList.deleteSuccess', { filename: template.data.name }));
       onFileDeleted();
     } catch (error) {
       console.error('Delete failed:', error);
+      
+      // Log failed deletion
+      await logActivity({
+        action: 'deleted',
+        resource_type: 'template',
+        resource_id: template.key,
+        resource_name: template.data.name,
+        created_by: template.owner || 'unknown',
+        modified_by: user?.key || template.owner || 'unknown',
+        success: false,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        file_size: template.data.size,
+        folder_path: template.data.folderPath,
+        mime_type: template.data.mimeType,
+      });
+      
       showErrorToast(t('fileList.deleteFailed'));
     } finally {
       setDeletingIds(prev => {
@@ -246,6 +311,22 @@ const FileList: FC<FileListProps> = ({
         }
       });
 
+      // Log successful move
+      await logActivity({
+        action: 'moved',
+        resource_type: 'template',
+        resource_id: templateToMove.key,
+        resource_name: templateToMove.data.name,
+        created_by: templateToMove.owner || 'unknown',
+        modified_by: user?.key || templateToMove.owner || 'unknown',
+        success: true,
+        old_value: templateToMove.data.folderPath || '/',
+        new_value: newFolderPath,
+        file_size: templateToMove.data.size,
+        folder_path: newFolderPath,
+        mime_type: templateToMove.data.mimeType,
+      });
+
       showSuccessToast(t('fileList.moveSuccess'));
       setTemplateToMove(null);
       onFileDeleted(); // Refresh templates
@@ -256,6 +337,24 @@ const FileList: FC<FileListProps> = ({
       }
     } catch (error) {
       console.error('Move failed:', error);
+      
+      // Log failed move
+      if (templateToMove) {
+        await logActivity({
+          action: 'moved',
+          resource_type: 'template',
+          resource_id: templateToMove.key,
+          resource_name: templateToMove.data.name,
+          created_by: templateToMove.owner || 'unknown',
+          modified_by: user?.key || templateToMove.owner || 'unknown',
+          success: false,
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          file_size: templateToMove.data.size,
+          folder_path: templateToMove.data.folderPath,
+          mime_type: templateToMove.data.mimeType,
+        });
+      }
+      
       showErrorToast(t('fileList.moveFailed'));
     }
   };
@@ -530,9 +629,45 @@ const FileList: FC<FileListProps> = ({
         }
       });
       onFileDeleted(); // Refresh to show updated favorite status
+
+      // Log successful favorite toggle
+      try {
+        await logActivity({
+          action: 'updated',
+          resource_type: 'template',
+          resource_id: template.key,
+          resource_name: template.data.name,
+          created_by: template.owner || 'unknown',
+          modified_by: user?.key || template.owner || 'unknown',
+          success: true,
+          old_value: template.data.isFavorite ? 'favorite' : 'not favorite',
+          new_value: newIsFavorite ? 'favorite' : 'not favorite',
+          file_size: template.data.size,
+          folder_path: template.data.folderPath,
+          mime_type: template.data.mimeType
+        });
+      } catch (logError) {
+        console.error('Failed to log favorite toggle:', logError);
+      }
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
       showErrorToast(t('fileList.favoriteFailed'));
+
+      // Log failed favorite toggle
+      try {
+        await logActivity({
+          action: 'updated',
+          resource_type: 'template',
+          resource_id: template.key,
+          resource_name: template.data.name,
+          created_by: template.owner || 'unknown',
+          modified_by: user?.key || template.owner || 'unknown',
+          success: false,
+          error_message: error instanceof Error ? error.message : 'Toggle favorite failed'
+        });
+      } catch (logError) {
+        console.error('Failed to log favorite toggle failure:', logError);
+      }
     } finally {
       setTogglingFavoriteIds(prev => {
         const newSet = new Set(prev);
@@ -540,11 +675,9 @@ const FileList: FC<FileListProps> = ({
         return newSet;
       });
     }
-  }, [onFileDeleted, t]);
+  }, [onFileDeleted, t, user, logActivity]);
 
   // Duplicate template handler
-  const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
-
   // Mobile action menu state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -582,6 +715,46 @@ const FileList: FC<FileListProps> = ({
   const handleItemMove = useCallback((template: Doc<WordTemplateData>) => {
     setTemplateToMove(template);
   }, []);
+
+  const handleDownloadLogs = useCallback(async (template: Doc<WordTemplateData>) => {
+    setDownloadingLogsIds(prev => new Set([...prev, template.key]));
+    
+    try {
+      // Fetch logs for this resource
+      const logs = await fetchLogsForResource(template.key);
+      
+      if (logs.length === 0) {
+        showWarningToast(t('fileList.noLogsAvailable'));
+        return;
+      }
+
+      // Generate CSV content
+      const csvContent = generateLogCSV(logs, {
+        timestamp: t('logs.columns.timestamp'),
+        action: t('logs.columns.action'),
+        status: t('logs.columns.status'),
+        resource: t('logs.columns.resource'),
+        details: t('logs.columns.details'),
+        createdBy: t('logs.columns.createdBy'),
+        modifiedBy: t('logs.columns.modifiedBy'),
+        error: t('logs.columns.error'),
+      });
+
+      // Download the CSV
+      downloadLogCSV(csvContent, template.data.name);
+      
+      showSuccessToast(t('fileList.downloadLogsSuccess'));
+    } catch (error) {
+      console.error('Failed to download logs:', error);
+      showErrorToast(t('fileList.downloadLogsFailed'));
+    } finally {
+      setDownloadingLogsIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(template.key);
+        return newSet;
+      });
+    }
+  }, [t]);
 
   const handleMenuToggle = useCallback((templateKey: string | null) => {
     setOpenMenuId(templateKey);
@@ -625,10 +798,40 @@ const FileList: FC<FileListProps> = ({
         }
       });
 
+      // Log successful duplicate (treated as created)
+      await logActivity({
+        action: 'created',
+        resource_type: 'template',
+        resource_id: newKey,
+        resource_name: newName,
+        created_by: user?.key || templateToDuplicate.owner || 'unknown',
+        modified_by: user?.key || templateToDuplicate.owner || 'unknown',
+        success: true,
+        file_size: templateToDuplicate.data.size,
+        folder_path: templateToDuplicate.data.folderPath,
+        mime_type: templateToDuplicate.data.mimeType,
+      });
+
       showSuccessToast(t('fileList.duplicateSuccess', { filename: newName }));
       onFileDeleted(); // Refresh the list
     } catch (error) {
       console.error('Failed to duplicate template:', error);
+      
+      // Log failed duplicate
+      await logActivity({
+        action: 'created',
+        resource_type: 'template',
+        resource_id: templateToDuplicate.key,
+        resource_name: newName,
+        created_by: user?.key || templateToDuplicate.owner || 'unknown',
+        modified_by: user?.key || templateToDuplicate.owner || 'unknown',
+        success: false,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        file_size: templateToDuplicate.data.size,
+        folder_path: templateToDuplicate.data.folderPath,
+        mime_type: templateToDuplicate.data.mimeType,
+      });
+      
       showErrorToast(t('fileList.duplicateFailed'));
       throw error; // Re-throw to let dialog handle error state
     } finally {
@@ -661,10 +864,42 @@ const FileList: FC<FileListProps> = ({
         }
       });
 
+      // Log successful rename
+      await logActivity({
+        action: 'renamed',
+        resource_type: 'template',
+        resource_id: templateToRename.key,
+        resource_name: newName,
+        created_by: templateToRename.owner || 'unknown',
+        modified_by: user?.key || templateToRename.owner || 'unknown',
+        success: true,
+        old_value: templateToRename.data.name,
+        new_value: newName,
+        file_size: templateToRename.data.size,
+        folder_path: templateToRename.data.folderPath,
+        mime_type: templateToRename.data.mimeType,
+      });
+
       showSuccessToast(t('templateRename.renameSuccess', { filename: newName }));
       onFileDeleted(); // Refresh the list
     } catch (error) {
       console.error('Failed to rename template:', error);
+      
+      // Log failed rename
+      await logActivity({
+        action: 'renamed',
+        resource_type: 'template',
+        resource_id: templateToRename.key,
+        resource_name: templateToRename.data.name,
+        created_by: templateToRename.owner || 'unknown',
+        modified_by: user?.key || templateToRename.owner || 'unknown',
+        success: false,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+        file_size: templateToRename.data.size,
+        folder_path: templateToRename.data.folderPath,
+        mime_type: templateToRename.data.mimeType,
+      });
+      
       showErrorToast(t('templateRename.renameFailed'));
       throw error; // Re-throw to let dialog handle error state
     }
@@ -959,6 +1194,7 @@ const FileList: FC<FileListProps> = ({
                     isDeleting={deletingIds.has(template.key)}
                     isDuplicating={duplicatingIds.has(template.key)}
                     isTogglingFavorite={togglingFavoriteIds.has(template.key)}
+                    isDownloadingLogs={downloadingLogsIds.has(template.key)}
                     isMenuOpen={openMenuId === template.key}
                     onSelect={handleItemSelect}
                     onRowClick={handleItemRowClick}
@@ -968,6 +1204,7 @@ const FileList: FC<FileListProps> = ({
                     onRename={handleItemRename}
                     onMove={handleItemMove}
                     onDelete={handleDelete}
+                    onDownloadLogs={handleDownloadLogs}
                     onMenuToggle={handleMenuToggle}
                     menuRef={menuRef}
                   />
@@ -987,6 +1224,7 @@ const FileList: FC<FileListProps> = ({
                 isDeleting={deletingIds.has(template.key)}
                 isDuplicating={duplicatingIds.has(template.key)}
                 isTogglingFavorite={togglingFavoriteIds.has(template.key)}
+                isDownloadingLogs={downloadingLogsIds.has(template.key)}
                 isMenuOpen={openMenuId === template.key}
                 onSelect={handleItemSelect}
                 onRowClick={handleItemRowClick}
@@ -996,6 +1234,7 @@ const FileList: FC<FileListProps> = ({
                 onRename={handleItemRename}
                 onMove={handleItemMove}
                 onDelete={handleDelete}
+                onDownloadLogs={handleDownloadLogs}
                 onMenuToggle={handleMenuToggle}
                 menuRef={menuRef}
               />

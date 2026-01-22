@@ -32,6 +32,8 @@ import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../..
 import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '../../hooks/useDebounce';
+import { logActivity } from '../../utils/activityLogger';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Dashboard: FC = () => {
   const { t } = useTranslation();
@@ -40,6 +42,7 @@ const Dashboard: FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { setOneTimeFile } = useFileProcessing();
   const { setAllTemplates, setFolderTree, setOnSelectTemplate, setOnSelectFolder } = useSearch();
+  const { user } = useAuth();
 
   // Initialize selectedFolderId from URL params BEFORE any hook calls
   const folderIdFromParams = searchParams.get('folder');
@@ -610,9 +613,43 @@ const Dashboard: FC = () => {
 
           savedTemplateKey = result.name;
           successCount++;
+
+          // Log successful upload
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: result.name,
+              resource_name: file.name,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: true,
+              file_size: file.size,
+              folder_path: folderPath,
+              mime_type: templateData.mimeType
+            });
+          } catch (logError) {
+            console.error('Failed to log upload activity:', logError);
+          }
         } catch (error) {
           console.error(`Upload failed for ${file.name}:`, error);
           failedFiles.push(file.name);
+
+          // Log failed upload
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: 'unknown',
+              resource_name: file.name,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: false,
+              error_message: error instanceof Error ? error.message : 'Upload failed'
+            });
+          } catch (logError) {
+            console.error('Failed to log upload failure:', logError);
+          }
         }
       }
 
@@ -757,9 +794,43 @@ const Dashboard: FC = () => {
           });
 
           successCount++;
+
+          // Log successful upload
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: result.name,
+              resource_name: file.name,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: true,
+              file_size: file.size,
+              folder_path: folderPath,
+              mime_type: templateData.mimeType
+            });
+          } catch (logError) {
+            console.error('Failed to log upload activity:', logError);
+          }
         } catch (error) {
           console.error(`Upload failed for ${file.name}:`, error);
           failedFiles.push(file.name);
+
+          // Log failed upload
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: 'unknown',
+              resource_name: file.name,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: false,
+              error_message: error instanceof Error ? error.message : 'Upload failed'
+            });
+          } catch (logError) {
+            console.error('Failed to log upload failure:', logError);
+          }
         }
       }
 

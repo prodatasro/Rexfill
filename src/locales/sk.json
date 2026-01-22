@@ -151,7 +151,12 @@
     "renameTemplate": "Premenovať šablónu",
     "moreActions": "Ďalšie akcie",
     "customProperty": "premenná",
-    "customProperties": "premenných"
+    "customProperties": "premenných",
+    "downloadLogs": "Stiahnuť záznamy",
+    "downloadingLogs": "Sťahovanie záznamov...",
+    "downloadLogsSuccess": "Záznamy boli úspešne stiahnuté",
+    "downloadLogsFailed": "Nepodarilo sa stiahnuť záznamy",
+    "noLogsAvailable": "Pre tento súbor nie sú k dispozícii žiadne záznamy aktivít"
   },
   "templateProcessor": {
     "title": "Spracovať šablónu",
@@ -710,6 +715,30 @@
       "limitReached": "Dosiahli ste denný limit",
       "nearLimit": "Blížite sa k limitu",
       "upgradeNow": "Vylepšiť teraz"
+    }
+  },
+  "logs": {
+    "columns": {
+      "timestamp": "Čas",
+      "action": "Akcia",
+      "status": "Stav",
+      "resource": "Zdroj",
+      "details": "Detaily",
+      "createdBy": "Vytvoril",
+      "modifiedBy": "Upravil",
+      "error": "Chyba"
+    },
+    "actions": {
+      "created": "Vytvorené",
+      "updated": "Aktualizované",
+      "deleted": "Zmazané",
+      "renamed": "Premenované",
+      "moved": "Presunuté",
+      "downloaded": "Stiahnuté"
+    },
+    "status": {
+      "success": "Úspech",
+      "failed": "Zlyhanie"
     }
   }
 }

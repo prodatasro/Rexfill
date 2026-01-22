@@ -19,6 +19,8 @@ import {
 import { buildStoragePath, buildTemplatePath } from '../../utils/templatePathUtils';
 import { buildFolderPath } from '../../utils/folderUtils';
 import { showSuccessToast, showErrorToast, showWarningToast } from '../../utils/toast';
+import { logActivity } from '../../utils/activityLogger';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ImportDialogProps {
   isOpen: boolean;
@@ -48,6 +50,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
   onImportComplete,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [step, setStep] = useState<ImportStep>('select');
   const [metadata, setMetadata] = useState<ExportMetadata | null>(null);
   const [zip, setZip] = useState<PizZip | null>(null);
@@ -303,6 +306,27 @@ const ImportDialog: FC<ImportDialogProps> = ({
               });
 
               stats.importedTemplates++;
+
+              // Log successful import (overwrite)
+              try {
+                await logActivity({
+                  action: 'updated',
+                  resource_type: 'template',
+                  resource_id: existingConflict.existingTemplate.key,
+                  resource_name: importTemplate.data.name,
+                  created_by: existingConflict.existingTemplate.owner || 'unknown',
+                  modified_by: user?.key || 'unknown',
+                  success: true,
+                  file_size: file.size,
+                  folder_path: existingConflict.existingTemplate.data.folderPath,
+                  mime_type: file.type,
+                  old_value: 'import',
+                  new_value: 'overwrite'
+                });
+              } catch (logError) {
+                console.error('Failed to log import activity:', logError);
+              }
+
               continue;
             }
             // For 'rename', fall through to create new
@@ -378,9 +402,45 @@ const ImportDialog: FC<ImportDialogProps> = ({
           });
 
           stats.importedTemplates++;
+
+          // Log successful import
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: newKey,
+              resource_name: newName,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: true,
+              file_size: file.size,
+              folder_path: folderPath || '/',
+              mime_type: file.type,
+              old_value: 'import',
+              new_value: conflictResolution
+            });
+          } catch (logError) {
+            console.error('Failed to log import activity:', logError);
+          }
         } catch (error) {
           console.error(`Failed to import template ${importTemplate.data.name}:`, error);
           stats.errors.push(`Template: ${importTemplate.data.name}`);
+
+          // Log failed import
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: 'unknown',
+              resource_name: importTemplate.data.name,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: false,
+              error_message: error instanceof Error ? error.message : 'Import failed'
+            });
+          } catch (logError) {
+            console.error('Failed to log import failure:', logError);
+          }
         }
 
         setImportProgress(

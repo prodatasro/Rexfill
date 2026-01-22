@@ -11,6 +11,8 @@ import {
   formatFileSize,
 } from '../../utils/exportImport';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { logActivity } from '../../utils/activityLogger';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ const ExportDialog: FC<ExportDialogProps> = ({
   fetchTemplateBlob,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set());
@@ -122,10 +125,51 @@ const ExportDialog: FC<ExportDialogProps> = ({
           folders: selectedFolders.length,
         })
       );
+
+      // Log successful export for each template
+      for (const template of selectedTemplates) {
+        try {
+          await logActivity({
+            action: 'downloaded',
+            resource_type: 'template',
+            resource_id: template.key,
+            resource_name: template.data.name,
+            created_by: template.owner || 'unknown',
+            modified_by: user?.key || template.owner || 'unknown',
+            success: true,
+            file_size: template.data.size,
+            folder_path: template.data.folderPath,
+            mime_type: template.data.mimeType,
+            old_value: 'export',
+            new_value: filename
+          });
+        } catch (logError) {
+          console.error('Failed to log export activity:', logError);
+        }
+      }
+
       onClose();
     } catch (error) {
       console.error('Export failed:', error);
       showErrorToast(t('exportImport.exportFailed'));
+
+      // Log failed export for each template
+      for (const template of selectedTemplates) {
+        try {
+          await logActivity({
+            action: 'downloaded',
+            resource_type: 'template',
+            resource_id: template.key,
+            resource_name: template.data.name,
+            created_by: template.owner || 'unknown',
+            modified_by: user?.key || template.owner || 'unknown',
+            success: false,
+            error_message: error instanceof Error ? error.message : 'Export failed'
+          });
+        } catch (logError) {
+          console.error('Failed to log export failure:', logError);
+        }
+      }
     } finally {
       setIsExporting(false);
       setExportProgress(0);

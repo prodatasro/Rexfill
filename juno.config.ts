@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => ({
         { collection: 'subscriptions', read: 'private', write: 'private', memory: 'stable' },
         { collection: 'usage', read: 'private', write: 'private', memory: 'stable' },
         { collection: 'contact_submissions', read: 'managed', write: 'public', memory: 'stable' },
+        { collection: 'activity_logs', read: 'managed', write: 'private', memory: 'stable' },
       ],
       storage: [
         { collection: 'templates', read: 'private', write: 'private', memory: 'stable'}
