@@ -26,7 +26,7 @@ export default defineConfig({
           // Split Juno/Internet Computer libraries
           'juno-vendor': ['@junobuild/core', '@junobuild/functions'],
           // Split document processing libraries (large)
-          'docx-vendor': ['docxtemplater', 'pizzip'],
+          'docx-vendor': ['pizzip'],
           // Split UI libraries
           'ui-vendor': ['lucide-react', 'sonner'],
         },

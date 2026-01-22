@@ -1,7 +1,7 @@
 import { FC, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, FileText, ChevronDown, ChevronRight, Files, Tag, Check } from 'lucide-react';
+import { Sparkles, FileText, ChevronDown, ChevronRight, Files, Check } from 'lucide-react';
 import { FormField, ColorVariant } from './FormField';
 import { SortOption, sortFields } from './FieldSorting';
 
@@ -42,7 +42,7 @@ const FieldInput: FC<{
   onChange: (fieldName: string, value: string) => void;
   id?: string;
   highlight?: boolean;
-}> = ({ fieldName, value, isCustomProperty, colorVariant, onChange, id, highlight }) => {
+}> = ({ fieldName, value, isCustomProperty: _isCustomProperty, colorVariant, onChange, id, highlight }) => {
   const { t } = useTranslation();
 
   const colorClasses: Record<ColorVariant, {
@@ -72,7 +72,8 @@ const FieldInput: FC<{
   };
 
   const colors = colorClasses[colorVariant];
-  const IconComponent = isCustomProperty ? FileText : Tag;
+  // All fields are custom properties now, always use FileText icon
+  const IconComponent = FileText;
 
   return (
     <div

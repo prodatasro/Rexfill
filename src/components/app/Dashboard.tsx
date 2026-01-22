@@ -561,8 +561,8 @@ const Dashboard: FC = () => {
         try {
           const fullPath = buildTemplatePath(folderPath, file.name);
 
-          // Extract placeholders and custom properties from the file
-          const { placeholderCount, customPropertyCount } = await extractMetadataFromFile(file);
+          // Extract custom properties from the file
+          const { customPropertyCount } = await extractMetadataFromFile(file);
 
           const templateData: WordTemplateData = {
             name: file.name,
@@ -572,7 +572,6 @@ const Dashboard: FC = () => {
             folderId: selectedFolderId,
             folderPath: folderPath,
             fullPath: fullPath,
-            placeholderCount,
             customPropertyCount
           };
 
@@ -710,8 +709,8 @@ const Dashboard: FC = () => {
         try {
           const fullPath = buildTemplatePath(folderPath, file.name);
 
-          // Extract placeholders and custom properties from the file
-          const { placeholderCount, customPropertyCount } = await extractMetadataFromFile(file);
+          // Extract custom properties from the file
+          const { customPropertyCount } = await extractMetadataFromFile(file);
 
           const templateData: WordTemplateData = {
             name: file.name,
@@ -721,7 +720,6 @@ const Dashboard: FC = () => {
             folderId: uploadToFolderId,
             folderPath: folderPath,
             fullPath: fullPath,
-            placeholderCount,
             customPropertyCount
           };
 

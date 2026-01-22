@@ -1,7 +1,6 @@
 import PizZip from 'pizzip';
 
 interface ExtractedMetadata {
-  placeholderCount: number;
   customPropertyCount: number;
 }
 
@@ -10,25 +9,6 @@ interface ExtractedMetadata {
  */
 function extractMetadataFromArrayBuffer(arrayBuffer: ArrayBuffer): ExtractedMetadata {
   const zip = new PizZip(arrayBuffer);
-
-  // Extract {{}} placeholders from document.xml
-  let placeholderCount = 0;
-  const documentXml = zip.file("word/document.xml");
-  if (documentXml) {
-    const xmlContent = documentXml.asText();
-    const textTagRegex = /<w:t[^>]*>([^<]*)<\/w:t>/gi;
-    let reconstructedText = "";
-    let match;
-
-    while ((match = textTagRegex.exec(xmlContent)) !== null) {
-      reconstructedText += match[1];
-    }
-
-    const placeholderRegex = /\{\{([^}]+)\}\}/g;
-    const matches = reconstructedText.match(placeholderRegex) || [];
-    // Count unique placeholders
-    placeholderCount = new Set(matches.map(m => m.slice(2, -2).trim())).size;
-  }
 
   // Extract custom properties from docProps/custom.xml
   let customPropertyCount = 0;
@@ -41,11 +21,11 @@ function extractMetadataFromArrayBuffer(arrayBuffer: ArrayBuffer): ExtractedMeta
     customPropertyCount = propertyElements.length;
   }
 
-  return { placeholderCount, customPropertyCount };
+  return { customPropertyCount };
 }
 
 /**
- * Extract placeholder and custom property counts from a DOCX file
+ * Extract custom property count from a DOCX file
  */
 export async function extractMetadataFromFile(file: File): Promise<ExtractedMetadata> {
   try {
@@ -53,12 +33,12 @@ export async function extractMetadataFromFile(file: File): Promise<ExtractedMeta
     return extractMetadataFromArrayBuffer(arrayBuffer);
   } catch (error) {
     console.error('Failed to extract metadata:', error);
-    return { placeholderCount: 0, customPropertyCount: 0 };
+    return { customPropertyCount: 0 };
   }
 }
 
 /**
- * Extract placeholder and custom property counts from a Blob
+ * Extract custom property count from a Blob
  */
 export async function extractMetadataFromBlob(blob: Blob): Promise<ExtractedMetadata> {
   try {
@@ -66,6 +46,6 @@ export async function extractMetadataFromBlob(blob: Blob): Promise<ExtractedMeta
     return extractMetadataFromArrayBuffer(arrayBuffer);
   } catch (error) {
     console.error('Failed to extract metadata from blob:', error);
-    return { placeholderCount: 0, customPropertyCount: 0 };
+    return { customPropertyCount: 0 };
   }
 }

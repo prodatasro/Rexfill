@@ -1,5 +1,5 @@
 import { FC, memo, useState, useEffect, useRef } from 'react';
-import { FileText, Tag, Check } from 'lucide-react';
+import { FileText, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export type ColorVariant = 'green' | 'amber' | 'default';
@@ -43,7 +43,7 @@ const colorClasses: Record<ColorVariant, {
 const FormFieldComponent: FC<FormFieldProps> = ({
   fieldName,
   value,
-  isCustomProperty,
+  isCustomProperty: _isCustomProperty,
   colorVariant,
   onChange,
   id,
@@ -54,15 +54,20 @@ const FormFieldComponent: FC<FormFieldProps> = ({
   // Local state for immediate UI updates (prevents lag)
   const [localValue, setLocalValue] = useState(value);
   const debounceTimerRef = useRef<number | null>(null);
+  const isTypingRef = useRef(false);
 
   // Sync local state when parent value changes (e.g., form reset)
+  // Only update if we're not currently typing (avoids overwriting user input)
   useEffect(() => {
-    setLocalValue(value);
+    if (!isTypingRef.current) {
+      setLocalValue(value);
+    }
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setLocalValue(newValue);
+    isTypingRef.current = true;
 
     // Debounce parent update (150ms balance between responsiveness and performance)
     if (debounceTimerRef.current) {
@@ -70,6 +75,7 @@ const FormFieldComponent: FC<FormFieldProps> = ({
     }
     debounceTimerRef.current = window.setTimeout(() => {
       onChange(fieldName, newValue);
+      isTypingRef.current = false;
     }, 150);
   };
 
@@ -91,10 +97,12 @@ const FormFieldComponent: FC<FormFieldProps> = ({
     if (localValue !== value) {
       onChange(fieldName, localValue);
     }
+    isTypingRef.current = false;
   };
 
   const colors = colorClasses[colorVariant];
-  const IconComponent = isCustomProperty ? FileText : Tag;
+  // All fields are custom properties now, always use FileText icon
+  const IconComponent = FileText;
 
   return (
     <div

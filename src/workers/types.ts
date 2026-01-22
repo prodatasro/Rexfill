@@ -5,23 +5,19 @@
 export type ProcessingStage =
   | 'loading'
   | 'parsing'
-  | 'fixing_placeholders'
   | 'updating_fields'
-  | 'rendering'
   | 'generating';
 
 export interface ProcessDocumentRequest {
   type: 'PROCESS_DOCUMENT';
   payload: {
     arrayBuffer: ArrayBuffer;
-    placeholderData: Record<string, string>;
     customPropsData: Record<string, string>;
-    placeholders: string[];
   };
 }
 
-export interface ExtractPlaceholdersRequest {
-  type: 'EXTRACT_PLACEHOLDERS';
+export interface ExtractCustomPropertiesRequest {
+  type: 'EXTRACT_CUSTOM_PROPERTIES';
   payload: {
     arrayBuffer: ArrayBuffer;
   };
@@ -42,10 +38,9 @@ export interface ProcessDocumentResponse {
   };
 }
 
-export interface ExtractPlaceholdersResponse {
+export interface ExtractCustomPropertiesResponse {
   type: 'EXTRACT_COMPLETE';
   payload: {
-    placeholders: string[];
     customProperties: Record<string, string>;
   };
 }
@@ -58,5 +53,5 @@ export interface ErrorResponse {
   };
 }
 
-export type WorkerRequest = ProcessDocumentRequest | ExtractPlaceholdersRequest;
-export type WorkerResponse = ProcessDocumentResponse | ExtractPlaceholdersResponse | ProgressUpdate | ErrorResponse;
+export type WorkerRequest = ProcessDocumentRequest | ExtractCustomPropertiesRequest;
+export type WorkerResponse = ProcessDocumentResponse | ExtractCustomPropertiesResponse | ProgressUpdate | ErrorResponse;

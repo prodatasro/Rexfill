@@ -4,7 +4,6 @@
  */
 
 import PizZip from "pizzip";
-import Docxtemplater from "docxtemplater";
 import { escapeXml, unescapeXml, escapeRegex } from "./xmlUtils";
 
 // Re-export for backwards compatibility
@@ -108,125 +107,6 @@ export function updateDocumentFieldsOptimized(
   });
 }
 
-/**
- * Fix split placeholders in the document XML
- * Runs a two-pass approach: generic patterns first, then specific placeholders
- */
-export function fixSplitPlaceholders(xmlContent: string, placeholders: string[]): string {
-  // Generic pattern to fix common split cases
-  let result = xmlContent.replace(
-    /(<w:t[^>]*>)([^<]*\{+[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*[}]+[^<]*?)(<\/w:t>)/g,
-    '$1$2$3$4'
-  );
-
-  result = result.replace(
-    /(<w:t[^>]*>)([^<]*\{\{[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*}}[^<]*?)(<\/w:t>)/g,
-    '$1$2$3$4'
-  );
-
-  // Fix specific placeholders that might be split
-  // Optimized: only process if we have placeholders
-  if (placeholders.length > 0) {
-    for (const placeholder of placeholders) {
-      const parts = placeholder.split('');
-      for (let i = 1; i < parts.length; i++) {
-        const firstPart = '{{' + parts.slice(0, i).join('');
-        const secondPart = parts.slice(i).join('') + '}}';
-        const pattern = new RegExp(
-          `(<w:t[^>]*>)([^<]*${firstPart.replace(/[{}]/g, '\\$&')})<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*${secondPart.replace(/[{}]/g, '\\$&')}[^<]*?)(<\/w:t>)`,
-          'g'
-        );
-        result = result.replace(pattern, '$1$2$3$4');
-      }
-    }
-  }
-
-  return result;
-}
-
-/**
- * PERFORMANCE OPTIMIZED: Fix split placeholders with early exit and strategic split points
- *
- * This version reduces the algorithmic complexity from O(n * m * xmlLength) to much less:
- * - Early exit if all placeholders are already present (common case)
- * - Only processes placeholders that are actually missing
- * - Uses strategic split points (first, middle, last) instead of all positions
- *
- * For 500 placeholders, this reduces regex operations from ~7500 to ~50-100 in most cases.
- */
-export function fixSplitPlaceholdersOptimized(xmlContent: string, placeholders: string[]): string {
-  // Skip if no placeholders
-  if (placeholders.length === 0) return xmlContent;
-
-  // Generic patterns first (covers most cases in a single pass)
-  let result = xmlContent.replace(
-    /(<w:t[^>]*>)([^<]*\{+[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*[}]+[^<]*?)(<\/w:t>)/g,
-    '$1$2$3$4'
-  );
-
-  result = result.replace(
-    /(<w:t[^>]*>)([^<]*\{\{[^}]*)<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>([^<]*}}[^<]*?)(<\/w:t>)/g,
-    '$1$2$3$4'
-  );
-
-  // EARLY EXIT: Check if all placeholders are already present
-  // This is the common case after generic fixes, avoiding O(n * m) loop entirely
-  const allPlaceholdersPresent = placeholders.every(p => result.includes(`{{${p}}}`));
-  if (allPlaceholdersPresent) return result;
-
-  // Only process placeholders that are still missing (split)
-  const missingPlaceholders = placeholders.filter(p => !result.includes(`{{${p}}}`));
-
-  // For remaining missing placeholders, use strategic split points
-  for (const placeholder of missingPlaceholders) {
-    const len = placeholder.length;
-
-    // Strategic split points: first position, middle, and last position
-    // This catches most real-world Word split scenarios without checking every position
-    const splitPoints: number[] = [];
-
-    if (len >= 1) splitPoints.push(1);                    // First character split (e.g., {{c|ustomerName}})
-    if (len >= 3) splitPoints.push(Math.floor(len / 2));  // Middle split (e.g., {{custo|merName}})
-    if (len >= 2) splitPoints.push(len - 1);              // Last character split (e.g., {{customerNam|e}})
-
-    // Remove duplicates for short placeholders
-    const uniqueSplitPoints = [...new Set(splitPoints)];
-
-    for (const i of uniqueSplitPoints) {
-      const firstPart = '{{' + placeholder.slice(0, i);
-      const secondPart = placeholder.slice(i) + '}}';
-      const pattern = new RegExp(
-        `(<w:t[^>]*>)([^<]*${escapeRegex(firstPart)})<\\/w:t><\\/w:r><w:r[^>]*><w:t[^>]*>([^<]*${escapeRegex(secondPart)}[^<]*?)(<\\/w:t>)`,
-        'g'
-      );
-      result = result.replace(pattern, '$1$2$3$4');
-
-      // Check if this placeholder is now fixed
-      if (result.includes(`{{${placeholder}}}`)) break;
-    }
-
-    // If still not found after strategic points, try all positions as fallback
-    if (!result.includes(`{{${placeholder}}}`)) {
-      for (let i = 1; i < len; i++) {
-        // Skip positions we already tried
-        if (uniqueSplitPoints.includes(i)) continue;
-
-        const firstPart = '{{' + placeholder.slice(0, i);
-        const secondPart = placeholder.slice(i) + '}}';
-        const pattern = new RegExp(
-          `(<w:t[^>]*>)([^<]*${escapeRegex(firstPart)})<\\/w:t><\\/w:r><w:r[^>]*><w:t[^>]*>([^<]*${escapeRegex(secondPart)}[^<]*?)(<\\/w:t>)`,
-          'g'
-        );
-        result = result.replace(pattern, '$1$2$3$4');
-
-        // Check if this placeholder is now fixed
-        if (result.includes(`{{${placeholder}}}`)) break;
-      }
-    }
-  }
-
-  return result;
-}
 
 /**
  * Read custom properties from a Word document
@@ -283,41 +163,14 @@ export function writeCustomPropertiesToZip(
   zip.file("docProps/custom.xml", xml);
 }
 
-/**
- * Extract placeholders from document XML
- * Uses regex parsing to work in Web Worker context (no DOMParser available)
- */
-export function extractPlaceholdersFromZip(zip: PizZip): string[] {
-  const documentXml = zip.file("word/document.xml");
-  if (!documentXml) {
-    return [];
-  }
-
-  const xmlContent = documentXml.asText();
-
-  // Extract all text content from <w:t> tags using regex
-  const textTagRegex = /<w:t[^>]*>([^<]*)<\/w:t>/gi;
-  let reconstructedText = "";
-  let match;
-
-  while ((match = textTagRegex.exec(xmlContent)) !== null) {
-    reconstructedText += match[1];
-  }
-
-  const placeholderRegex = /\{\{([^}]+)\}\}/g;
-  const matches = reconstructedText.match(placeholderRegex) || [];
-  return [...new Set(matches.map(m => m.slice(2, -2).trim()))];
-}
 
 /**
- * Process a document with the given data
+ * Process a document with the given custom properties data
  * Returns the processed document as a Blob
  */
 export function processDocumentSync(
   arrayBuffer: ArrayBuffer,
-  placeholderData: Record<string, string>,
   customPropsData: Record<string, string>,
-  placeholders: string[],
   onProgress?: (stage: string, percent: number) => void
 ): Blob {
   onProgress?.('loading', 0);
@@ -331,30 +184,6 @@ export function processDocumentSync(
     updateDocumentFieldsOptimized(zip, customPropsData, (percent) => {
       onProgress?.('updating_fields', percent);
     });
-  }
-
-  // Process placeholders
-  if (placeholders.length > 0) {
-    onProgress?.('fixing_placeholders', 0);
-
-    const documentXml = zip.file("word/document.xml");
-    if (documentXml) {
-      let xmlContent = documentXml.asText();
-      xmlContent = fixSplitPlaceholders(xmlContent, placeholders);
-      zip.file("word/document.xml", xmlContent);
-    }
-    onProgress?.('fixing_placeholders', 100);
-
-    onProgress?.('rendering', 0);
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-      nullGetter: () => ""
-    });
-
-    doc.setData(placeholderData);
-    doc.render();
-    onProgress?.('rendering', 100);
   }
 
   onProgress?.('generating', 0);

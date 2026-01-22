@@ -57,7 +57,7 @@
   },
   "dashboard": {
     "title": "Your Word Templates",
-    "subtitle": "Upload DOCX files with placeholders like {{name}} and fill them dynamically.",
+    "subtitle": "Upload DOCX files with custom document properties and fill them dynamically.",
     "recentTemplates": "Recent Templates",
     "noRecentTemplates": "No recently accessed templates",
     "clearRecent": "Clear",
@@ -65,7 +65,7 @@
   },
   "fileUpload": {
     "title": "Upload Word Template",
-    "description": "Select a .docx file with placeholders to upload",
+    "description": "Select a .docx file with custom document properties to upload",
     "chooseFile": "Choose File",
     "uploading": "Uploading...",
     "fileExists": "A file with the name \"{{filename}}\" already exists in this folder. Please rename your file or choose a different one.",
@@ -150,8 +150,6 @@
     "duplicateFailed": "Failed to duplicate template",
     "renameTemplate": "Rename template",
     "moreActions": "More actions",
-    "placeholder": "field",
-    "placeholders": "fields",
     "customProperty": "property",
     "customProperties": "properties"
   },
@@ -162,10 +160,10 @@
     "sharedFields": "Shared Fields",
     "uniqueFields": "unique fields",
     "analyzing": "Analyzing template...",
-    "noPlaceholders": "No placeholders found",
-    "noPlaceholdersDesc": "This template doesn't contain any placeholders to fill.",
+    "noCustomProperties": "No custom properties found",
+    "noCustomPropertiesDesc": "This template doesn't contain any custom document properties to fill.",
     "customizationTitle": "Template Customization",
-    "customizationDesc": "Found <strong>{{count}}</strong> placeholder{{plural}} in your template. Fill in the values below to personalize your document.",
+    "customizationDesc": "Found <strong>{{count}}</strong> custom propert{{plural}} in your template. Fill in the values below to personalize your document.",
     "enterValue": "Enter value for {{placeholder}}...",
     "chars": "chars",
     "save": "Save",
@@ -227,9 +225,7 @@
     "progress": {
       "loading": "Loading document...",
       "parsing": "Parsing document...",
-      "fixing_placeholders": "Preparing placeholders...",
       "updating_fields": "Updating document fields...",
-      "rendering": "Rendering template...",
       "generating": "Generating document...",
       "processing": "Processing files..."
     },
@@ -415,7 +411,7 @@
     "hero": {
       "badge": "Now with batch processing",
       "title": "Fill Word Templates in Seconds",
-      "subtitle": "Upload your DOCX templates with {{placeholders}}, fill them with data, and download personalized documents instantly. No complex setup required.",
+      "subtitle": "Upload your DOCX templates with custom document properties, fill them with data, and download personalized documents instantly. No complex setup required.",
       "cta": {
         "primary": "Start Free",
         "secondary": "See How It Works"
@@ -432,7 +428,7 @@
       "subtitle": "Powerful features to streamline your document workflow",
       "templateProcessing": {
         "title": "Smart Template Processing",
-        "description": "Upload DOCX files with {{placeholders}} and fill them dynamically with your data. Supports complex documents with multiple fields."
+        "description": "Upload DOCX files with custom document properties and fill them dynamically with your data. Supports complex documents with multiple fields."
       },
       "folderOrganization": {
         "title": "Folder Organization",
@@ -460,7 +456,7 @@
       "subtitle": "Get started in three simple steps",
       "step1": {
         "title": "Upload Template",
-        "description": "Upload your DOCX file with {{placeholder}} markers where you want dynamic content."
+        "description": "Upload your DOCX file with custom document properties defined where you want dynamic content."
       },
       "step2": {
         "title": "Fill Fields",
@@ -524,44 +520,37 @@
     "title": "Template Preparation Guide",
     "subtitle": "Learn how to create Word templates that work perfectly with Rexfill",
     "sections": {
-      "placeholders": {
-        "title": "Using Placeholders",
-        "intro": "Placeholders are special markers in your Word document that Rexfill replaces with your data. They use double curly braces syntax.",
-        "example1": "Dear {{customer_name}}, thank you for your order #{{order_number}}.",
-        "description": "When you process this template, Rexfill will detect these placeholders and create form fields for you to fill in.",
-        "correct": "Correct Format",
-        "incorrect": "Avoid These",
-        "singleBrace": "single braces",
-        "spaces": "spaces inside",
-        "caseSensitive": "case matters"
-      },
       "customProperties": {
-        "title": "Custom Document Properties",
-        "intro": "Word custom properties allow you to store metadata that can be used throughout your document with auto-updating fields.",
+        "title": "Using Custom Document Properties",
+        "intro": "Custom document properties in Word allow you to store dynamic data that can be inserted throughout your document using DOCPROPERTY fields.",
         "howTo": "How to add custom properties in Word:",
         "step1": "Go to File > Info > Properties > Advanced Properties",
         "step2": "Click the Custom tab",
-        "step3": "Add a name and value for your property",
+        "step3": "Add a name and value for your property (e.g., CustomerName, OrderNumber)",
         "step4": "Click Add, then OK",
-        "benefit": "Rexfill will detect these properties and allow you to update them along with placeholders."
+        "insertField": "How to insert custom property fields in your document:",
+        "insertStep1": "Press Ctrl+F9 to create a field",
+        "insertStep2": "Type: DOCPROPERTY CustomerName",
+        "insertStep3": "Press F9 to update the field",
+        "benefit": "Rexfill will detect these properties and allow you to update their values. All DOCPROPERTY fields in the document will automatically reflect the new values."
       },
       "bestPractices": {
         "title": "Best Practices",
-        "tip1": "Use descriptive placeholder names like {{customer_name}} instead of {{n}}",
-        "tip2": "Keep placeholder names in lowercase with underscores for consistency",
+        "tip1": "Use descriptive property names like CustomerName instead of single letters",
+        "tip2": "Keep property names consistent across your templates",
         "tip3": "Test your template with a small document first before batch processing",
-        "tip4": "Avoid complex formatting inside placeholder text (bold, italic within {{}})",
+        "tip4": "Use DOCPROPERTY fields for text that appears multiple times in your document",
         "tip5": "Save your template as .docx format (not .doc or other formats)"
       },
       "troubleshooting": {
         "title": "Troubleshooting",
         "issue1": {
-          "title": "Placeholders not detected",
-          "solution": "Make sure you're using double curly braces {{like_this}} with no spaces. Sometimes Word splits text across multiple runs - try retyping the placeholder in one go."
+          "title": "Properties not detected",
+          "solution": "Make sure you've added custom properties via File > Info > Properties > Advanced Properties > Custom tab. Properties must be saved to the document."
         },
         "issue2": {
-          "title": "Formatting issues after processing",
-          "solution": "Complex formatting within placeholders can cause issues. Apply formatting to the entire placeholder text, not just parts of it."
+          "title": "Fields not updating in Word",
+          "solution": "After processing, open the document in Word and press Ctrl+A then F9 to update all fields. Or enable 'Update fields before printing' in Word options."
         },
         "issue3": {
           "title": "File won't upload",

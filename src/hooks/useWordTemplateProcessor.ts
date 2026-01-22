@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Doc } from "@junobuild/core";
 import PizZip from "pizzip";
-import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word-template";
 import { FolderTreeNode, FolderData } from "../types/folder";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
-import { fixSplitPlaceholdersOptimized } from "../utils/documentProcessing";
 import { buildTemplatePath } from "../utils/templatePathUtils";
 import { validateFolderName, buildFolderPath } from "../utils/folderUtils";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
@@ -31,9 +29,8 @@ export const useWordTemplateProcessor = ({
   onTemplateChange,
 }: UseWordTemplateProcessorProps) => {
   const { t } = useTranslation();
-  const { processDocument: workerProcessDocument, extractPlaceholders: workerExtractPlaceholders, progress: workerProgress, isWorkerReady } = useDocumentWorker();
+  const { processDocument: workerProcessDocument, extractCustomProperties: workerExtractCustomProperties, progress: workerProgress, isWorkerReady } = useDocumentWorker();
 
-  const [placeholders, setPlaceholders] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [customProperties, setCustomProperties] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -59,11 +56,11 @@ export const useWordTemplateProcessor = ({
       setLoading(false);
       return;
     }
-    extractPlaceholdersAndProperties();
+    extractCustomPropertiesFromDocument();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, file]);
 
-  const extractPlaceholdersAndProperties = async () => {
+  const extractCustomPropertiesFromDocument = async () => {
     try {
       let arrayBuffer: ArrayBuffer;
 
@@ -90,16 +87,12 @@ export const useWordTemplateProcessor = ({
       // Try to use worker if available, otherwise fall back to synchronous
       if (isWorkerReady) {
         try {
-          const { placeholders: extractedPlaceholders, customProperties: docCustomProperties } =
-            await workerExtractPlaceholders(arrayBuffer);
+          const { customProperties: docCustomProperties } =
+            await workerExtractCustomProperties(arrayBuffer);
 
           setCustomProperties(docCustomProperties);
-          setPlaceholders(extractedPlaceholders);
 
           const initialData: Record<string, string> = {};
-          extractedPlaceholders.forEach(placeholder => {
-            initialData[placeholder] = '';
-          });
           Object.entries(docCustomProperties).forEach(([key, value]) => {
             initialData[key] = value;
           });
@@ -144,35 +137,7 @@ export const useWordTemplateProcessor = ({
       const docCustomProperties = readCustomProperties(zip);
       setCustomProperties(docCustomProperties);
 
-      const documentXml = zip.file("word/document.xml");
-      if (!documentXml) {
-        throw new Error("Could not find document.xml in the Word file");
-      }
-
-      const xmlContent = documentXml.asText();
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlContent, "application/xml");
-
-      const textRuns = xmlDoc.getElementsByTagName("w:t");
-      let reconstructedText = "";
-
-      for (let i = 0; i < textRuns.length; i++) {
-        const textNode = textRuns[i];
-        reconstructedText += textNode.textContent || "";
-      }
-
-      const placeholderRegex = /\{\{([^}]+)\}\}/g;
-      const matches = reconstructedText.match(placeholderRegex) || [];
-      const uniquePlaceholders = [...new Set(matches.map(match => match.slice(2, -2).trim()))];
-
-      setPlaceholders(uniquePlaceholders);
-
       const initialData: Record<string, string> = {};
-
-      uniquePlaceholders.forEach(placeholder => {
-        initialData[placeholder] = '';
-      });
-
       Object.entries(docCustomProperties).forEach(([key, value]) => {
         initialData[key] = value;
       });
@@ -183,7 +148,7 @@ export const useWordTemplateProcessor = ({
 
       setFormData(initialData);
     } catch (error) {
-      console.error('Error extracting placeholders and properties:', error);
+      console.error('Error extracting custom properties:', error);
     } finally {
       setLoading(false);
     }
@@ -253,25 +218,15 @@ export const useWordTemplateProcessor = ({
       return { blob, fileName };
     }
 
-    const placeholderData: Record<string, string> = {};
-    const customPropsData: Record<string, string> = {};
-
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key in customProperties) {
-        customPropsData[key] = value;
-      } else {
-        placeholderData[key] = value;
-      }
-    });
+    // All form data is custom properties data
+    const customPropsData: Record<string, string> = { ...formData };
 
     // Try to use worker if available
     if (isWorkerReady) {
       try {
         const blob = await workerProcessDocument(
           arrayBuffer,
-          placeholderData,
-          customPropsData,
-          placeholders
+          customPropsData
         );
         return { blob, fileName };
       } catch (workerError) {
@@ -290,78 +245,21 @@ export const useWordTemplateProcessor = ({
     }
 
     // Fallback: synchronous processing
-    try {
-      const zip = new PizZip(arrayBuffer);
+    const zip = new PizZip(arrayBuffer);
 
-      if (Object.keys(customPropsData).length > 0) {
-        writeCustomProperties(zip, customPropsData);
-        updateDocumentFields(zip, customPropsData);
-      }
-
-      if (placeholders.length > 0) {
-        // Pre-process the document to fix split placeholders before passing to docxtemplater
-        const documentXml = zip.file("word/document.xml");
-        if (documentXml) {
-          let xmlContent = documentXml.asText();
-
-          // PERFORMANCE: Use optimized algorithm with early exit and strategic split points
-          xmlContent = fixSplitPlaceholdersOptimized(xmlContent, placeholders);
-
-          zip.file("word/document.xml", xmlContent);
-        }
-
-        const doc = new Docxtemplater(zip, {
-          paragraphLoop: true,
-          linebreaks: true,
-          nullGetter: () => ""
-        });
-
-        doc.setData(placeholderData);
-        doc.render();
-      }
-
-      const blob = zip.generate({
-        type: "blob",
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        compression: 'DEFLATE',
-        compressionOptions: { level: 6 },
-      }) as Blob;
-
-      return { blob, fileName };
-    } catch (error) {
-      console.error('Primary processing failed, trying fallback...', error);
-
-      const zip = new PizZip(arrayBuffer);
-
-      if (Object.keys(customPropsData).length > 0) {
-        writeCustomProperties(zip, customPropsData);
-        updateDocumentFields(zip, customPropsData);
-      }
-
-      if (placeholders.length > 0) {
-        const doc = new Docxtemplater(zip, {
-          paragraphLoop: true,
-          linebreaks: true,
-          nullGetter: () => "",
-          delimiters: {
-            start: "{{",
-            end: "}}"
-          }
-        });
-
-        doc.setData(placeholderData);
-        doc.render();
-      }
-
-      const blob = zip.generate({
-        type: "blob",
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        compression: 'DEFLATE',
-        compressionOptions: { level: 6 },
-      }) as Blob;
-
-      return { blob, fileName };
+    if (Object.keys(customPropsData).length > 0) {
+      writeCustomProperties(zip, customPropsData);
+      updateDocumentFields(zip, customPropsData);
     }
+
+    const blob = zip.generate({
+      type: "blob",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    }) as Blob;
+
+    return { blob, fileName };
   };
 
   const processDocument = async () => {
@@ -380,75 +278,8 @@ export const useWordTemplateProcessor = ({
       return true;
     } catch (error) {
       console.error('Error processing document:', error);
-      try {
-        let arrayBuffer: ArrayBuffer;
-
-        if (file) {
-          arrayBuffer = await file.arrayBuffer();
-        } else if (template?.data.url) {
-          const response = await fetchWithTimeout(template.data.url, { timeout: FETCH_TIMEOUT });
-          if (!response.ok) {
-            throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
-          }
-          arrayBuffer = await response.arrayBuffer();
-        } else {
-          throw new Error("No file or template provided");
-        }
-        const zip = new PizZip(arrayBuffer);
-
-        const placeholderData: Record<string, string> = {};
-        const customPropsData: Record<string, string> = {};
-
-        Object.entries(formData).forEach(([key, value]) => {
-          if (key in customProperties) {
-            customPropsData[key] = value;
-          } else {
-            placeholderData[key] = value;
-          }
-        });
-
-        if (Object.keys(customPropsData).length > 0) {
-          writeCustomProperties(zip, customPropsData);
-          updateDocumentFields(zip, customPropsData);
-        }
-
-        if (placeholders.length > 0) {
-          const doc = new Docxtemplater(zip, {
-            paragraphLoop: true,
-            linebreaks: true,
-            nullGetter: () => "",
-            delimiters: {
-              start: "{{",
-              end: "}}"
-            }
-          });
-
-          doc.setData(placeholderData);
-          doc.render();
-        }
-
-        const output = zip.generate({
-          type: "blob",
-          mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          compression: 'DEFLATE',
-          compressionOptions: { level: 6 },
-        });
-
-        const url = window.URL.createObjectURL(output);
-        const a = document.createElement("a");
-        a.href = url;
-        const fileName = file ? file.name : template?.data.name || 'document.docx';
-        a.download = `processed_${fileName}`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-
-        showSuccessToast(t('templateProcessor.processSuccess'));
-        return true;
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-        showErrorToast(t('templateProcessor.processError'));
-        return false;
-      }
+      showErrorToast(t('templateProcessor.processError'));
+      return false;
     } finally {
       setProcessing(false);
     }
@@ -476,8 +307,8 @@ export const useWordTemplateProcessor = ({
         filename: storagePath
       });
 
-      // Extract metadata from the blob to preserve/update placeholder counts
-      const { placeholderCount, customPropertyCount } = await extractMetadataFromBlob(blob);
+      // Extract metadata from the blob to update custom property count
+      const { customPropertyCount } = await extractMetadataFromBlob(blob);
 
       await setDocWithTimeout({
         collection: 'templates_meta',
@@ -488,7 +319,6 @@ export const useWordTemplateProcessor = ({
             url: result.downloadUrl,
             size: blob.size,
             uploadedAt: Date.now(),
-            placeholderCount,
             customPropertyCount
           }
         }
@@ -652,8 +482,8 @@ export const useWordTemplateProcessor = ({
         filename: storagePath
       });
 
-      // Extract metadata from the blob to store placeholder/custom property counts
-      const { placeholderCount, customPropertyCount } = await extractMetadataFromBlob(blob);
+      // Extract metadata from the blob to store custom property count
+      const { customPropertyCount } = await extractMetadataFromBlob(blob);
 
       const key = storagePath.replace(/\//g, '_').replace(/\./g, '_');
       const newTemplateDoc: Doc<WordTemplateData> = {
@@ -667,7 +497,6 @@ export const useWordTemplateProcessor = ({
           folderId: targetFolderId,
           folderPath,
           fullPath,
-          placeholderCount,
           customPropertyCount
         }
       };
@@ -697,11 +526,10 @@ export const useWordTemplateProcessor = ({
     }
   };
 
-  const allFields = [...placeholders, ...Object.keys(customProperties)];
+  const allFields = Object.keys(customProperties);
 
   return {
     // State
-    placeholders,
     formData,
     customProperties,
     loading,

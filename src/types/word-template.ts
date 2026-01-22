@@ -15,8 +15,7 @@ export interface WordTemplateData {
   // User preferences
   isFavorite?: boolean;            // Whether template is marked as favorite
 
-  // Placeholder metadata (extracted during upload)
-  placeholderCount?: number;       // Number of {{}} placeholders in the template
+  // Custom property metadata (extracted during upload)
   customPropertyCount?: number;    // Number of custom properties in docProps/custom.xml
 }
 

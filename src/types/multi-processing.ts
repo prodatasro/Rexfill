@@ -9,7 +9,6 @@ export interface ProcessingTemplate {
   template?: Doc<WordTemplateData>;              // For saved templates
   file?: File;                                   // For one-time files
   fileName: string;                              // Display name
-  placeholders: string[];                        // {{placeholder}} fields from document
   customProperties: Record<string, string>;      // Custom properties from docProps/custom.xml
 }
 
@@ -25,9 +24,6 @@ export interface MultiFileFieldData {
 
   /** Maps each field name to the list of file IDs that contain it */
   fieldToFiles: Map<string, string[]>;
-
-  /** Tracks whether each field is a custom property (true) or placeholder (false) */
-  isCustomProperty: Record<string, boolean>;
 }
 
 /**

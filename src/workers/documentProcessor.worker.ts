@@ -6,7 +6,6 @@
 import PizZip from 'pizzip';
 import {
   processDocumentSync,
-  extractPlaceholdersFromZip,
   readCustomPropertiesFromZip
 } from '../utils/documentProcessing';
 import type {
@@ -34,30 +33,27 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const { type, payload } = event.data;
 
   try {
-    if (type === 'EXTRACT_PLACEHOLDERS') {
+    if (type === 'EXTRACT_CUSTOM_PROPERTIES') {
       postProgress('parsing', 0);
 
       const zip = new PizZip(payload.arrayBuffer);
       postProgress('parsing', 50);
 
-      const placeholders = extractPlaceholdersFromZip(zip);
       const customProperties = readCustomPropertiesFromZip(zip);
       postProgress('parsing', 100);
 
       self.postMessage({
         type: 'EXTRACT_COMPLETE',
-        payload: { placeholders, customProperties }
+        payload: { customProperties }
       } satisfies WorkerResponse);
 
     } else if (type === 'PROCESS_DOCUMENT') {
-      const { arrayBuffer, placeholderData, customPropsData, placeholders } = payload;
+      const { arrayBuffer, customPropsData } = payload;
 
       const blob = processDocumentSync(
         arrayBuffer,
-        placeholderData,
         customPropsData,
-        placeholders,
-        (stage, percent) => {
+        (stage: string, percent: number) => {
           postProgress(stage as ProcessingStage, percent);
         }
       );

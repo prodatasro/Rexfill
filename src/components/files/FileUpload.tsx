@@ -176,8 +176,8 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
 
           const fullPath = buildTemplatePath(folderPath, file.name);
 
-          // Extract placeholders and custom properties from the file
-          const { placeholderCount, customPropertyCount } = await extractMetadataFromFile(file);
+          // Extract custom properties from the file
+          const { customPropertyCount } = await extractMetadataFromFile(file);
 
           const templateData: WordTemplateData = {
             name: file.name,
@@ -187,7 +187,6 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             folderId: uploadFolderId,
             folderPath: folderPath,
             fullPath: fullPath,
-            placeholderCount,
             customPropertyCount
           };
 

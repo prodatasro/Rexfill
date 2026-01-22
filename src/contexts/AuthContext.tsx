@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, FC } from 'react';
 import { initSatellite, onAuthStateChange, signIn, signOut, User, SignInUserInterruptError } from '@junobuild/core';
+import { initOrbiter } from '@junobuild/analytics';
 import { showErrorToast } from '../utils/toast';
 
 interface AuthContextType {
@@ -21,6 +22,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
+
+    // Initialize analytics as early as possible
+    initOrbiter({
+      satelliteId: import.meta.env.DEV ? 'auamu-4x777-77775-aaaaa-cai' : 'ufqml-byaaa-aaaas-amtia-cai',
+      orbiterId: import.meta.env.DEV ? 'atbka-rp777-77775-aaaaq-cai' : undefined,
+      ...(import.meta.env.DEV && { container: 'http://localhost:5987' })
+    });
 
     const initAuth = async () => {
       // Initialize satellite first, then listen for auth changes

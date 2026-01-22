@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Doc } from "@junobuild/core";
 import PizZip from "pizzip";
-import Docxtemplater from "docxtemplater";
 import { WordTemplateData } from "../types/word-template";
 import { ProcessingTemplate, MultiFileFieldData, ProcessedDocumentResult, FileStatusInfo } from "../types/multi-processing";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
-import { fixSplitPlaceholdersOptimized } from "../utils/documentProcessing";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
 import { useTranslation } from "react-i18next";
@@ -31,7 +29,6 @@ export const useMultiFileProcessor = ({
     sharedFields: [],
     fileFields: new Map(),
     fieldToFiles: new Map(),
-    isCustomProperty: {},
   });
   const [formData, setFormData] = useState<Record<string, string>>({});
 
@@ -65,34 +62,12 @@ export const useMultiFileProcessor = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateKeys, fileNames]);
 
-  const extractPlaceholdersFromBuffer = async (arrayBuffer: ArrayBuffer): Promise<{
-    placeholders: string[];
+  const extractCustomPropertiesFromBuffer = async (arrayBuffer: ArrayBuffer): Promise<{
     customProperties: Record<string, string>;
   }> => {
     const zip = new PizZip(arrayBuffer);
     const docCustomProperties = readCustomProperties(zip);
-
-    const documentXml = zip.file("word/document.xml");
-    if (!documentXml) {
-      return { placeholders: [], customProperties: docCustomProperties };
-    }
-
-    const xmlContent = documentXml.asText();
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlContent, "application/xml");
-
-    const textRuns = xmlDoc.getElementsByTagName("w:t");
-    let reconstructedText = "";
-
-    for (let i = 0; i < textRuns.length; i++) {
-      reconstructedText += textRuns[i].textContent || "";
-    }
-
-    const placeholderRegex = /\{\{([^}]+)\}\}/g;
-    const matches = reconstructedText.match(placeholderRegex) || [];
-    const uniquePlaceholders = [...new Set(matches.map(match => match.slice(2, -2).trim()))];
-
-    return { placeholders: uniquePlaceholders, customProperties: docCustomProperties };
+    return { customProperties: docCustomProperties };
   };
 
   const extractAllPlaceholdersAndProperties = async () => {
@@ -108,13 +83,12 @@ export const useMultiFileProcessor = ({
             throw new Error(`Failed to fetch template: ${response.status} ${response.statusText}`);
           }
           const arrayBuffer = await response.arrayBuffer();
-          const { placeholders, customProperties } = await extractPlaceholdersFromBuffer(arrayBuffer);
+          const { customProperties } = await extractCustomPropertiesFromBuffer(arrayBuffer);
 
           return {
             id: template.key,
             template,
             fileName: template.data.name,
-            placeholders,
             customProperties,
           };
         } catch (error) {
@@ -130,13 +104,12 @@ export const useMultiFileProcessor = ({
       const fileTasks = files.map(async (file): Promise<ProcessingTemplate | null> => {
         try {
           const arrayBuffer = await file.arrayBuffer();
-          const { placeholders, customProperties } = await extractPlaceholdersFromBuffer(arrayBuffer);
+          const { customProperties } = await extractCustomPropertiesFromBuffer(arrayBuffer);
 
           return {
             id: file.name,
             file,
             fileName: file.name,
-            placeholders,
             customProperties,
           };
         } catch (error) {
@@ -158,10 +131,9 @@ export const useMultiFileProcessor = ({
       // Initialize form data
       const initial: Record<string, string> = {};
 
-      // Add all fields (shared + unique) with empty values or existing custom property values
+      // Add all custom property fields with existing values
       const allFieldNames = new Set<string>();
       extractedTemplates.forEach(pt => {
-        pt.placeholders.forEach(p => allFieldNames.add(p));
         Object.keys(pt.customProperties).forEach(k => allFieldNames.add(k));
       });
 
@@ -187,26 +159,15 @@ export const useMultiFileProcessor = ({
 
   const categorizeFields = (extractedTemplates: ProcessingTemplate[]): MultiFileFieldData => {
     const fieldToFiles = new Map<string, string[]>();
-    const isCustomProperty: Record<string, boolean> = {};
 
-    // Build field-to-files mapping
+    // Build field-to-files mapping (all fields are custom properties now)
     extractedTemplates.forEach(pt => {
-      // Process placeholders
-      pt.placeholders.forEach(placeholder => {
-        const files = fieldToFiles.get(placeholder) || [];
-        files.push(pt.id);
-        fieldToFiles.set(placeholder, files);
-        isCustomProperty[placeholder] = false;
-      });
-
-      // Process custom properties
       Object.keys(pt.customProperties).forEach(propName => {
         const files = fieldToFiles.get(propName) || [];
         if (!files.includes(pt.id)) {
           files.push(pt.id);
         }
         fieldToFiles.set(propName, files);
-        isCustomProperty[propName] = true;
       });
     });
 
@@ -237,7 +198,6 @@ export const useMultiFileProcessor = ({
       sharedFields,
       fileFields,
       fieldToFiles,
-      isCustomProperty,
     };
   };
 
@@ -297,22 +257,10 @@ export const useMultiFileProcessor = ({
 
     const zip = new PizZip(arrayBuffer);
 
-    // Determine which fields belong to this file
-    const relevantFields = new Set<string>();
-    pt.placeholders.forEach(p => relevantFields.add(p));
-    Object.keys(pt.customProperties).forEach(k => relevantFields.add(k));
-
-    // Split form data for this file
-    const placeholderData: Record<string, string> = {};
+    // Build custom properties data for this file
     const customPropsData: Record<string, string> = {};
-
-    relevantFields.forEach(fieldName => {
-      const value = currentFormData[fieldName] || '';
-      if (fieldName in pt.customProperties) {
-        customPropsData[fieldName] = value;
-      } else {
-        placeholderData[fieldName] = value;
-      }
+    Object.keys(pt.customProperties).forEach(fieldName => {
+      customPropsData[fieldName] = currentFormData[fieldName] || '';
     });
 
     // Update custom properties
@@ -321,36 +269,11 @@ export const useMultiFileProcessor = ({
       updateDocumentFields(zip, customPropsData);
     }
 
-    // Process placeholders
-    let outputZip = zip;
-    if (pt.placeholders.length > 0) {
-      // Pre-process the document to fix split placeholders
-      const documentXml = zip.file("word/document.xml");
-      if (documentXml) {
-        let xmlContent = documentXml.asText();
-
-        // PERFORMANCE: Use optimized algorithm with early exit and strategic split points
-        xmlContent = fixSplitPlaceholdersOptimized(xmlContent, pt.placeholders);
-
-        zip.file("word/document.xml", xmlContent);
-      }
-
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-        nullGetter: () => ""
-      });
-
-      doc.setData(placeholderData);
-      doc.render();
-
-      // Get the modified zip from docxtemplater
-      outputZip = doc.getZip();
-    }
-
-    const blob = outputZip.generate({
+    const blob = zip.generate({
       type: "blob",
       mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
     }) as Blob;
 
     return blob;

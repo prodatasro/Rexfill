@@ -78,9 +78,7 @@ export function useDocumentWorker() {
 
   const processDocument = useCallback((
     arrayBuffer: ArrayBuffer,
-    placeholderData: Record<string, string>,
-    customPropsData: Record<string, string>,
-    placeholders: string[]
+    customPropsData: Record<string, string>
   ): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       if (!workerRef.current) {
@@ -92,7 +90,7 @@ export function useDocumentWorker() {
 
       const request: WorkerRequest = {
         type: 'PROCESS_DOCUMENT',
-        payload: { arrayBuffer, placeholderData, customPropsData, placeholders }
+        payload: { arrayBuffer, customPropsData }
       };
 
       // Transfer ArrayBuffer ownership for better performance
@@ -100,9 +98,9 @@ export function useDocumentWorker() {
     });
   }, []);
 
-  const extractPlaceholders = useCallback((
+  const extractCustomProperties = useCallback((
     arrayBuffer: ArrayBuffer
-  ): Promise<{ placeholders: string[]; customProperties: Record<string, string> }> => {
+  ): Promise<{ customProperties: Record<string, string> }> => {
     return new Promise((resolve, reject) => {
       if (!workerRef.current) {
         reject(new Error('Worker not initialized'));
@@ -112,7 +110,7 @@ export function useDocumentWorker() {
       pendingRef.current = { resolve: resolve as (v: unknown) => void, reject };
 
       const request: WorkerRequest = {
-        type: 'EXTRACT_PLACEHOLDERS',
+        type: 'EXTRACT_CUSTOM_PROPERTIES',
         payload: { arrayBuffer }
       };
 
@@ -123,7 +121,7 @@ export function useDocumentWorker() {
 
   return {
     processDocument,
-    extractPlaceholders,
+    extractCustomProperties,
     progress,
     isWorkerReady
   };

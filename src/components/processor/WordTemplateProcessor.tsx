@@ -442,10 +442,10 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                 <div className="text-center py-12 sm:py-16">
                   <ClipboardList className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 text-slate-400 dark:text-slate-600" />
                   <p className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl mb-2">
-                    {t('templateProcessor.noPlaceholders')}
+                    {t('templateProcessor.noCustomProperties')}
                   </p>
                   <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
-                    {t('templateProcessor.noPlaceholdersDesc')}
+                    {t('templateProcessor.noCustomPropertiesDesc')}
                   </p>
                 </div>
               ) : (
@@ -494,7 +494,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
                     fileFields={isMultiFileMode ? fieldData.fileFields : undefined}
                     expandedFiles={expandedFiles}
                     sharedFieldsExpanded={sharedFieldsExpanded}
-                    isCustomProperty={isMultiFileMode ? fieldData.isCustomProperty : undefined}
+                    isCustomProperty={undefined}
                     formData={formData}
                     onInputChange={handleInputChange}
                     onToggleSection={toggleFileExpanded}

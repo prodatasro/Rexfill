@@ -128,19 +128,6 @@ const FileListItem: FC<FileListItemProps> = memo(
           </p>
         </div>
 
-        {/* Placeholder Count Badge */}
-        {template.data.placeholderCount !== undefined &&
-          template.data.placeholderCount > 0 && (
-            <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium shrink-0">
-              <span>{template.data.placeholderCount}</span>
-              <span>
-                {template.data.placeholderCount === 1
-                  ? t('fileList.placeholder')
-                  : t('fileList.placeholders')}
-              </span>
-            </div>
-          )}
-
         {/* Custom Property Count Badge */}
         {template.data.customPropertyCount !== undefined &&
           template.data.customPropertyCount > 0 && (
@@ -362,7 +349,6 @@ const FileListItem: FC<FileListItemProps> = memo(
       prevProps.template.data.name === nextProps.template.data.name &&
       prevProps.template.data.isFavorite === nextProps.template.data.isFavorite &&
       prevProps.template.data.folderPath === nextProps.template.data.folderPath &&
-      prevProps.template.data.placeholderCount === nextProps.template.data.placeholderCount &&
       prevProps.template.data.customPropertyCount === nextProps.template.data.customPropertyCount &&
       prevProps.index === nextProps.index &&
       prevProps.isSelected === nextProps.isSelected &&

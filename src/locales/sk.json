@@ -57,7 +57,7 @@
   },
   "dashboard": {
     "title": "Vaše Word šablóny",
-    "subtitle": "Nahrajte DOCX súbory s premennými ako {{name}} a vypĺňajte ich dynamicky.",
+    "subtitle": "Nahrajte DOCX súbory s vlastnými premennými dokumentu a vypĺňajte ich dynamicky.",
     "recentTemplates": "Nedávne šablóny",
     "noRecentTemplates": "Žiadne nedávno použité šablóny",
     "clearRecent": "Vymazať",
@@ -65,7 +65,7 @@
   },
   "fileUpload": {
     "title": "Nahrať Word šablónu",
-    "description": "Vyberte .docx súbor s premennými na nahratie",
+    "description": "Vyberte .docx súbor s vlastnými premennými dokumentu na nahratie",
     "chooseFile": "Vybrať súbor",
     "uploading": "Nahrávam...",
     "fileExists": "Súbor s názvom \"{{filename}}\" už existuje v tomto priečinku. Prosím premenujte váš súbor alebo vyberte iný.",
@@ -150,8 +150,6 @@
     "duplicateFailed": "Nepodarilo sa duplikovať šablónu",
     "renameTemplate": "Premenovať šablónu",
     "moreActions": "Ďalšie akcie",
-    "placeholder": "pole",
-    "placeholders": "polí",
     "customProperty": "premenná",
     "customProperties": "premenných"
   },
@@ -162,12 +160,10 @@
     "sharedFields": "Zdieľané polia",
     "uniqueFields": "jedinečných polí",
     "analyzing": "Analyzujem šablónu...",
-    "noPlaceholders": "Neboli nájdené žiadne premenné",
-    "noPlaceholdersDesc": "Táto šablóna neobsahuje žiadne premenné na vyplnenie.",
+    "noCustomProperties": "Neboli nájdené žiadne premenné",
+    "noCustomPropertiesDesc": "Táto šablóna neobsahuje žiadne vlastné vlastnosti dokumentu na vyplnenie.",
     "customizationTitle": "Prispôsobenie šablóny",
-    "customizationDesc_one": "Našla sa <strong>{{count}}</strong> premenná vo vašej šablóne. Vyplňte hodnotu nižšie pre prispôsobenie dokumentu.",
-    "customizationDesc_few": "Našli sa <strong>{{count}}</strong> premenné vo vašej šablóne. Vyplňte hodnoty nižšie pre prispôsobenie dokumentu.",
-    "customizationDesc_other": "Našlo sa <strong>{{count}}</strong> premenných vo vašej šablóne. Vyplňte hodnoty nižšie pre prispôsobenie dokumentu.",
+    "customizationDesc": "Našlo sa <strong>{{count}}</strong> vlastných vlastností vo vašej šablóne. Vyplňte hodnoty nižšie pre prispôsobenie dokumentu.",
     "enterValue": "Zadajte hodnotu pre {{placeholder}}...",
     "chars": "znakov",
     "save": "Uložiť",
@@ -229,9 +225,7 @@
     "progress": {
       "loading": "Načítavam dokument...",
       "parsing": "Analyzujem dokument...",
-      "fixing_placeholders": "Pripravujem premenné...",
       "updating_fields": "Aktualizujem polia dokumentu...",
-      "rendering": "Vykresľujem šablónu...",
       "generating": "Generujem dokument...",
       "processing": "Spracúvam súbory..."
     },
@@ -417,7 +411,7 @@
     "hero": {
       "badge": "Teraz s dávkovým spracovaním",
       "title": "Vyplňte Word šablóny za pár sekúnd",
-      "subtitle": "Nahrajte DOCX šablóny s {{premennými}}, vyplňte ich údajmi a okamžite stiahnite personalizované dokumenty. Žiadne zložité nastavovanie.",
+      "subtitle": "Nahrajte DOCX šablóny s vlastnými premennými dokumentu, vyplňte ich údajmi a okamžite stiahnite personalizované dokumenty. Žiadne zložité nastavovanie.",
       "cta": {
         "primary": "Začať zadarmo",
         "secondary": "Pozrite sa ako to funguje"
@@ -434,7 +428,7 @@
       "subtitle": "Výkonné funkcie na zefektívnenie vašich dokumentov",
       "templateProcessing": {
         "title": "Inteligentné spracovanie šablón",
-        "description": "Nahrajte DOCX súbory s {{premennými}} a dynamicky ich vyplňte vašimi údajmi. Podporuje komplexné dokumenty s viacerými poliami."
+        "description": "Nahrajte DOCX súbory s vlastnými premennými dokumentu a dynamicky ich vyplňte vašimi údajmi. Podporuje komplexné dokumenty s viacerými poliami."
       },
       "folderOrganization": {
         "title": "Organizácia do priečinkov",
@@ -462,7 +456,7 @@
       "subtitle": "Začnite v troch jednoduchých krokoch",
       "step1": {
         "title": "Nahrajte šablónu",
-        "description": "Nahrajte váš DOCX súbor s {{premennými}} na miestach, kde chcete dynamický obsah."
+        "description": "Nahrajte váš DOCX súbor s vlastnými premennými dokumentu definovanými tam, kde chcete dynamický obsah."
       },
       "step2": {
         "title": "Vyplňte polia",
@@ -526,44 +520,37 @@
     "title": "Návod na prípravu šablón",
     "subtitle": "Naučte sa vytvárať Word šablóny, ktoré perfektne fungujú s Rexfill",
     "sections": {
-      "placeholders": {
-        "title": "Používanie premenných",
-        "intro": "Premenné sú špeciálne značky vo vašom Word dokumente, ktoré Rexfill nahradí vašimi údajmi. Používajú syntax s dvojitými zátvorkami.",
-        "example1": "Vážený {{meno_zakaznika}}, ďakujeme za vašu objednávku #{{cislo_objednavky}}.",
-        "description": "Keď spracujete túto šablónu, Rexfill deteguje tieto premenné a vytvorí pre vás formulárové polia na vyplnenie.",
-        "correct": "Správny formát",
-        "incorrect": "Vyhnite sa týmto",
-        "singleBrace": "jednoduché zátvorky",
-        "spaces": "medzery vnútri",
-        "caseSensitive": "záleží na veľkosti písmen"
-      },
       "customProperties": {
-        "title": "Vlastné vlastnosti dokumentu",
-        "intro": "Vlastné vlastnosti Wordu umožňujú ukladať metadáta, ktoré je možné použiť v celom dokumente s automaticky aktualizovanými poliami.",
+        "title": "Používanie vlastných vlastností dokumentu",
+        "intro": "Vlastné vlastnosti dokumentu vo Worde umožňujú ukladať dynamické údaje, ktoré je možné vložiť do celého dokumentu pomocou polí DOCPROPERTY.",
         "howTo": "Ako pridať vlastné vlastnosti vo Worde:",
         "step1": "Prejdite na Súbor > Informácie > Vlastnosti > Rozšírené vlastnosti",
         "step2": "Kliknite na záložku Vlastné",
-        "step3": "Pridajte názov a hodnotu pre vašu vlastnosť",
+        "step3": "Pridajte názov a hodnotu pre vašu vlastnosť (napr. MenoZakaznika, CisloObjednavky)",
         "step4": "Kliknite Pridať, potom OK",
-        "benefit": "Rexfill deteguje tieto vlastnosti a umožní vám ich aktualizovať spolu s premennými."
+        "insertField": "Ako vložiť polia vlastných vlastností do dokumentu:",
+        "insertStep1": "Stlačte Ctrl+F9 pre vytvorenie poľa",
+        "insertStep2": "Napíšte: DOCPROPERTY MenoZakaznika",
+        "insertStep3": "Stlačte F9 pre aktualizáciu poľa",
+        "benefit": "Rexfill deteguje tieto vlastnosti a umožní vám aktualizovať ich hodnoty. Všetky polia DOCPROPERTY v dokumente automaticky zobrazia nové hodnoty."
       },
       "bestPractices": {
         "title": "Osvedčené postupy",
-        "tip1": "Používajte popisné názvy premenných ako {{meno_zakaznika}} namiesto {{m}}",
-        "tip2": "Názvy premenných píšte malými písmenami s podčiarkovníkmi pre konzistentnosť",
+        "tip1": "Používajte popisné názvy vlastností ako MenoZakaznika namiesto jednotlivých písmen",
+        "tip2": "Udržujte názvy vlastností konzistentné naprieč vašimi šablónami",
         "tip3": "Najprv otestujte šablónu s malým dokumentom pred dávkovým spracovaním",
-        "tip4": "Vyhnite sa komplexnému formátovaniu vo vnútri textu premennej (tučné, kurzíva v {{}})",
+        "tip4": "Používajte polia DOCPROPERTY pre text, ktorý sa v dokumente objavuje viackrát",
         "tip5": "Uložte šablónu vo formáte .docx (nie .doc ani iné formáty)"
       },
       "troubleshooting": {
         "title": "Riešenie problémov",
         "issue1": {
-          "title": "Premenné neboli detegované",
-          "solution": "Uistite sa, že používate dvojité zátvorky {{takto}} bez medzier. Niekedy Word rozdelí text na viacero častí - skúste premennú prepísať naraz."
+          "title": "Vlastnosti neboli detegované",
+          "solution": "Uistite sa, že ste pridali vlastné vlastnosti cez Súbor > Informácie > Vlastnosti > Rozšírené vlastnosti > záložka Vlastné. Vlastnosti musia byť uložené v dokumente."
         },
         "issue2": {
-          "title": "Problémy s formátovaním po spracovaní",
-          "solution": "Komplexné formátovanie v rámci premenných môže spôsobiť problémy. Aplikujte formátovanie na celý text premennej, nie len na časti."
+          "title": "Polia sa vo Worde neaktualizujú",
+          "solution": "Po spracovaní otvorte dokument vo Worde a stlačte Ctrl+A potom F9 pre aktualizáciu všetkých polí. Alebo povoľte 'Aktualizovať polia pred tlačou' v nastaveniach Wordu."
         },
         "issue3": {
           "title": "Súbor sa nenahráva",

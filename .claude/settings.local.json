@@ -23,7 +23,9 @@
       "Bash(head:*)",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -1 {}')",
       "Bash(git mv:*)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(grep:*)",
+      "Bash(npm run test:run:*)"
     ]
   }
 }
