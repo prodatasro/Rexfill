@@ -1,5 +1,5 @@
 import { FC, memo } from 'react';
-import { X, FolderPlus, Search, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Download, Archive } from 'lucide-react';
+import { X, FolderPlus, Search, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Download, Archive, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Folder, FolderTreeNode } from '../../types/folder';
 import FileUpload from '../files/FileUpload';
@@ -44,6 +44,10 @@ interface DashboardSidebarProps {
   onOpenExportDialog: () => void;
   onOpenImportDialog: () => void;
 
+  // Download All Logs
+  onDownloadAllLogs: () => void;
+  isDownloadingAllLogs: boolean;
+
   // Counts
   totalTemplateCount: number;
   favoritesCount: number;
@@ -78,6 +82,8 @@ const DashboardSidebar: FC<DashboardSidebarProps> = memo(({
   onToggleSortOrder,
   onOpenExportDialog,
   onOpenImportDialog,
+  onDownloadAllLogs,
+  isDownloadingAllLogs,
   totalTemplateCount,
   favoritesCount,
   recentCount,
@@ -194,6 +200,16 @@ const DashboardSidebar: FC<DashboardSidebarProps> = memo(({
                   aria-label={t('exportImport.importTitle')}
                 >
                   <Archive className="w-5 h-5" />
+                </button>
+                <div className="w-px bg-slate-300 dark:bg-slate-600 mx-1" />
+                <button
+                  onClick={onDownloadAllLogs}
+                  disabled={isDownloadingAllLogs}
+                  className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors disabled:opacity-50"
+                  title={t('logs.downloadAllLogs')}
+                  aria-label={t('logs.downloadAllLogs')}
+                >
+                  <FileText className="w-5 h-5" />
                 </button>
               </div>
             </div>

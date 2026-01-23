@@ -54,6 +54,27 @@ export async function fetchLogsForResource(
 }
 
 /**
+ * Fetch all activity logs
+ * Returns all logs sorted by timestamp (newest first)
+ */
+export async function fetchAllLogs(): Promise<Doc<ActivityLogData>[]> {
+  try {
+    const { items } = await listDocsWithTimeout<ActivityLogData>({
+      collection: 'activity_logs',
+      filter: {},
+    });
+
+    // Sort by timestamp descending
+    const logs = items.sort((a, b) => b.data.timestamp - a.data.timestamp);
+
+    return logs;
+  } catch (error) {
+    console.error('Failed to fetch all logs:', error);
+    throw error;
+  }
+}
+
+/**
  * Format timestamp to local date/time string
  */
 function formatTimestamp(timestamp: number): string {

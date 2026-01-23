@@ -718,6 +718,10 @@
     }
   },
   "logs": {
+    "downloadAllLogs": "Stiahnuť všetky záznamy",
+    "downloadAllSuccess": "Všetky záznamy aktivít boli úspešne stiahnuté",
+    "downloadAllFailed": "Nepodarilo sa stiahnuť všetky záznamy",
+    "noLogsAvailable": "Nie sú k dispozícii žiadne záznamy aktivít",
     "columns": {
       "timestamp": "Čas",
       "action": "Akcia",

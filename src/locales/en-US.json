@@ -717,8 +717,10 @@
       "upgradeNow": "Upgrade Now"
     }
   },
-  "logs": {
-    "columns": {
+  "logs": {    "downloadAllLogs": "Download All Logs",
+    "downloadAllSuccess": "All activity logs downloaded successfully",
+    "downloadAllFailed": "Failed to download all logs",
+    "noLogsAvailable": "No activity logs available",    "columns": {
       "timestamp": "Timestamp",
       "action": "Action",
       "status": "Status",
