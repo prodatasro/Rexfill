@@ -1,9 +1,10 @@
 import { FC, memo } from 'react';
-import { X, FolderPlus, Search, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Download, Archive, FileText } from 'lucide-react';
+import { X, FolderPlus, Search, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Download, Archive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Folder, FolderTreeNode } from '../../types/folder';
 import FileUpload from '../files/FileUpload';
 import FolderTree from '../folders/FolderTree';
+import LogDownloadMenu from './LogDownloadMenu';
 
 interface DashboardSidebarProps {
   // Sidebar visibility
@@ -44,9 +45,10 @@ interface DashboardSidebarProps {
   onOpenExportDialog: () => void;
   onOpenImportDialog: () => void;
 
-  // Download All Logs
+  // Download Logs
   onDownloadAllLogs: () => void;
-  isDownloadingAllLogs: boolean;
+  onDownloadOneTimeLogs: () => void;
+  isDownloadingLogs: boolean;
 
   // Counts
   totalTemplateCount: number;
@@ -83,7 +85,8 @@ const DashboardSidebar: FC<DashboardSidebarProps> = memo(({
   onOpenExportDialog,
   onOpenImportDialog,
   onDownloadAllLogs,
-  isDownloadingAllLogs,
+  onDownloadOneTimeLogs,
+  isDownloadingLogs,
   totalTemplateCount,
   favoritesCount,
   recentCount,
@@ -202,15 +205,11 @@ const DashboardSidebar: FC<DashboardSidebarProps> = memo(({
                   <Archive className="w-5 h-5" />
                 </button>
                 <div className="w-px bg-slate-300 dark:bg-slate-600 mx-1" />
-                <button
-                  onClick={onDownloadAllLogs}
-                  disabled={isDownloadingAllLogs}
-                  className="p-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors disabled:opacity-50"
-                  title={t('logs.downloadAllLogs')}
-                  aria-label={t('logs.downloadAllLogs')}
-                >
-                  <FileText className="w-5 h-5" />
-                </button>
+                <LogDownloadMenu
+                  onDownloadAllLogs={onDownloadAllLogs}
+                  onDownloadOneTimeLogs={onDownloadOneTimeLogs}
+                  isDownloading={isDownloadingLogs}
+                />
               </div>
             </div>
             <div className="flex-1 overflow-hidden p-2">

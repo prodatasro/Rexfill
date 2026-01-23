@@ -718,10 +718,17 @@
     }
   },
   "logs": {
-    "downloadAllLogs": "Stiahnuť všetky záznamy",
+    "downloadLogs": "Stiahnuť záznamy",
+    "downloadAllLogs": "Všetky záznamy aktivít",
+    "downloadAllLogsDesc": "Kompletný audit všetkých operácií",
     "downloadAllSuccess": "Všetky záznamy aktivít boli úspešne stiahnuté",
     "downloadAllFailed": "Nepodarilo sa stiahnuť všetky záznamy",
     "noLogsAvailable": "Nie sú k dispozícii žiadne záznamy aktivít",
+    "downloadOneTimeLogs": "Záznamy jednorazového spracovania",
+    "downloadOneTimeLogsDesc": "Záznamy o spracovaní dočasných súborov",
+    "downloadOneTimeSuccess": "Záznamy jednorazového spracovania boli úspešne stiahnuté",
+    "downloadOneTimeFailed": "Nepodarilo sa stiahnuť záznamy jednorazového spracovania",
+    "noOneTimeLogsAvailable": "Nie sú k dispozícii žiadne záznamy jednorazového spracovania",
     "columns": {
       "timestamp": "Čas",
       "action": "Akcia",
@@ -738,7 +745,8 @@
       "deleted": "Zmazané",
       "renamed": "Premenované",
       "moved": "Presunuté",
-      "downloaded": "Stiahnuté"
+      "downloaded": "Stiahnuté",
+      "processed_onetime": "Jednorazovo spracované"
     },
     "status": {
       "success": "Úspech",

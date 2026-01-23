@@ -32,7 +32,7 @@ import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../..
 import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '../../hooks/useDebounce';
-import { logActivity, fetchAllLogs, generateLogCSV, downloadLogCSV } from '../../utils/activityLogger';
+import { logActivity, fetchAllLogs, fetchOneTimeProcessingLogs, generateLogCSV, downloadLogCSV } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Dashboard: FC = () => {
@@ -97,7 +97,7 @@ const Dashboard: FC = () => {
   // Export/Import dialog state
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isDownloadingAllLogs, setIsDownloadingAllLogs] = useState(false);
+  const [isDownloadingLogs, setIsDownloadingLogs] = useState(false);
 
   // Determine the actual folder ID to use for filtering (ignore virtual folders for the hook)
   const actualFolderId = useMemo(() => {
@@ -343,7 +343,7 @@ const Dashboard: FC = () => {
   }, [allTemplates, confirm, folderTree, refreshTemplates, removeRecentTemplate, t]);
 
   const handleDownloadAllLogs = useCallback(async () => {
-    setIsDownloadingAllLogs(true);
+    setIsDownloadingLogs(true);
 
     try {
       const logs = await fetchAllLogs();
@@ -373,7 +373,42 @@ const Dashboard: FC = () => {
       console.error('Failed to download all logs:', error);
       showErrorToast(t('logs.downloadAllFailed'));
     } finally {
-      setIsDownloadingAllLogs(false);
+      setIsDownloadingLogs(false);
+    }
+  }, [t]);
+
+  const handleDownloadOneTimeLogs = useCallback(async () => {
+    setIsDownloadingLogs(true);
+
+    try {
+      const logs = await fetchOneTimeProcessingLogs();
+
+      if (logs.length === 0) {
+        showErrorToast(t('logs.noOneTimeLogsAvailable'));
+        return;
+      }
+
+      // Generate CSV content
+      const csvContent = generateLogCSV(logs, {
+        timestamp: t('logs.columns.timestamp'),
+        action: t('logs.columns.action'),
+        status: t('logs.columns.status'),
+        resource: t('logs.columns.resource'),
+        details: t('logs.columns.details'),
+        createdBy: t('logs.columns.createdBy'),
+        modifiedBy: t('logs.columns.modifiedBy'),
+        error: t('logs.columns.error'),
+      });
+
+      // Download the CSV
+      downloadLogCSV(csvContent, 'onetime-processing');
+
+      showSuccessToast(t('logs.downloadOneTimeSuccess'));
+    } catch (error) {
+      console.error('Failed to download one-time processing logs:', error);
+      showErrorToast(t('logs.downloadOneTimeFailed'));
+    } finally {
+      setIsDownloadingLogs(false);
     }
   }, [t]);
 
@@ -951,7 +986,8 @@ const Dashboard: FC = () => {
           onOpenExportDialog={() => setIsExportDialogOpen(true)}
           onOpenImportDialog={() => setIsImportDialogOpen(true)}
           onDownloadAllLogs={handleDownloadAllLogs}
-          isDownloadingAllLogs={isDownloadingAllLogs}
+          onDownloadOneTimeLogs={handleDownloadOneTimeLogs}
+          isDownloadingLogs={isDownloadingLogs}
           totalTemplateCount={allTemplates.filter(t => !t.data.folderId).length}
           favoritesCount={favoriteTemplates.length}
           recentCount={recentTemplateObjects.length}

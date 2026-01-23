@@ -6,10 +6,10 @@ export interface ActivityLogData {
   timestamp: number;
   
   /** Type of action performed */
-  action: 'created' | 'updated' | 'deleted' | 'renamed' | 'moved' | 'downloaded';
+  action: 'created' | 'updated' | 'deleted' | 'renamed' | 'moved' | 'downloaded' | 'processed_onetime';
   
   /** Type of resource being logged */
-  resource_type: 'template' | 'folder';
+  resource_type: 'template' | 'folder' | 'onetime_file';
   
   /** Unique identifier of the resource */
   resource_id: string;
@@ -43,4 +43,16 @@ export interface ActivityLogData {
   
   /** Error message if operation failed */
   error_message?: string;
+
+  /** SHA-256 hash of the file (for one-time processing) */
+  file_hash?: string;
+
+  /** List of field names that were filled (for one-time processing) */
+  fields_filled?: string[];
+
+  /** Processing duration in milliseconds (for one-time processing) */
+  processing_duration_ms?: number;
+
+  /** Number of custom properties in the document (for one-time processing) */
+  custom_properties_count?: number;
 }

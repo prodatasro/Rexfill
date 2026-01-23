@@ -12,7 +12,7 @@ import { extractMetadataFromBlob } from "../utils/extractMetadata";
 import { useTranslation } from "react-i18next";
 import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
 import { uploadFileWithTimeout, setDocWithTimeout, listDocsWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
-import { logActivity } from "../utils/activityLogger";
+import { logActivity, computeFileHash } from "../utils/activityLogger";
 import { useAuth } from "../contexts/AuthContext";
 
 const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
@@ -267,20 +267,78 @@ export const useWordTemplateProcessor = ({
 
   const processDocument = async () => {
     setProcessing(true);
+    const startTime = Date.now();
+    const fileName = file ? file.name : template?.data.name || 'document.docx';
+    const isOneTimeProcessing = !!file && !template;
+    
+    // Compute file hash for one-time processing (for audit trail)
+    let fileHash: { full: string; short: string } | null = null;
+    if (isOneTimeProcessing && file) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        fileHash = await computeFileHash(arrayBuffer);
+      } catch (error) {
+        console.warn('Failed to compute file hash:', error);
+      }
+    }
+
     try {
-      const { blob, fileName } = await generateProcessedBlob();
+      const { blob, fileName: processedFileName } = await generateProcessedBlob();
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `processed_${fileName}`;
+      a.download = `processed_${processedFileName}`;
       a.click();
       window.URL.revokeObjectURL(url);
+
+      // Log one-time processing activity
+      if (isOneTimeProcessing) {
+        const filledFields = Object.keys(formData).filter(key => formData[key] && formData[key].trim() !== '');
+        const processingDuration = Date.now() - startTime;
+        
+        await logActivity({
+          action: 'processed_onetime',
+          resource_type: 'onetime_file',
+          resource_id: fileHash?.short || `onetime_${Date.now()}`,
+          resource_name: fileName,
+          created_by: user?.key || 'anonymous',
+          modified_by: user?.key || 'anonymous',
+          success: true,
+          file_size: file?.size,
+          file_hash: fileHash?.full,
+          fields_filled: filledFields,
+          processing_duration_ms: processingDuration,
+          custom_properties_count: Object.keys(customProperties).length,
+          mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
+      }
 
       showSuccessToast(t('templateProcessor.processSuccess'));
       return true;
     } catch (error) {
       console.error('Error processing document:', error);
+      
+      // Log failed one-time processing
+      if (isOneTimeProcessing) {
+        const processingDuration = Date.now() - startTime;
+        
+        await logActivity({
+          action: 'processed_onetime',
+          resource_type: 'onetime_file',
+          resource_id: fileHash?.short || `onetime_${Date.now()}`,
+          resource_name: fileName,
+          created_by: user?.key || 'anonymous',
+          modified_by: user?.key || 'anonymous',
+          success: false,
+          file_size: file?.size,
+          file_hash: fileHash?.full,
+          processing_duration_ms: processingDuration,
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
+      }
+      
       showErrorToast(t('templateProcessor.processError'));
       return false;
     } finally {

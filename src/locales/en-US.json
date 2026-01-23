@@ -717,10 +717,19 @@
       "upgradeNow": "Upgrade Now"
     }
   },
-  "logs": {    "downloadAllLogs": "Download All Logs",
+  "logs": {
+    "downloadLogs": "Download Logs",
+    "downloadAllLogs": "All Activity Logs",
+    "downloadAllLogsDesc": "Complete audit trail of all operations",
     "downloadAllSuccess": "All activity logs downloaded successfully",
     "downloadAllFailed": "Failed to download all logs",
-    "noLogsAvailable": "No activity logs available",    "columns": {
+    "noLogsAvailable": "No activity logs available",
+    "downloadOneTimeLogs": "One-Time Processing Logs",
+    "downloadOneTimeLogsDesc": "Ephemeral file processing records",
+    "downloadOneTimeSuccess": "One-time processing logs downloaded successfully",
+    "downloadOneTimeFailed": "Failed to download one-time processing logs",
+    "noOneTimeLogsAvailable": "No one-time processing logs available",
+    "columns": {
       "timestamp": "Timestamp",
       "action": "Action",
       "status": "Status",
@@ -736,7 +745,8 @@
       "deleted": "Deleted",
       "renamed": "Renamed",
       "moved": "Moved",
-      "downloaded": "Downloaded"
+      "downloaded": "Downloaded",
+      "processed_onetime": "One-time Processed"
     },
     "status": {
       "success": "Success",

@@ -75,6 +75,34 @@ export async function fetchAllLogs(): Promise<Doc<ActivityLogData>[]> {
 }
 
 /**
+ * Fetch only one-time processing logs
+ * Returns logs for ephemeral file processing sorted by timestamp (newest first)
+ */
+export async function fetchOneTimeProcessingLogs(): Promise<Doc<ActivityLogData>[]> {
+  try {
+    const allLogs = await fetchAllLogs();
+    return allLogs.filter((log) => log.data.resource_type === 'onetime_file');
+  } catch (error) {
+    console.error('Failed to fetch one-time processing logs:', error);
+    throw error;
+  }
+}
+
+/**
+ * Compute SHA-256 hash of a file for audit purposes
+ * Returns first 16 characters of the hash for display, full hash for storage
+ */
+export async function computeFileHash(arrayBuffer: ArrayBuffer): Promise<{ full: string; short: string }> {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const fullHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return {
+    full: fullHash,
+    short: fullHash.substring(0, 16)
+  };
+}
+
+/**
  * Format timestamp to local date/time string
  */
 function formatTimestamp(timestamp: number): string {
