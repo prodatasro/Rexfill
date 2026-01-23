@@ -24,11 +24,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     let unsubscribe: (() => void) | undefined;
 
     // Initialize analytics as early as possible
-    initOrbiter({
-      satelliteId: import.meta.env.DEV ? 'auamu-4x777-77775-aaaaa-cai' : 'ufqml-byaaa-aaaas-amtia-cai',
-      orbiterId: import.meta.env.DEV ? 'atbka-rp777-77775-aaaaq-cai' : undefined,
-      ...(import.meta.env.DEV && { container: 'http://localhost:5987' })
-    });
+    if (import.meta.env.DEV) {
+      initOrbiter({
+        satelliteId: 'auamu-4x777-77775-aaaaa-cai',
+        orbiterId: 'atbka-rp777-77775-aaaaq-cai',
+        container: 'http://localhost:5987'
+      });
+    }
 
     const initAuth = async () => {
       // Initialize satellite first, then listen for auth changes
