@@ -10,6 +10,8 @@ import FolderSelector from '../folders/FolderSelector';
 import { useTranslation } from 'react-i18next';
 import { listDocsWithTimeout, uploadFileWithTimeout, setDocWithTimeout } from '../../utils/junoWithTimeout';
 import { TimeoutError } from '../../utils/fetchWithTimeout';
+import { logActivity } from '../../utils/activityLogger';
+import { useAuth } from '../../contexts';
 
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;
@@ -35,6 +37,7 @@ interface UploadProgress {
 
 const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, onSaveAndProcess, selectedFolderId, folderTree, compact = false }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<UploadMode>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -227,9 +230,43 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
           // Track the template key for saveAndProcess mode
           savedTemplateKey = result.name;
           successCount++;
+
+          // Log successful upload
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: result.name,
+              resource_name: file.name,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: true,
+              file_size: file.size,
+              folder_path: folderPath,
+              mime_type: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            });
+          } catch (logError) {
+            console.error('Failed to log upload activity:', logError);
+          }
         } catch (error) {
           console.error(`Upload failed for ${file.name}:`, error);
           failedFiles.push(file.name);
+
+          // Log failed upload
+          try {
+            await logActivity({
+              action: 'created',
+              resource_type: 'template',
+              resource_id: 'unknown',
+              resource_name: file.name,
+              created_by: user?.key || 'unknown',
+              modified_by: user?.key || 'unknown',
+              success: false,
+              error_message: error instanceof Error ? error.message : 'Upload failed'
+            });
+          } catch (logError) {
+            console.error('Failed to log upload failure:', logError);
+          }
         }
       }
 
