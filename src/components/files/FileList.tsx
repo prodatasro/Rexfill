@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import TemplateMoveDialog from '../dialogs/TemplateMoveDialog';
 import TemplateRenameDialog from '../dialogs/TemplateRenameDialog';
 import TemplateDuplicateDialog from '../dialogs/TemplateDuplicateDialog';
+import DocxPreviewModal from '../modals/DocxPreviewModal';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
 import { setDocWithTimeout, deleteDocWithTimeout, deleteAssetWithTimeout, listAssetsWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
@@ -62,6 +63,9 @@ const FileList: FC<FileListProps> = ({
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
   const [templateToRename, setTemplateToRename] = useState<Doc<WordTemplateData> | null>(null);
   const [templateToDuplicate, setTemplateToDuplicate] = useState<Doc<WordTemplateData> | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<Doc<WordTemplateData> | null>(null);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const { confirm } = useConfirm();
 
   // Multi-select state
@@ -756,6 +760,29 @@ const FileList: FC<FileListProps> = ({
     }
   }, [t]);
 
+  const handlePreview = useCallback(async (template: Doc<WordTemplateData>) => {
+    try {
+      if (!template.data.url) {
+        showErrorToast(t('fileList.previewFailed'));
+        return;
+      }
+
+      // Fetch the file blob
+      const response = await fetchWithTimeout(template.data.url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch file');
+      }
+
+      const blob = await response.blob();
+      setPreviewBlob(blob);
+      setPreviewTemplate(template);
+      setIsPreviewOpen(true);
+    } catch (error) {
+      console.error('Preview failed:', error);
+      showErrorToast(t('fileList.previewFailed'));
+    }
+  }, [t]);
+
   const handleMenuToggle = useCallback((templateKey: string | null) => {
     setOpenMenuId(templateKey);
   }, []);
@@ -1205,6 +1232,7 @@ const FileList: FC<FileListProps> = ({
                     onMove={handleItemMove}
                     onDelete={handleDelete}
                     onDownloadLogs={handleDownloadLogs}
+                    onPreview={handlePreview}
                     onMenuToggle={handleMenuToggle}
                     menuRef={menuRef}
                   />
@@ -1235,6 +1263,7 @@ const FileList: FC<FileListProps> = ({
                 onMove={handleItemMove}
                 onDelete={handleDelete}
                 onDownloadLogs={handleDownloadLogs}
+                onPreview={handlePreview}
                 onMenuToggle={handleMenuToggle}
                 menuRef={menuRef}
               />
@@ -1304,6 +1333,18 @@ const FileList: FC<FileListProps> = ({
         existingNames={existingNamesInFolderForDuplicate}
         onDuplicate={handleDuplicate}
         onCancel={() => setTemplateToDuplicate(null)}
+      />
+
+      {/* DOCX Preview Modal */}
+      <DocxPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPreviewTemplate(null);
+          setPreviewBlob(null);
+        }}
+        fileName={previewTemplate?.data.name || ''}
+        fileBlob={previewBlob}
       />
     </div>
   );

@@ -110,6 +110,8 @@
     "downloadTemplate": "Download template",
     "downloadSuccess": "Template \"{{filename}}\" downloaded successfully",
     "downloadFailed": "Failed to download file. Please try again.",
+    "previewTemplate": "Preview template",
+    "previewFailed": "Failed to load preview. Please try again.",
     "deleteTemplate": "Delete template",
     "moveTemplate": "Move to folder",
     "deleteConfirmTitle": "Delete Template",
@@ -752,5 +754,12 @@
       "success": "Success",
       "failed": "Failed"
     }
+  },
+  "preview": {
+    "title": "Preview",
+    "errorLoading": "Failed to load preview"
+  },
+  "common": {
+    "close": "Close"
   }
 }

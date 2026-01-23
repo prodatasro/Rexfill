@@ -1,0 +1,16 @@
+{
+  "fileList": {
+    "clearSelection": "Clear selection",
+    "selectAll": "Select all",
+    "customProperty": "Custom property",
+    "customProperties": "Custom properties",
+    "previewTemplate": "Preview template"
+  },
+  "preview": {
+    "title": "Preview",
+    "errorLoading": "Failed to load preview"
+  },
+  "common": {
+    "close": "Close"
+  }
+}
