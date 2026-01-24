@@ -234,6 +234,7 @@
     "activityLog": {
       "title": "Záznamy aktivít",
       "showing": "Zobrazených {{count}} z {{total}} záznamov",
+      "showingRange": "Zobrazených {{start}}-{{end}} z {{total}}",
       "filters": "Filtre",
       "resetFilters": "Resetovať filtre",
       "downloadCSV": "Stiahnuť CSV",
@@ -249,7 +250,12 @@
       "success": "Úspech",
       "failed": "Zlyhalo",
       "noLogs": "Neboli nájdené žiadne záznamy aktivít",
-      "blockchainDisclaimer": "Záznamy aktivít sú trvalo uložené na blockchaine a nie je možné ich zmazať. To zabezpečuje úplnú transparentnosť auditných záznamov."
+      "blockchainDisclaimer": "Záznamy aktivít sú trvalo uložené na blockchaine a nie je možné ich zmazať. To zabezpečuje úplnú transparentnosť auditných záznamov.",
+      "details": "Detaily",
+      "previous": "Predchádzajúca",
+      "previousShort": "Predch.",
+      "next": "Ďalšia",
+      "pageOf": "Stránka {{current}} z {{total}}"
     },
     "gdpr": {
       "title": "Exportovať vaše dáta",

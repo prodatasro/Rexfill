@@ -22,7 +22,6 @@
   "profile": {
     "title": "User Profile",
     "subtitle": "Manage your account settings and view activity logs",
-    "profileInfo": "Profile Information",
     "editProfile": "Edit Profile",
     "displayName": "Display Name",
     "displayNamePlaceholder": "Enter your name",
@@ -85,6 +84,7 @@
     "activityLog": {
       "title": "Activity Log",
       "showing": "Showing {{count}} of {{total}} logs",
+      "showingRange": "Showing {{start}}-{{end}} of {{total}}",
       "filters": "Filters",
       "resetFilters": "Reset Filters",
       "downloadCSV": "Download CSV",
@@ -100,7 +100,12 @@
       "success": "Success",
       "failed": "Failed",
       "noLogs": "No activity logs found",
-      "blockchainDisclaimer": "Activity logs are permanently stored on blockchain and cannot be deleted. This ensures complete audit trail transparency."
+      "blockchainDisclaimer": "Activity logs are permanently stored on blockchain and cannot be deleted. This ensures complete audit trail transparency.",
+      "details": "Details",
+      "previous": "Previous",
+      "previousShort": "Prev",
+      "next": "Next",
+      "pageOf": "Page {{current}} of {{total}}"
     },
     "gdpr": {
       "title": "Export Your Data",

@@ -27,7 +27,137 @@
   },
   "header": {
     "logout": "Logout",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "userMenu": "User menu",
+    "profile": "Profile"
+  },
+  "profile": {
+    "title": "User Profile",
+    "subtitle": "Manage your account settings and view activity logs",
+    "profileInfo": "Profile Information",
+    "editProfile": "Edit Profile",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Enter your name",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself...",
+    "notSet": "Not set",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "sessionInfo": "Session Information",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Please log in to view your profile",
+    "nav": {
+      "section": "Section",
+      "profile": "My Profile",
+      "settings": "Account Settings",
+      "subscription": "Subscription & Usage",
+      "activity": "Activity Log"
+    },
+    "profileInfo": {
+      "subtitle": "Manage your personal information and avatar"
+    },
+    "settings": {
+      "subtitle": "Customize your experience and manage account details",
+      "theme": {
+        "title": "Appearance",
+        "light": "Light Mode",
+        "dark": "Dark Mode",
+        "description": "Choose your preferred theme"
+      },
+      "language": {
+        "title": "Language"
+      }
+    },
+    "subscription": {
+      "subtitle": "View your plan details and usage statistics",
+      "currentPlan": "Current Plan",
+      "usage": "Usage Statistics",
+      "documentsToday": "Documents Today",
+      "documentsThisMonth": "Documents This Month",
+      "totalTemplates": "Total Templates",
+      "planDescription": {
+        "free": "Free plan with basic features",
+        "starter": "Starter plan with enhanced limits",
+        "professional": "Professional plan with advanced features",
+        "enterprise": "Enterprise plan with unlimited access"
+      }
+    },
+    "activity": {
+      "subtitle": "View your account activity and audit trail"
+    },
+    "avatar": {
+      "upload": "Upload",
+      "remove": "Remove",
+      "maxSize": "Max 5MB (will be resized to 256x256)",
+      "invalidFileType": "Please select an image file",
+      "fileTooLarge": "Image too large (max 5MB)"
+    },
+    "activityLog": {
+      "title": "Activity Log",
+      "showing": "Showing {{count}} of {{total}} logs",
+      "showingRange": "Showing {{start}}-{{end}} of {{total}}",
+      "filters": "Filters",
+      "resetFilters": "Reset Filters",
+      "downloadCSV": "Download CSV",
+      "searchPlaceholder": "Search logs...",
+      "dateFrom": "From Date",
+      "dateTo": "To Date",
+      "actionType": "Action Type",
+      "resourceType": "Resource Type",
+      "timestamp": "Timestamp",
+      "action": "Action",
+      "resourceName": "Resource",
+      "status": "Status",
+      "success": "Success",
+      "failed": "Failed",
+      "noLogs": "No activity logs found",
+      "blockchainDisclaimer": "Activity logs are permanently stored on blockchain and cannot be deleted. This ensures complete audit trail transparency.",
+      "details": "Details",
+      "previous": "Previous",
+      "previousShort": "Prev",
+      "next": "Next",
+      "pageOf": "Page {{current}} of {{total}}"
+    },
+    "gdpr": {
+      "title": "Export Your Data",
+      "subtitle": "Download all your data in compliance with GDPR",
+      "description": "Download a complete archive of all your data including profile, templates, folders, activity logs, and subscription information.",
+      "export": "Export Data",
+      "cancel": "Cancel",
+      "notLoggedIn": "Please log in to export your data",
+      "fetchingTemplates": "Fetching templates...",
+      "fetchingFolders": "Fetching folders...",
+      "fetchingLogs": "Fetching activity logs...",
+      "creatingArchive": "Creating archive...",
+      "downloading": "Preparing download...",
+      "exporting": "Exporting your data...",
+      "exportSuccess": "Data exported successfully",
+      "exportFailed": "Failed to export data",
+      "blockchainWarning": "Important: Data Management",
+      "blockchainExplanation": "You can delete all your templates, folders, and other data while keeping your profile active for future login. Activity logs stored on the blockchain are permanent for transparency and security, but all other data can be removed.",
+      "includedData": "Your export includes:",
+      "dataProfile": "Profile information (name, email, avatar)",
+      "dataTemplates": "All document templates and files",
+      "dataFolders": "Folder structure and metadata",
+      "dataLogs": "Complete activity log history (permanent blockchain records)",
+      "dataSubscription": "Subscription and billing information",
+      "dataUsage": "Usage statistics and quotas",
+      "deleteAll": "Delete All Data",
+      "deleteWarning": "Warning: Permanent Deletion",
+      "deleteExplanation": "This will permanently delete all your templates and folders. Your profile will remain active so you can continue to log in. This action cannot be undone.",
+      "deleteConfirm": "Type DELETE to confirm",
+      "deleteConfirmPlaceholder": "Type DELETE",
+      "deleting": "Deleting your data...",
+      "deletingTemplates": "Deleting templates...",
+      "deletingFolders": "Deleting folders...",
+      "deleteSuccess": "All data deleted successfully",
+      "deleteFailed": "Failed to delete data",
+      "deleteIncomplete": "Please type DELETE to confirm",
+      "deleteTitle": "Delete All Data",
+      "deleteDescription": "Permanently delete all your templates and folders while keeping your profile active."
+    }
   },
   "globalSearch": {
     "title": "Search",

@@ -17,6 +17,8 @@
     "discard": "Descartar"
   },
   "header": {
+    "userMenu": "Menú de usuario",
+    "profile": "Perfil",
     "logout": "Cerrar sesión",
     "toggleTheme": "Cambiar tema"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "Aún no hay plantillas",
     "getStarted": "Cargue su primera plantilla de Word",
     "processTemplate": "Procesar plantilla",
+    "previewTemplate": "Vista previa",
     "size": "Tamaño",
     "uploaded": "Cargado",
     "downloadTemplate": "Descargar plantilla",
@@ -180,6 +183,13 @@
     "ok": "OK",
     "cancel": "Cancelar"
   },
+  "preview": {
+    "title": "Vista previa",
+    "errorLoading": "Error al cargar la vista previa"
+  },
+  "common": {
+    "close": "Cerrar"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "Perfil de usuario",
+    "subtitle": "Administre la configuración de su cuenta y vea los registros de actividad",
+    "profileInfo": "Información del perfil",
+    "editProfile": "Editar perfil",
+    "displayName": "Nombre para mostrar",
+    "displayNamePlaceholder": "Ingrese su nombre",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "su@email.com",
+    "bio": "Biografía",
+    "bioPlaceholder": "Cuéntenos sobre usted...",
+    "notSet": "No establecido",
+    "save": "Guardar cambios",
+    "cancel": "Cancelar",
+    "sessionInfo": "Información de sesión",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Inicie sesión para ver su perfil",
+    "nav": {
+      "section": "Sección",
+      "profile": "Mi perfil",
+      "settings": "Configuración de cuenta",
+      "subscription": "Suscripción y uso",
+      "activity": "Registro de actividad"
+    },
+    "profileInfo": {
+      "subtitle": "Administre su información personal y avatar"
+    },
+    "settings": {
+      "subtitle": "Personalice su experiencia y administre los detalles de la cuenta",
+      "theme": {
+        "title": "Apariencia",
+        "light": "Modo claro",
+        "dark": "Modo oscuro",
+        "description": "Elija su tema preferido"
+      },
+      "language": {
+        "title": "Idioma"
+      }
+    },
+    "subscription": {
+      "subtitle": "Ver los detalles de su plan y estadísticas de uso",
+      "currentPlan": "Plan actual",
+      "usage": "Estadísticas de uso",
+      "documentsToday": "Documentos hoy",
+      "documentsThisMonth": "Documentos este mes",
+      "totalTemplates": "Total de plantillas",
+      "planDescription": {
+        "free": "Plan gratuito con funciones básicas",
+        "starter": "Plan inicial con límites mejorados",
+        "professional": "Plan profesional con funciones avanzadas",
+        "enterprise": "Plan empresarial con acceso ilimitado"
+      }
+    },
+    "activity": {
+      "subtitle": "Ver su actividad de cuenta y registro de auditoría"
+    },
+    "avatar": {
+      "upload": "Cargar",
+      "remove": "Eliminar",
+      "maxSize": "Máx 5MB (se redimensionará a 256x256)",
+      "invalidFileType": "Por favor seleccione un archivo de imagen",
+      "fileTooLarge": "Imagen demasiado grande (máx 5MB)"
+    },
+    "activityLog": {
+      "title": "Registro de actividad",
+      "showing": "Mostrando {{count}} de {{total}} registros",
+      "showingRange": "Mostrando {{start}}-{{end}} de {{total}}",
+      "filters": "Filtros",
+      "resetFilters": "Restablecer filtros",
+      "downloadCSV": "Descargar CSV",
+      "searchPlaceholder": "Buscar registros...",
+      "dateFrom": "Desde fecha",
+      "dateTo": "Hasta fecha",
+      "actionType": "Tipo de acción",
+      "resourceType": "Tipo de recurso",
+      "timestamp": "Marca de tiempo",
+      "action": "Acción",
+      "resourceName": "Recurso",
+      "status": "Estado",
+      "success": "Éxito",
+      "failed": "Fallido",
+      "noLogs": "No se encontraron registros de actividad",
+      "blockchainDisclaimer": "Los registros de actividad se almacenan permanentemente en blockchain y no se pueden eliminar. Esto garantiza la transparencia completa del registro de auditoría.",
+      "details": "Detalles",
+      "previous": "Anterior",
+      "previousShort": "Ant.",
+      "next": "Siguiente",
+      "pageOf": "Página {{current}} de {{total}}"
+    },
+    "gdpr": {
+      "title": "Exportar sus datos",
+      "subtitle": "Descargue todos sus datos en cumplimiento con GDPR",
+      "description": "Descargue un archivo completo de todos sus datos, incluidos perfil, plantillas, carpetas, registros de actividad e información de suscripción.",
+      "export": "Exportar datos",
+      "cancel": "Cancelar",
+      "notLoggedIn": "Inicie sesión para exportar sus datos",
+      "fetchingTemplates": "Obteniendo plantillas...",
+      "fetchingFolders": "Obteniendo carpetas...",
+      "fetchingLogs": "Obteniendo registros de actividad...",
+      "creatingArchive": "Creando archivo...",
+      "downloading": "Preparando descarga...",
+      "exporting": "Exportando sus datos...",
+      "exportSuccess": "Datos exportados exitosamente",
+      "exportFailed": "Error al exportar datos",
+      "blockchainWarning": "Importante: Gestión de datos",
+      "blockchainExplanation": "Puede eliminar todas sus plantillas, carpetas y otros datos mientras mantiene su perfil activo para futuras sesiones. Los registros de actividad almacenados en blockchain son permanentes por transparencia y seguridad, pero todos los demás datos pueden eliminarse.",
+      "includedData": "Su exportación incluye:",
+      "dataProfile": "Información del perfil (nombre, correo electrónico, avatar)",
+      "dataTemplates": "Todas las plantillas de documentos y archivos",
+      "dataFolders": "Estructura de carpetas y metadatos",
+      "dataLogs": "Historial completo de registros de actividad (registros permanentes de blockchain)",
+      "dataSubscription": "Información de suscripción y facturación",
+      "dataUsage": "Estadísticas de uso y cuotas",
+      "deleteAll": "Eliminar todos los datos",
+      "deleteWarning": "Advertencia: Eliminación permanente",
+      "deleteExplanation": "Esto eliminará permanentemente todas sus plantillas y carpetas. Su perfil permanecerá activo para que pueda continuar iniciando sesión. Esta acción no se puede deshacer.",
+      "deleteConfirm": "Escriba DELETE para confirmar",
+      "deleteConfirmPlaceholder": "Escriba DELETE",
+      "deleting": "Eliminando sus datos...",
+      "deletingTemplates": "Eliminando plantillas...",
+      "deletingFolders": "Eliminando carpetas...",
+      "deleteSuccess": "Todos los datos eliminados exitosamente",
+      "deleteFailed": "Error al eliminar datos",
+      "deleteIncomplete": "Por favor escriba DELETE para confirmar",
+      "deleteTitle": "Eliminar todos los datos",
+      "deleteDescription": "Eliminar permanentemente todas sus plantillas y carpetas mientras mantiene su perfil activo."
+    }
   }
 }

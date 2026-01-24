@@ -17,6 +17,8 @@
     "discard": "Elimina"
   },
   "header": {
+    "userMenu": "Menu utente",
+    "profile": "Profilo",
     "logout": "Esci",
     "toggleTheme": "Cambia tema"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "Nessun modello ancora",
     "getStarted": "Carica il tuo primo modello Word",
     "processTemplate": "Elabora modello",
+    "previewTemplate": "Anteprima",
     "size": "Dimensione",
     "uploaded": "Caricato",
     "downloadTemplate": "Scarica modello",
@@ -180,6 +183,13 @@
     "ok": "OK",
     "cancel": "Annulla"
   },
+  "preview": {
+    "title": "Anteprima",
+    "errorLoading": "Impossibile caricare l'anteprima"
+  },
+  "common": {
+    "close": "Chiudi"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "Profilo utente",
+    "subtitle": "Gestisci le impostazioni del tuo account e visualizza i log delle attività",
+    "profileInfo": "Informazioni profilo",
+    "editProfile": "Modifica profilo",
+    "displayName": "Nome visualizzato",
+    "displayNamePlaceholder": "Inserisci il tuo nome",
+    "email": "Email",
+    "emailPlaceholder": "tuo@email.it",
+    "bio": "Biografia",
+    "bioPlaceholder": "Raccontaci di te...",
+    "notSet": "Non impostato",
+    "save": "Salva modifiche",
+    "cancel": "Annulla",
+    "sessionInfo": "Informazioni sessione",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Effettua l'accesso per visualizzare il tuo profilo",
+    "nav": {
+      "section": "Sezione",
+      "profile": "Il mio profilo",
+      "settings": "Impostazioni account",
+      "subscription": "Abbonamento e utilizzo",
+      "activity": "Log attività"
+    },
+    "profileInfo": {
+      "subtitle": "Gestisci le tue informazioni personali e l'avatar"
+    },
+    "settings": {
+      "subtitle": "Personalizza la tua esperienza e gestisci i dettagli dell'account",
+      "theme": {
+        "title": "Aspetto",
+        "light": "Modalità chiara",
+        "dark": "Modalità scura",
+        "description": "Scegli il tuo tema preferito"
+      },
+      "language": {
+        "title": "Lingua"
+      }
+    },
+    "subscription": {
+      "subtitle": "Visualizza i dettagli del piano e le statistiche di utilizzo",
+      "currentPlan": "Piano attuale",
+      "usage": "Statistiche di utilizzo",
+      "documentsToday": "Documenti oggi",
+      "documentsThisMonth": "Documenti questo mese",
+      "totalTemplates": "Totale modelli",
+      "planDescription": {
+        "free": "Piano gratuito con funzionalità di base",
+        "starter": "Piano starter con limiti migliorati",
+        "professional": "Piano professionale con funzionalità avanzate",
+        "enterprise": "Piano enterprise con accesso illimitato"
+      }
+    },
+    "activity": {
+      "subtitle": "Visualizza l'attività del tuo account e la cronologia di audit"
+    },
+    "avatar": {
+      "upload": "Carica",
+      "remove": "Rimuovi",
+      "maxSize": "Max 5MB (verrà ridimensionato a 256x256)",
+      "invalidFileType": "Seleziona un file immagine",
+      "fileTooLarge": "Immagine troppo grande (max 5MB)"
+    },
+    "activityLog": {
+      "title": "Log attività",
+      "showing": "Mostrando {{count}} di {{total}} log",
+      "showingRange": "Mostrando {{start}}-{{end}} di {{total}}",
+      "filters": "Filtri",
+      "resetFilters": "Ripristina filtri",
+      "downloadCSV": "Scarica CSV",
+      "searchPlaceholder": "Cerca nei log...",
+      "dateFrom": "Data inizio",
+      "dateTo": "Data fine",
+      "actionType": "Tipo azione",
+      "resourceType": "Tipo risorsa",
+      "timestamp": "Timestamp",
+      "action": "Azione",
+      "resourceName": "Risorsa",
+      "status": "Stato",
+      "success": "Successo",
+      "failed": "Fallito",
+      "noLogs": "Nessun log di attività trovato",
+      "blockchainDisclaimer": "I log delle attività sono archiviati permanentemente sulla blockchain e non possono essere eliminati. Ciò garantisce la completa trasparenza della cronologia di audit.",
+      "details": "Dettagli",
+      "previous": "Precedente",
+      "previousShort": "Prec.",
+      "next": "Successivo",
+      "pageOf": "Pagina {{current}} di {{total}}"
+    },
+    "gdpr": {
+      "title": "Esporta i tuoi dati",
+      "subtitle": "Scarica tutti i tuoi dati in conformità con il GDPR",
+      "description": "Scarica un archivio completo di tutti i tuoi dati, inclusi profilo, modelli, cartelle, log delle attività e informazioni sull'abbonamento.",
+      "export": "Esporta dati",
+      "cancel": "Annulla",
+      "notLoggedIn": "Effettua l'accesso per esportare i tuoi dati",
+      "fetchingTemplates": "Recupero modelli...",
+      "fetchingFolders": "Recupero cartelle...",
+      "fetchingLogs": "Recupero log delle attività...",
+      "creatingArchive": "Creazione archivio...",
+      "downloading": "Preparazione download...",
+      "exporting": "Esportazione dei tuoi dati...",
+      "exportSuccess": "Dati esportati con successo",
+      "exportFailed": "Esportazione dati fallita",
+      "blockchainWarning": "Importante: Gestione dati",
+      "blockchainExplanation": "Puoi eliminare tutti i tuoi modelli, cartelle e altri dati mantenendo il profilo attivo per accessi futuri. I log delle attività archiviati sulla blockchain sono permanenti per trasparenza e sicurezza, ma tutti gli altri dati possono essere rimossi.",
+      "includedData": "La tua esportazione include:",
+      "dataProfile": "Informazioni profilo (nome, email, avatar)",
+      "dataTemplates": "Tutti i modelli di documenti e file",
+      "dataFolders": "Struttura cartelle e metadati",
+      "dataLogs": "Cronologia completa log attività (registrazioni blockchain permanenti)",
+      "dataSubscription": "Informazioni abbonamento e fatturazione",
+      "dataUsage": "Statistiche di utilizzo e quote",
+      "deleteAll": "Elimina tutti i dati",
+      "deleteWarning": "Attenzione: Eliminazione permanente",
+      "deleteExplanation": "Questo eliminerà permanentemente tutti i tuoi modelli e cartelle. Il tuo profilo rimarrà attivo in modo da poter continuare ad accedere. Questa azione non può essere annullata.",
+      "deleteConfirm": "Digita DELETE per confermare",
+      "deleteConfirmPlaceholder": "Digita DELETE",
+      "deleting": "Eliminazione dei tuoi dati...",
+      "deletingTemplates": "Eliminazione modelli...",
+      "deletingFolders": "Eliminazione cartelle...",
+      "deleteSuccess": "Tutti i dati eliminati con successo",
+      "deleteFailed": "Eliminazione dati fallita",
+      "deleteIncomplete": "Per favore digita DELETE per confermare",
+      "deleteTitle": "Elimina tutti i dati",
+      "deleteDescription": "Elimina permanentemente tutti i tuoi modelli e cartelle mantenendo il profilo attivo."
+    }
   }
 }

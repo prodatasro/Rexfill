@@ -17,6 +17,8 @@
     "discard": "Zahodit"
   },
   "header": {
+    "userMenu": "Uživatelské menu",
+    "profile": "Profil",
     "logout": "Odhlásit se",
     "toggleTheme": "Přepnout téma"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "Zatím žádné šablony",
     "getStarted": "Nahrajte svou první Word šablonu",
     "processTemplate": "Zpracovat šablonu",
+    "previewTemplate": "Zobrazit náhled",
     "size": "Velikost",
     "uploaded": "Nahráno",
     "downloadTemplate": "Stáhnout šablonu",
@@ -180,6 +183,13 @@
     "ok": "OK",
     "cancel": "Zrušit"
   },
+  "preview": {
+    "title": "Náhled",
+    "errorLoading": "Nepodařilo se načíst náhled"
+  },
+  "common": {
+    "close": "Zavřít"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "Uživatelský profil",
+    "subtitle": "Spravujte nastavení účtu a prohlížejte záznamy aktivit",
+    "profileInfo": "Informace o profilu",
+    "editProfile": "Upravit profil",
+    "displayName": "Zobrazované jméno",
+    "displayNamePlaceholder": "Zadejte své jméno",
+    "email": "E-mail",
+    "emailPlaceholder": "vas@email.cz",
+    "bio": "O mně",
+    "bioPlaceholder": "Povězte nám něco o sobě...",
+    "notSet": "Nenastaveno",
+    "save": "Uložit změny",
+    "cancel": "Zrušit",
+    "sessionInfo": "Informace o relaci",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Pro zobrazení profilu se přihlaste",
+    "nav": {
+      "section": "Sekce",
+      "profile": "Můj profil",
+      "settings": "Nastavení účtu",
+      "subscription": "Předplatné a využití",
+      "activity": "Záznamy aktivit"
+    },
+    "profileInfo": {
+      "subtitle": "Spravujte své osobní informace a avatar"
+    },
+    "settings": {
+      "subtitle": "Přizpůsobte si prostředí a spravujte detaily účtu",
+      "theme": {
+        "title": "Vzhled",
+        "light": "Světlý režim",
+        "dark": "Tmavý režim",
+        "description": "Vyberte si preferovaný vzhled"
+      },
+      "language": {
+        "title": "Jazyk"
+      }
+    },
+    "subscription": {
+      "subtitle": "Zobrazení detailů plánu a statistik využití",
+      "currentPlan": "Aktuální plán",
+      "usage": "Statistiky využití",
+      "documentsToday": "Dokumenty dnes",
+      "documentsThisMonth": "Dokumenty tento měsíc",
+      "totalTemplates": "Celkový počet šablon",
+      "planDescription": {
+        "free": "Bezplatný plán se základními funkcemi",
+        "starter": "Startovací plán s rozšířenými limity",
+        "professional": "Profesionální plán s pokročilými funkcemi",
+        "enterprise": "Podnikový plán s neomezeným přístupem"
+      }
+    },
+    "activity": {
+      "subtitle": "Zobrazení aktivit účtu a auditního záznamu"
+    },
+    "avatar": {
+      "upload": "Nahrát",
+      "remove": "Odstranit",
+      "maxSize": "Max 5MB (bude změněno na 256x256)",
+      "invalidFileType": "Vyberte prosím obrázek",
+      "fileTooLarge": "Obrázek je příliš velký (max 5MB)"
+    },
+    "activityLog": {
+      "title": "Záznamy aktivit",
+      "showing": "Zobrazeno {{count}} z {{total}} záznamů",
+      "showingRange": "Zobrazeno {{start}}-{{end}} z {{total}}",
+      "filters": "Filtry",
+      "resetFilters": "Resetovat filtry",
+      "downloadCSV": "Stáhnout CSV",
+      "searchPlaceholder": "Hledat záznamy...",
+      "dateFrom": "Od data",
+      "dateTo": "Do data",
+      "actionType": "Typ akce",
+      "resourceType": "Typ zdroje",
+      "timestamp": "Čas",
+      "action": "Akce",
+      "resourceName": "Zdroj",
+      "status": "Stav",
+      "success": "Úspěch",
+      "failed": "Selhalo",
+      "noLogs": "Nebyly nalezeny žádné záznamy aktivit",
+      "blockchainDisclaimer": "Záznamy aktivit jsou trvale uloženy na blockchainu a nelze je smazat. To zajišťuje úplnou transparentnost auditních záznamů.",
+      "details": "Detaily",
+      "previous": "Předchozí",
+      "previousShort": "Předch.",
+      "next": "Další",
+      "pageOf": "Stránka {{current}} z {{total}}"
+    },
+    "gdpr": {
+      "title": "Exportovat vaše data",
+      "subtitle": "Stáhněte všechna vaše data v souladu s GDPR",
+      "description": "Stáhněte si kompletní archiv všech vašich dat včetně profilu, šablon, složek, záznamů aktivit a informací o předplatném.",
+      "export": "Exportovat data",
+      "cancel": "Zrušit",
+      "notLoggedIn": "Pro export vašich dat se přihlaste",
+      "fetchingTemplates": "Načítání šablon...",
+      "fetchingFolders": "Načítání složek...",
+      "fetchingLogs": "Načítání záznamů aktivit...",
+      "creatingArchive": "Vytváření archivu...",
+      "downloading": "Příprava stahování...",
+      "exporting": "Exportování vašich dat...",
+      "exportSuccess": "Data byla úspěšně exportována",
+      "exportFailed": "Export dat se nezdařil",
+      "blockchainWarning": "Důležité: Správa dat",
+      "blockchainExplanation": "Můžete smazat všechny své šablony, složky a ostatní data, přičemž si zachováte aktivní profil pro budoucí přihlášení. Záznamy aktivit uložené na blockchainu jsou trvalé kvůli transparentnosti a bezpečnosti, ale všechna ostatní data lze odstranit.",
+      "includedData": "Váš export obsahuje:",
+      "dataProfile": "Informace o profilu (jméno, e-mail, avatar)",
+      "dataTemplates": "Všechny šablony dokumentů a soubory",
+      "dataFolders": "Strukturu složek a metadata",
+      "dataLogs": "Kompletní historii záznamů aktivit (trvalé blockchainové záznamy)",
+      "dataSubscription": "Informace o předplatném a fakturaci",
+      "dataUsage": "Statistiky využití a kvóty",
+      "deleteAll": "Smazat všechna data",
+      "deleteWarning": "Varování: Trvalé smazání",
+      "deleteExplanation": "Toto trvale smaže všechny vaše šablony a složky. Váš profil zůstane aktivní, takže se budete moci nadále přihlašovat. Tuto akci nelze vrátit zpět.",
+      "deleteConfirm": "Napište DELETE pro potvrzení",
+      "deleteConfirmPlaceholder": "Napište DELETE",
+      "deleting": "Mazání vašich dat...",
+      "deletingTemplates": "Mazání šablon...",
+      "deletingFolders": "Mazání složek...",
+      "deleteSuccess": "Všechna data byla úspěšně smazána",
+      "deleteFailed": "Smazání dat se nezdařilo",
+      "deleteIncomplete": "Prosím napište DELETE pro potvrzení",
+      "deleteTitle": "Smazat všechna data",
+      "deleteDescription": "Trvale smazat všechny vaše šablony a složky, přičemž si zachováte aktivní profil."
+    }
   }
 }

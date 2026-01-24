@@ -17,6 +17,8 @@
     "discard": "Verwerfen"
   },
   "header": {
+    "userMenu": "Benutzermenü",
+    "profile": "Profil",
     "logout": "Abmelden",
     "toggleTheme": "Design wechseln"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "Noch keine Vorlagen",
     "getStarted": "Laden Sie Ihre erste Word-Vorlage hoch",
     "processTemplate": "Vorlage verarbeiten",
+    "previewTemplate": "Vorschau anzeigen",
     "size": "Größe",
     "uploaded": "Hochgeladen",
     "downloadTemplate": "Vorlage herunterladen",
@@ -180,6 +183,13 @@
     "ok": "OK",
     "cancel": "Abbrechen"
   },
+  "preview": {
+    "title": "Vorschau",
+    "errorLoading": "Vorschau konnte nicht geladen werden"
+  },
+  "common": {
+    "close": "Schließen"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "Benutzerprofil",
+    "subtitle": "Verwalten Sie Ihre Kontoeinstellungen und sehen Sie Aktivitätsprotokolle ein",
+    "profileInfo": "Profilinformationen",
+    "editProfile": "Profil bearbeiten",
+    "displayName": "Anzeigename",
+    "displayNamePlaceholder": "Geben Sie Ihren Namen ein",
+    "email": "E-Mail",
+    "emailPlaceholder": "ihre@email.de",
+    "bio": "Biografie",
+    "bioPlaceholder": "Erzählen Sie uns über sich...",
+    "notSet": "Nicht festgelegt",
+    "save": "Änderungen speichern",
+    "cancel": "Abbrechen",
+    "sessionInfo": "Sitzungsinformationen",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Bitte melden Sie sich an, um Ihr Profil anzuzeigen",
+    "nav": {
+      "section": "Bereich",
+      "profile": "Mein Profil",
+      "settings": "Kontoeinstellungen",
+      "subscription": "Abonnement & Nutzung",
+      "activity": "Aktivitätsprotokoll"
+    },
+    "profileInfo": {
+      "subtitle": "Verwalten Sie Ihre persönlichen Informationen und Ihren Avatar"
+    },
+    "settings": {
+      "subtitle": "Passen Sie Ihre Erfahrung an und verwalten Sie Kontodetails",
+      "theme": {
+        "title": "Erscheinungsbild",
+        "light": "Heller Modus",
+        "dark": "Dunkler Modus",
+        "description": "Wählen Sie Ihr bevorzugtes Design"
+      },
+      "language": {
+        "title": "Sprache"
+      }
+    },
+    "subscription": {
+      "subtitle": "Sehen Sie Ihre Plandetails und Nutzungsstatistiken ein",
+      "currentPlan": "Aktueller Plan",
+      "usage": "Nutzungsstatistiken",
+      "documentsToday": "Dokumente heute",
+      "documentsThisMonth": "Dokumente diesen Monat",
+      "totalTemplates": "Gesamtzahl der Vorlagen",
+      "planDescription": {
+        "free": "Kostenloser Plan mit grundlegenden Funktionen",
+        "starter": "Starter-Plan mit erweiterten Limits",
+        "professional": "Professional-Plan mit erweiterten Funktionen",
+        "enterprise": "Enterprise-Plan mit unbegrenztem Zugriff"
+      }
+    },
+    "activity": {
+      "subtitle": "Zeigen Sie Ihre Kontoaktivität und Ihren Audit-Trail an"
+    },
+    "avatar": {
+      "upload": "Hochladen",
+      "remove": "Entfernen",
+      "maxSize": "Max 5MB (wird auf 256x256 skaliert)",
+      "invalidFileType": "Bitte wählen Sie eine Bilddatei",
+      "fileTooLarge": "Bild zu groß (max 5MB)"
+    },
+    "activityLog": {
+      "title": "Aktivitätsprotokoll",
+      "showing": "Zeige {{count}} von {{total}} Protokollen",
+      "showingRange": "Zeige {{start}}-{{end}} von {{total}}",
+      "filters": "Filter",
+      "resetFilters": "Filter zurücksetzen",
+      "downloadCSV": "CSV herunterladen",
+      "searchPlaceholder": "Protokolle durchsuchen...",
+      "dateFrom": "Von Datum",
+      "dateTo": "Bis Datum",
+      "actionType": "Aktionstyp",
+      "resourceType": "Ressourcentyp",
+      "timestamp": "Zeitstempel",
+      "action": "Aktion",
+      "resourceName": "Ressource",
+      "status": "Status",
+      "success": "Erfolg",
+      "failed": "Fehlgeschlagen",
+      "noLogs": "Keine Aktivitätsprotokolle gefunden",
+      "blockchainDisclaimer": "Aktivitätsprotokolle werden dauerhaft auf der Blockchain gespeichert und können nicht gelöscht werden. Dies gewährleistet vollständige Transparenz des Audit-Trails.",
+      "details": "Details",
+      "previous": "Zurück",
+      "previousShort": "Zurück",
+      "next": "Weiter",
+      "pageOf": "Seite {{current}} von {{total}}"
+    },
+    "gdpr": {
+      "title": "Ihre Daten exportieren",
+      "subtitle": "Laden Sie alle Ihre Daten gemäß DSGVO herunter",
+      "description": "Laden Sie ein vollständiges Archiv aller Ihrer Daten herunter, einschließlich Profil, Vorlagen, Ordner, Aktivitätsprotokolle und Abonnementinformationen.",
+      "export": "Daten exportieren",
+      "cancel": "Abbrechen",
+      "notLoggedIn": "Bitte melden Sie sich an, um Ihre Daten zu exportieren",
+      "fetchingTemplates": "Vorlagen werden abgerufen...",
+      "fetchingFolders": "Ordner werden abgerufen...",
+      "fetchingLogs": "Aktivitätsprotokolle werden abgerufen...",
+      "creatingArchive": "Archiv wird erstellt...",
+      "downloading": "Download wird vorbereitet...",
+      "exporting": "Ihre Daten werden exportiert...",
+      "exportSuccess": "Daten erfolgreich exportiert",
+      "exportFailed": "Export der Daten fehlgeschlagen",
+      "blockchainWarning": "Wichtig: Datenverwaltung",
+      "blockchainExplanation": "Sie können alle Ihre Vorlagen, Ordner und andere Daten löschen, während Ihr Profil für zukünftige Anmeldungen aktiv bleibt. Auf der Blockchain gespeicherte Aktivitätsprotokolle sind aus Gründen der Transparenz und Sicherheit dauerhaft, aber alle anderen Daten können entfernt werden.",
+      "includedData": "Ihr Export umfasst:",
+      "dataProfile": "Profilinformationen (Name, E-Mail, Avatar)",
+      "dataTemplates": "Alle Dokumentvorlagen und Dateien",
+      "dataFolders": "Ordnerstruktur und Metadaten",
+      "dataLogs": "Vollständige Aktivitätsprotokoll-Historie (dauerhafte Blockchain-Aufzeichnungen)",
+      "dataSubscription": "Abonnement- und Abrechnungsinformationen",
+      "dataUsage": "Nutzungsstatistiken und Kontingente",
+      "deleteAll": "Alle Daten löschen",
+      "deleteWarning": "Warnung: Dauerhaftes Löschen",
+      "deleteExplanation": "Dies löscht dauerhaft alle Ihre Vorlagen und Ordner. Ihr Profil bleibt aktiv, sodass Sie sich weiterhin anmelden können. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteConfirm": "Geben Sie DELETE ein, um zu bestätigen",
+      "deleteConfirmPlaceholder": "Geben Sie DELETE ein",
+      "deleting": "Ihre Daten werden gelöscht...",
+      "deletingTemplates": "Vorlagen werden gelöscht...",
+      "deletingFolders": "Ordner werden gelöscht...",
+      "deleteSuccess": "Alle Daten wurden erfolgreich gelöscht",
+      "deleteFailed": "Löschen der Daten fehlgeschlagen",
+      "deleteIncomplete": "Bitte geben Sie DELETE ein, um zu bestätigen",
+      "deleteTitle": "Alle Daten löschen",
+      "deleteDescription": "Löschen Sie dauerhaft alle Ihre Vorlagen und Ordner, während Ihr Profil aktiv bleibt."
+    }
   }
 }

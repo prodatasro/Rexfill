@@ -17,6 +17,8 @@
     "discard": "Ignorer"
   },
   "header": {
+    "userMenu": "Menu utilisateur",
+    "profile": "Profil",
     "logout": "Se déconnecter",
     "toggleTheme": "Changer de thème"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "Pas encore de modèles",
     "getStarted": "Téléchargez votre premier modèle Word",
     "processTemplate": "Traiter le modèle",
+    "previewTemplate": "Aperçu",
     "size": "Taille",
     "uploaded": "Téléchargé",
     "downloadTemplate": "Télécharger le modèle",
@@ -180,6 +183,13 @@
     "ok": "OK",
     "cancel": "Annuler"
   },
+  "preview": {
+    "title": "Aperçu",
+    "errorLoading": "Échec du chargement de l'aperçu"
+  },
+  "common": {
+    "close": "Fermer"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "Profil utilisateur",
+    "subtitle": "Gérez les paramètres de votre compte et consultez les journaux d'activité",
+    "profileInfo": "Informations de profil",
+    "editProfile": "Modifier le profil",
+    "displayName": "Nom d'affichage",
+    "displayNamePlaceholder": "Entrez votre nom",
+    "email": "E-mail",
+    "emailPlaceholder": "votre@email.fr",
+    "bio": "Biographie",
+    "bioPlaceholder": "Parlez-nous de vous...",
+    "notSet": "Non défini",
+    "save": "Enregistrer les modifications",
+    "cancel": "Annuler",
+    "sessionInfo": "Informations de session",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Veuillez vous connecter pour voir votre profil",
+    "nav": {
+      "section": "Section",
+      "profile": "Mon profil",
+      "settings": "Paramètres du compte",
+      "subscription": "Abonnement et utilisation",
+      "activity": "Journal d'activité"
+    },
+    "profileInfo": {
+      "subtitle": "Gérez vos informations personnelles et votre avatar"
+    },
+    "settings": {
+      "subtitle": "Personnalisez votre expérience et gérez les détails du compte",
+      "theme": {
+        "title": "Apparence",
+        "light": "Mode clair",
+        "dark": "Mode sombre",
+        "description": "Choisissez votre thème préféré"
+      },
+      "language": {
+        "title": "Langue"
+      }
+    },
+    "subscription": {
+      "subtitle": "Consultez les détails de votre plan et les statistiques d'utilisation",
+      "currentPlan": "Plan actuel",
+      "usage": "Statistiques d'utilisation",
+      "documentsToday": "Documents aujourd'hui",
+      "documentsThisMonth": "Documents ce mois-ci",
+      "totalTemplates": "Total des modèles",
+      "planDescription": {
+        "free": "Plan gratuit avec fonctionnalités de base",
+        "starter": "Plan de démarrage avec limites améliorées",
+        "professional": "Plan professionnel avec fonctionnalités avancées",
+        "enterprise": "Plan entreprise avec accès illimité"
+      }
+    },
+    "activity": {
+      "subtitle": "Consultez l'activité de votre compte et la piste d'audit"
+    },
+    "avatar": {
+      "upload": "Télécharger",
+      "remove": "Supprimer",
+      "maxSize": "Max 5Mo (sera redimensionné à 256x256)",
+      "invalidFileType": "Veuillez sélectionner un fichier image",
+      "fileTooLarge": "Image trop volumineuse (max 5Mo)"
+    },
+    "activityLog": {
+      "title": "Journal d'activité",
+      "showing": "Affichage de {{count}} sur {{total}} journaux",
+      "showingRange": "Affichage de {{start}}-{{end}} sur {{total}}",
+      "filters": "Filtres",
+      "resetFilters": "Réinitialiser les filtres",
+      "downloadCSV": "Télécharger CSV",
+      "searchPlaceholder": "Rechercher dans les journaux...",
+      "dateFrom": "Date de début",
+      "dateTo": "Date de fin",
+      "actionType": "Type d'action",
+      "resourceType": "Type de ressource",
+      "timestamp": "Horodatage",
+      "action": "Action",
+      "resourceName": "Ressource",
+      "status": "Statut",
+      "success": "Succès",
+      "failed": "Échec",
+      "noLogs": "Aucun journal d'activité trouvé",
+      "blockchainDisclaimer": "Les journaux d'activité sont stockés de manière permanente sur la blockchain et ne peuvent pas être supprimés. Cela garantit une transparence complète de la piste d'audit.",
+      "details": "Détails",
+      "previous": "Précédent",
+      "previousShort": "Préc.",
+      "next": "Suivant",
+      "pageOf": "Page {{current}} sur {{total}}"
+    },
+    "gdpr": {
+      "title": "Exporter vos données",
+      "subtitle": "Téléchargez toutes vos données conformément au RGPD",
+      "description": "Téléchargez une archive complète de toutes vos données, y compris le profil, les modèles, les dossiers, les journaux d'activité et les informations d'abonnement.",
+      "export": "Exporter les données",
+      "cancel": "Annuler",
+      "notLoggedIn": "Veuillez vous connecter pour exporter vos données",
+      "fetchingTemplates": "Récupération des modèles...",
+      "fetchingFolders": "Récupération des dossiers...",
+      "fetchingLogs": "Récupération des journaux d'activité...",
+      "creatingArchive": "Création de l'archive...",
+      "downloading": "Préparation du téléchargement...",
+      "exporting": "Exportation de vos données...",
+      "exportSuccess": "Données exportées avec succès",
+      "exportFailed": "Échec de l'exportation des données",
+      "blockchainWarning": "Important : Gestion des données",
+      "blockchainExplanation": "Vous pouvez supprimer tous vos modèles, dossiers et autres données tout en conservant votre profil actif pour les connexions futures. Les journaux d'activité stockés sur la blockchain sont permanents pour la transparence et la sécurité, mais toutes les autres données peuvent être supprimées.",
+      "includedData": "Votre exportation comprend :",
+      "dataProfile": "Informations de profil (nom, e-mail, avatar)",
+      "dataTemplates": "Tous les modèles de documents et fichiers",
+      "dataFolders": "Structure des dossiers et métadonnées",
+      "dataLogs": "Historique complet des journaux d'activité (enregistrements blockchain permanents)",
+      "dataSubscription": "Informations d'abonnement et de facturation",
+      "dataUsage": "Statistiques d'utilisation et quotas",
+      "deleteAll": "Supprimer toutes les données",
+      "deleteWarning": "Avertissement : Suppression permanente",
+      "deleteExplanation": "Cela supprimera définitivement tous vos modèles et dossiers. Votre profil restera actif pour que vous puissiez continuer à vous connecter. Cette action ne peut pas être annulée.",
+      "deleteConfirm": "Tapez DELETE pour confirmer",
+      "deleteConfirmPlaceholder": "Tapez DELETE",
+      "deleting": "Suppression de vos données...",
+      "deletingTemplates": "Suppression des modèles...",
+      "deletingFolders": "Suppression des dossiers...",
+      "deleteSuccess": "Toutes les données supprimées avec succès",
+      "deleteFailed": "Échec de la suppression des données",
+      "deleteIncomplete": "Veuillez taper DELETE pour confirmer",
+      "deleteTitle": "Supprimer toutes les données",
+      "deleteDescription": "Supprimez définitivement tous vos modèles et dossiers tout en conservant votre profil actif."
+    }
   }
 }

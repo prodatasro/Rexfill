@@ -17,6 +17,8 @@
     "discard": "Odrzuć"
   },
   "header": {
+    "userMenu": "Menu użytkownika",
+    "profile": "Profil",
     "logout": "Wyloguj się",
     "toggleTheme": "Przełącz motyw"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "Brak szablonów",
     "getStarted": "Prześlij swój pierwszy szablon Word",
     "processTemplate": "Przetwórz szablon",
+    "previewTemplate": "Podgląd",
     "size": "Rozmiar",
     "uploaded": "Przesłano",
     "downloadTemplate": "Pobierz szablon",
@@ -180,6 +183,13 @@
     "ok": "OK",
     "cancel": "Anuluj"
   },
+  "preview": {
+    "title": "Podgląd",
+    "errorLoading": "Nie udało się załadować podglądu"
+  },
+  "common": {
+    "close": "Zamknij"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "Profil użytkownika",
+    "subtitle": "Zarządzaj ustawieniami konta i przeglądaj dzienniki aktywności",
+    "profileInfo": "Informacje o profilu",
+    "editProfile": "Edytuj profil",
+    "displayName": "Wyświetlana nazwa",
+    "displayNamePlaceholder": "Wprowadź swoje imię",
+    "email": "E-mail",
+    "emailPlaceholder": "twoj@email.pl",
+    "bio": "O mnie",
+    "bioPlaceholder": "Opowiedz nam o sobie...",
+    "notSet": "Nieustawione",
+    "save": "Zapisz zmiany",
+    "cancel": "Anuluj",
+    "sessionInfo": "Informacje o sesji",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Zaloguj się, aby wyświetlić swój profil",
+    "nav": {
+      "section": "Sekcja",
+      "profile": "Mój profil",
+      "settings": "Ustawienia konta",
+      "subscription": "Subskrypcja i użycie",
+      "activity": "Dziennik aktywności"
+    },
+    "profileInfo": {
+      "subtitle": "Zarządzaj swoimi danymi osobowymi i awatarem"
+    },
+    "settings": {
+      "subtitle": "Dostosuj swoje doświadczenie i zarządzaj szczegółami konta",
+      "theme": {
+        "title": "Wygląd",
+        "light": "Tryb jasny",
+        "dark": "Tryb ciemny",
+        "description": "Wybierz preferowany motyw"
+      },
+      "language": {
+        "title": "Język"
+      }
+    },
+    "subscription": {
+      "subtitle": "Wyświetl szczegóły planu i statystyki użycia",
+      "currentPlan": "Obecny plan",
+      "usage": "Statystyki użycia",
+      "documentsToday": "Dokumenty dzisiaj",
+      "documentsThisMonth": "Dokumenty w tym miesiącu",
+      "totalTemplates": "Wszystkie szablony",
+      "planDescription": {
+        "free": "Darmowy plan z podstawowymi funkcjami",
+        "starter": "Plan startowy z rozszerzonymi limitami",
+        "professional": "Plan profesjonalny z zaawansowanymi funkcjami",
+        "enterprise": "Plan korporacyjny z nieograniczonym dostępem"
+      }
+    },
+    "activity": {
+      "subtitle": "Wyświetl aktywność konta i ścieżkę audytu"
+    },
+    "avatar": {
+      "upload": "Prześlij",
+      "remove": "Usuń",
+      "maxSize": "Maks. 5MB (zostanie zmieniony na 256x256)",
+      "invalidFileType": "Proszę wybrać plik obrazu",
+      "fileTooLarge": "Obraz za duży (maks. 5MB)"
+    },
+    "activityLog": {
+      "title": "Dziennik aktywności",
+      "showing": "Wyświetlanie {{count}} z {{total}} wpisów",
+      "showingRange": "Wyświetlanie {{start}}-{{end}} z {{total}}",
+      "filters": "Filtry",
+      "resetFilters": "Resetuj filtry",
+      "downloadCSV": "Pobierz CSV",
+      "searchPlaceholder": "Szukaj w dzienniku...",
+      "dateFrom": "Od daty",
+      "dateTo": "Do daty",
+      "actionType": "Typ akcji",
+      "resourceType": "Typ zasobu",
+      "timestamp": "Znacznik czasu",
+      "action": "Akcja",
+      "resourceName": "Zasób",
+      "status": "Status",
+      "success": "Sukces",
+      "failed": "Niepowodzenie",
+      "noLogs": "Nie znaleziono dzienników aktywności",
+      "blockchainDisclaimer": "Dzienniki aktywności są trwale przechowywane w blockchain i nie mogą być usunięte. Zapewnia to pełną przejrzystość ścieżki audytu.",
+      "details": "Szczegóły",
+      "previous": "Poprzednia",
+      "previousShort": "Poprz.",
+      "next": "Następna",
+      "pageOf": "Strona {{current}} z {{total}}"
+    },
+    "gdpr": {
+      "title": "Eksportuj swoje dane",
+      "subtitle": "Pobierz wszystkie swoje dane zgodnie z RODO",
+      "description": "Pobierz kompletne archiwum wszystkich swoich danych, w tym profilu, szablonów, folderów, dzienników aktywności i informacji o subskrypcji.",
+      "export": "Eksportuj dane",
+      "cancel": "Anuluj",
+      "notLoggedIn": "Zaloguj się, aby wyeksportować swoje dane",
+      "fetchingTemplates": "Pobieranie szablonów...",
+      "fetchingFolders": "Pobieranie folderów...",
+      "fetchingLogs": "Pobieranie dzienników aktywności...",
+      "creatingArchive": "Tworzenie archiwum...",
+      "downloading": "Przygotowywanie pobierania...",
+      "exporting": "Eksportowanie twoich danych...",
+      "exportSuccess": "Dane wyeksportowane pomyślnie",
+      "exportFailed": "Eksport danych nie powiódł się",
+      "blockchainWarning": "Ważne: Zarządzanie danymi",
+      "blockchainExplanation": "Możesz usunąć wszystkie swoje szablony, foldery i inne dane, zachowując aktywny profil do przyszłych logowań. Dzienniki aktywności przechowywane w blockchain są trwałe ze względu na przejrzystość i bezpieczeństwo, ale wszystkie inne dane mogą zostać usunięte.",
+      "includedData": "Twój eksport zawiera:",
+      "dataProfile": "Informacje o profilu (imię, e-mail, avatar)",
+      "dataTemplates": "Wszystkie szablony dokumentów i pliki",
+      "dataFolders": "Struktura folderów i metadane",
+      "dataLogs": "Pełna historia dzienników aktywności (trwałe zapisy blockchain)",
+      "dataSubscription": "Informacje o subskrypcji i rozliczeniach",
+      "dataUsage": "Statystyki użycia i limity",
+      "deleteAll": "Usuń wszystkie dane",
+      "deleteWarning": "Ostrzeżenie: Trwałe usunięcie",
+      "deleteExplanation": "Spowoduje to trwałe usunięcie wszystkich szablonów i folderów. Twój profil pozostanie aktywny, dzięki czemu będziesz mógł nadal się logować. Tej akcji nie można cofnąć.",
+      "deleteConfirm": "Wpisz DELETE, aby potwierdzić",
+      "deleteConfirmPlaceholder": "Wpisz DELETE",
+      "deleting": "Usuwanie twoich danych...",
+      "deletingTemplates": "Usuwanie szablonów...",
+      "deletingFolders": "Usuwanie folderów...",
+      "deleteSuccess": "Wszystkie dane usunięte pomyślnie",
+      "deleteFailed": "Usunięcie danych nie powiodło się",
+      "deleteIncomplete": "Proszę wpisać DELETE, aby potwierdzić",
+      "deleteTitle": "Usuń wszystkie dane",
+      "deleteDescription": "Trwale usuń wszystkie swoje szablony i foldery, zachowując aktywny profil."
+    }
   }
 }

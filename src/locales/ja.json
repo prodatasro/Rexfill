@@ -17,6 +17,8 @@
     "discard": "破棄"
   },
   "header": {
+    "userMenu": "ユーザーメニュー",
+    "profile": "プロフィール",
     "logout": "ログアウト",
     "toggleTheme": "テーマを切り替える"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "まだテンプレートがありません",
     "getStarted": "最初のWordテンプレートをアップロードしてください",
     "processTemplate": "テンプレートを処理",
+    "previewTemplate": "プレビュー",
     "size": "サイズ",
     "uploaded": "アップロード済み",
     "downloadTemplate": "テンプレートをダウンロード",
@@ -180,6 +183,13 @@
     "ok": "OK",
     "cancel": "キャンセル"
   },
+  "preview": {
+    "title": "プレビュー",
+    "errorLoading": "プレビューの読み込みに失敗しました"
+  },
+  "common": {
+    "close": "閉じる"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "ユーザープロフィール",
+    "subtitle": "アカウント設定を管理し、アクティビティログを表示します",
+    "profileInfo": "プロフィール情報",
+    "editProfile": "プロフィールを編集",
+    "displayName": "表示名",
+    "displayNamePlaceholder": "名前を入力してください",
+    "email": "メールアドレス",
+    "emailPlaceholder": "your@email.com",
+    "bio": "自己紹介",
+    "bioPlaceholder": "あなたについて教えてください...",
+    "notSet": "未設定",
+    "save": "変更を保存",
+    "cancel": "キャンセル",
+    "sessionInfo": "セッション情報",
+    "principalId": "Principal ID",
+    "notLoggedIn": "プロフィールを表示するにはログインしてください",
+    "nav": {
+      "section": "セクション",
+      "profile": "マイプロフィール",
+      "settings": "アカウント設定",
+      "subscription": "サブスクリプションと使用状況",
+      "activity": "アクティビティログ"
+    },
+    "profileInfo": {
+      "subtitle": "個人情報とアバターを管理します"
+    },
+    "settings": {
+      "subtitle": "エクスペリエンスをカスタマイズし、アカウントの詳細を管理します",
+      "theme": {
+        "title": "外観",
+        "light": "ライトモード",
+        "dark": "ダークモード",
+        "description": "お好みのテーマを選択してください"
+      },
+      "language": {
+        "title": "言語"
+      }
+    },
+    "subscription": {
+      "subtitle": "プランの詳細と使用統計を表示します",
+      "currentPlan": "現在のプラン",
+      "usage": "使用統計",
+      "documentsToday": "本日のドキュメント",
+      "documentsThisMonth": "今月のドキュメント",
+      "totalTemplates": "テンプレート総数",
+      "planDescription": {
+        "free": "基本機能付き無料プラン",
+        "starter": "拡張制限付きスタータープラン",
+        "professional": "高度な機能付きプロフェッショナルプラン",
+        "enterprise": "無制限アクセス付きエンタープライズプラン"
+      }
+    },
+    "activity": {
+      "subtitle": "アカウントのアクティビティと監査証跡を表示します"
+    },
+    "avatar": {
+      "upload": "アップロード",
+      "remove": "削除",
+      "maxSize": "最大5MB（256x256にリサイズされます）",
+      "invalidFileType": "画像ファイルを選択してください",
+      "fileTooLarge": "画像が大きすぎます（最大5MB）"
+    },
+    "activityLog": {
+      "title": "アクティビティログ",
+      "showing": "{{total}} 件中 {{count}} 件のログを表示",
+      "showingRange": "{{total}} 件中 {{start}}-{{end}} 件を表示",
+      "filters": "フィルター",
+      "resetFilters": "フィルターをリセット",
+      "downloadCSV": "CSVをダウンロード",
+      "searchPlaceholder": "ログを検索...",
+      "dateFrom": "開始日",
+      "dateTo": "終了日",
+      "actionType": "アクション種類",
+      "resourceType": "リソース種類",
+      "timestamp": "タイムスタンプ",
+      "action": "アクション",
+      "resourceName": "リソース",
+      "status": "ステータス",
+      "success": "成功",
+      "failed": "失敗",
+      "noLogs": "アクティビティログが見つかりません",
+      "blockchainDisclaimer": "アクティビティログはブロックチェーンに永久に保存され、削除できません。これにより、監査証跡の完全な透明性が保証されます。",
+      "details": "詳細",
+      "previous": "前へ",
+      "previousShort": "前",
+      "next": "次へ",
+      "pageOf": "ページ {{current}} / {{total}}"
+    },
+    "gdpr": {
+      "title": "データをエクスポート",
+      "subtitle": "GDPRに準拠してすべてのデータをダウンロード",
+      "description": "プロフィール、テンプレート、フォルダ、アクティビティログ、サブスクリプション情報を含むすべてのデータの完全なアーカイブをダウンロードします。",
+      "export": "データをエクスポート",
+      "cancel": "キャンセル",
+      "notLoggedIn": "データをエクスポートするにはログインしてください",
+      "fetchingTemplates": "テンプレートを取得中...",
+      "fetchingFolders": "フォルダを取得中...",
+      "fetchingLogs": "アクティビティログを取得中...",
+      "creatingArchive": "アーカイブを作成中...",
+      "downloading": "ダウンロードを準備中...",
+      "exporting": "データをエクスポート中...",
+      "exportSuccess": "データのエクスポートに成功しました",
+      "exportFailed": "データのエクスポートに失敗しました",
+      "blockchainWarning": "重要：データ管理",
+      "blockchainExplanation": "今後のログインのためにプロフィールをアクティブに保ちながら、すべてのテンプレート、フォルダ、その他のデータを削除できます。透明性とセキュリティのためにブロックチェーンに保存されたアクティビティログは永久的ですが、他のすべてのデータは削除できます。",
+      "includedData": "エクスポートに含まれるもの：",
+      "dataProfile": "プロフィール情報（名前、メール、アバター）",
+      "dataTemplates": "すべてのドキュメントテンプレートとファイル",
+      "dataFolders": "フォルダ構造とメタデータ",
+      "dataLogs": "完全なアクティビティログ履歴（永久的なブロックチェーン記録）",
+      "dataSubscription": "サブスクリプションと請求情報",
+      "dataUsage": "使用統計とクォータ",
+      "deleteAll": "すべてのデータを削除",
+      "deleteWarning": "警告：永久削除",
+      "deleteExplanation": "これにより、すべてのテンプレートとフォルダが永久に削除されます。プロフィールはアクティブのままなので、引き続きログインできます。この操作は元に戻せません。",
+      "deleteConfirm": "確認のためDELETEと入力してください",
+      "deleteConfirmPlaceholder": "DELETEと入力",
+      "deleting": "データを削除中...",
+      "deletingTemplates": "テンプレートを削除中...",
+      "deletingFolders": "フォルダを削除中...",
+      "deleteSuccess": "すべてのデータが正常に削除されました",
+      "deleteFailed": "データの削除に失敗しました",
+      "deleteIncomplete": "確認のためDELETEと入力してください",
+      "deleteTitle": "すべてのデータを削除",
+      "deleteDescription": "プロフィールをアクティブに保ちながら、すべてのテンプレートとフォルダを永久に削除します。"
+    }
   }
 }

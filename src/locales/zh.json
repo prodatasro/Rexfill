@@ -17,6 +17,8 @@
     "discard": "丢弃"
   },
   "header": {
+    "userMenu": "用户菜单",
+    "profile": "个人资料",
     "logout": "登出",
     "toggleTheme": "切换主题"
   },
@@ -68,6 +70,7 @@
     "noTemplates": "暂无模板",
     "getStarted": "上传您的第一个 Word 模板",
     "processTemplate": "处理模板",
+    "previewTemplate": "预览",
     "size": "大小",
     "uploaded": "已上传",
     "downloadTemplate": "下载模板",
@@ -180,6 +183,13 @@
     "ok": "确定",
     "cancel": "取消"
   },
+  "preview": {
+    "title": "预览",
+    "errorLoading": "加载预览失败"
+  },
+  "common": {
+    "close": "关闭"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +260,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "用户资料",
+    "subtitle": "管理您的账户设置并查看活动日志",
+    "profileInfo": "个人资料信息",
+    "editProfile": "编辑资料",
+    "displayName": "显示名称",
+    "displayNamePlaceholder": "输入您的姓名",
+    "email": "电子邮件",
+    "emailPlaceholder": "your@email.com",
+    "bio": "简介",
+    "bioPlaceholder": "告诉我们关于您的信息...",
+    "notSet": "未设置",
+    "save": "保存更改",
+    "cancel": "取消",
+    "sessionInfo": "会话信息",
+    "principalId": "Principal ID",
+    "notLoggedIn": "请登录以查看您的资料",
+    "nav": {
+      "section": "部分",
+      "profile": "我的资料",
+      "settings": "账户设置",
+      "subscription": "订阅与使用",
+      "activity": "活动日志"
+    },
+    "profileInfo": {
+      "subtitle": "管理您的个人信息和头像"
+    },
+    "settings": {
+      "subtitle": "自定义您的体验并管理账户详情",
+      "theme": {
+        "title": "外观",
+        "light": "浅色模式",
+        "dark": "深色模式",
+        "description": "选择您喜欢的主题"
+      },
+      "language": {
+        "title": "语言"
+      }
+    },
+    "subscription": {
+      "subtitle": "查看您的计划详情和使用统计",
+      "currentPlan": "当前计划",
+      "usage": "使用统计",
+      "documentsToday": "今天的文档",
+      "documentsThisMonth": "本月的文档",
+      "totalTemplates": "模板总数",
+      "planDescription": {
+        "free": "具有基本功能的免费计划",
+        "starter": "具有增强限制的入门计划",
+        "professional": "具有高级功能的专业计划",
+        "enterprise": "具有无限访问权限的企业计划"
+      }
+    },
+    "activity": {
+      "subtitle": "查看您的账户活动和审计跟踪"
+    },
+    "avatar": {
+      "upload": "上传",
+      "remove": "移除",
+      "maxSize": "最大5MB（将调整为256x256）",
+      "invalidFileType": "请选择图像文件",
+      "fileTooLarge": "图像太大（最大5MB）"
+    },
+    "activityLog": {
+      "title": "活动日志",
+      "showing": "显示 {{count}} / {{total}} 条日志",
+      "showingRange": "显示 {{start}}-{{end}} / {{total}}",
+      "filters": "筛选器",
+      "resetFilters": "重置筛选器",
+      "downloadCSV": "下载CSV",
+      "searchPlaceholder": "搜索日志...",
+      "dateFrom": "开始日期",
+      "dateTo": "结束日期",
+      "actionType": "操作类型",
+      "resourceType": "资源类型",
+      "timestamp": "时间戳",
+      "action": "操作",
+      "resourceName": "资源",
+      "status": "状态",
+      "success": "成功",
+      "failed": "失败",
+      "noLogs": "未找到活动日志",
+      "blockchainDisclaimer": "活动日志永久存储在区块链上，无法删除。这确保了审计跟踪的完全透明。",
+      "details": "详情",
+      "previous": "上一页",
+      "previousShort": "上页",
+      "next": "下一页",
+      "pageOf": "第 {{current}} 页，共 {{total}} 页"
+    },
+    "gdpr": {
+      "title": "导出您的数据",
+      "subtitle": "根据GDPR下载您的所有数据",
+      "description": "下载包含您所有数据的完整存档，包括个人资料、模板、文件夹、活动日志和订阅信息。",
+      "export": "导出数据",
+      "cancel": "取消",
+      "notLoggedIn": "请登录以导出您的数据",
+      "fetchingTemplates": "获取模板...",
+      "fetchingFolders": "获取文件夹...",
+      "fetchingLogs": "获取活动日志...",
+      "creatingArchive": "创建存档...",
+      "downloading": "准备下载...",
+      "exporting": "正在导出您的数据...",
+      "exportSuccess": "数据导出成功",
+      "exportFailed": "导出数据失败",
+      "blockchainWarning": "重要：数据管理",
+      "blockchainExplanation": "您可以删除所有模板、文件夹和其他数据，同时保持您的个人资料活跃以供将来登录。存储在区块链上的活动日志为了透明和安全而永久保存，但所有其他数据都可以删除。",
+      "includedData": "您的导出包括：",
+      "dataProfile": "个人资料信息（姓名、电子邮件、头像）",
+      "dataTemplates": "所有文档模板和文件",
+      "dataFolders": "文件夹结构和元数据",
+      "dataLogs": "完整的活动日志历史记录（永久区块链记录）",
+      "dataSubscription": "订阅和账单信息",
+      "dataUsage": "使用统计和配额",
+      "deleteAll": "删除所有数据",
+      "deleteWarning": "警告：永久删除",
+      "deleteExplanation": "这将永久删除您的所有模板和文件夹。您的个人资料将保持活跃，以便您可以继续登录。此操作无法撤消。",
+      "deleteConfirm": "输入DELETE以确认",
+      "deleteConfirmPlaceholder": "输入DELETE",
+      "deleting": "正在删除您的数据...",
+      "deletingTemplates": "正在删除模板...",
+      "deletingFolders": "正在删除文件夹...",
+      "deleteSuccess": "所有数据已成功删除",
+      "deleteFailed": "删除数据失败",
+      "deleteIncomplete": "请输入DELETE以确认",
+      "deleteTitle": "删除所有数据",
+      "deleteDescription": "永久删除您的所有模板和文件夹，同时保持您的个人资料活跃。"
+    }
   }
 }

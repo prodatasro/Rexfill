@@ -17,6 +17,8 @@
     "discard": "Elvetés"
   },
   "header": {
+    "userMenu": "Felhasználói menü",
+    "profile": "Profil",
     "logout": "Kijelentkezés",
     "toggleTheme": "Téma váltása"
   },
@@ -67,8 +69,7 @@
     "title": "Templates",
     "noTemplates": "Még nincsenek sablonok",
     "getStarted": "Töltse fel az első Word sablonját",
-    "processTemplate": "Sablon feldolgozása",
-    "size": "Méret",
+    "processTemplate": "Sablon feldolgozása",    "previewTemplate": "Előnézet",    "size": "Méret",
     "uploaded": "Feltöltve",
     "downloadTemplate": "Sablon letöltése",
     "downloadSuccess": "A \"{{filename}}\" sablon sikeresen letöltve",
@@ -180,6 +181,13 @@
     "ok": "OK",
     "cancel": "Mégse"
   },
+  "preview": {
+    "title": "Előnézet",
+    "errorLoading": "Az előnézet betöltése sikertelen"
+  },
+  "common": {
+    "close": "Bezárás"
+  },
   "language": {
     "sk": "Slovenčina",
     "en-US": "English",
@@ -250,5 +258,133 @@
     "moveTo": "Move to",
     "moveButton": "Move Template",
     "moving": "Moving..."
+  },
+  "profile": {
+    "title": "Felhasználói profil",
+    "subtitle": "Kezelje a fiókbeállításokat és tekintse meg a tevékenységi naplókat",
+    "profileInfo": "Profilinformációk",
+    "editProfile": "Profil szerkesztése",
+    "displayName": "Megjelenített név",
+    "displayNamePlaceholder": "Adja meg a nevét",
+    "email": "E-mail",
+    "emailPlaceholder": "az@email.hu",
+    "bio": "Bemutatkozás",
+    "bioPlaceholder": "Meséljen magáról...",
+    "notSet": "Nincs beállítva",
+    "save": "Változtatások mentése",
+    "cancel": "Mégse",
+    "sessionInfo": "Munkamenet információk",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Kérjük, jelentkezzen be a profil megtekintéséhez",
+    "nav": {
+      "section": "Szakasz",
+      "profile": "Profilom",
+      "settings": "Fiókbeállítások",
+      "subscription": "Előfizetés és használat",
+      "activity": "Tevékenységi napló"
+    },
+    "profileInfo": {
+      "subtitle": "Kezelje személyes adatait és avatarját"
+    },
+    "settings": {
+      "subtitle": "Szabja testre az élményt és kezelje a fiók részleteit",
+      "theme": {
+        "title": "Megjelenés",
+        "light": "Világos mód",
+        "dark": "Sötét mód",
+        "description": "Válassza ki a preferált témát"
+      },
+      "language": {
+        "title": "Nyelv"
+      }
+    },
+    "subscription": {
+      "subtitle": "Tekintse meg a csomag részleteit és a használati statisztikákat",
+      "currentPlan": "Jelenlegi csomag",
+      "usage": "Használati statisztikák",
+      "documentsToday": "Dokumentumok ma",
+      "documentsThisMonth": "Dokumentumok ebben a hónapban",
+      "totalTemplates": "Összes sablon",
+      "planDescription": {
+        "free": "Ingyenes csomag alapvető funkciókkal",
+        "starter": "Kezdő csomag bővített korlátokkal",
+        "professional": "Professzionális csomag fejlett funkciókkal",
+        "enterprise": "Vállalati csomag korlátlan hozzáféréssel"
+      }
+    },
+    "activity": {
+      "subtitle": "Tekintse meg a fiók tevékenységét és az ellenőrzési nyomot"
+    },
+    "avatar": {
+      "upload": "Feltöltés",
+      "remove": "Eltávolítás",
+      "maxSize": "Max 5MB (átméretezve 256x256-ra)",
+      "invalidFileType": "Kérjük, válasszon képfájlt",
+      "fileTooLarge": "A kép túl nagy (max 5MB)"
+    },
+    "activityLog": {
+      "title": "Tevékenységi napló",
+      "showing": "{{count}}/{{total}} napló megjelenítése",
+      "showingRange": "{{start}}-{{end}}/{{total}} megjelenítése",
+      "filters": "Szűrők",
+      "resetFilters": "Szűrők visszaállítása",
+      "downloadCSV": "CSV letöltése",
+      "searchPlaceholder": "Naplók keresése...",
+      "dateFrom": "Dátumtól",
+      "dateTo": "Dátumig",
+      "actionType": "Művelet típusa",
+      "resourceType": "Erőforrás típusa",
+      "timestamp": "Időbélyeg",
+      "action": "Művelet",
+      "resourceName": "Erőforrás",
+      "status": "Állapot",
+      "success": "Sikeres",
+      "failed": "Sikertelen",
+      "noLogs": "Nem találhatók tevékenységi naplók",
+      "blockchainDisclaimer": "A tevékenységi naplók véglegesen tárolódnak a blokkláncon és nem törölhetők. Ez biztosítja az ellenőrzési nyom teljes átláthatóságát.",
+      "details": "Részletek",
+      "previous": "Előző",
+      "previousShort": "Előző",
+      "next": "Következő",
+      "pageOf": "{{current}}. oldal / {{total}}"
+    },
+    "gdpr": {
+      "title": "Adatok exportálása",
+      "subtitle": "Töltse le az összes adatát a GDPR-nak megfelelően",
+      "description": "Töltsön le egy teljes archívumot az összes adatáról, beleértve a profilt, sablonokat, mappákat, tevékenységi naplókat és előfizetési információkat.",
+      "export": "Adatok exportálása",
+      "cancel": "Mégse",
+      "notLoggedIn": "Kérjük, jelentkezzen be az adatok exportálásához",
+      "fetchingTemplates": "Sablonok lekérése...",
+      "fetchingFolders": "Mappák lekérése...",
+      "fetchingLogs": "Tevékenységi naplók lekérése...",
+      "creatingArchive": "Archívum létrehozása...",
+      "downloading": "Letöltés előkészítése...",
+      "exporting": "Adatok exportálása...",
+      "exportSuccess": "Adatok sikeresen exportálva",
+      "exportFailed": "Az adatok exportálása sikertelen",
+      "blockchainWarning": "Fontos: Adatkezelés",
+      "blockchainExplanation": "Törölheti az összes sablont, mappát és egyéb adatot, miközben a profilja aktív marad a jövőbeni bejelentkezésekhez. A blokkláncon tárolt tevékenységi naplók átláthatóság és biztonság miatt véglegesek, de minden más adat eltávolítható.",
+      "includedData": "Az exportálás tartalmazza:",
+      "dataProfile": "Profilinformációk (név, e-mail, avatar)",
+      "dataTemplates": "Összes dokumentumsablon és fájl",
+      "dataFolders": "Mappastruktúra és metaadatok",
+      "dataLogs": "Teljes tevékenységi napló előzmények (végleges blokklánc rekordok)",
+      "dataSubscription": "Előfizetési és számlázási információk",
+      "dataUsage": "Használati statisztikák és kvóták",
+      "deleteAll": "Összes adat törlése",
+      "deleteWarning": "Figyelmeztetés: Végleges törlés",
+      "deleteExplanation": "Ez véglegesen törli az összes sablont és mappát. A profilja aktív marad, így továbbra is bejelentkezhet. Ez a művelet nem vonható vissza.",
+      "deleteConfirm": "Írja be a DELETE szót a megerősítéshez",
+      "deleteConfirmPlaceholder": "Írja be: DELETE",
+      "deleting": "Adatok törlése...",
+      "deletingTemplates": "Sablonok törlése...",
+      "deletingFolders": "Mappák törlése...",
+      "deleteSuccess": "Minden adat sikeresen törölve",
+      "deleteFailed": "Az adatok törlése sikertelen",
+      "deleteIncomplete": "Kérjük, írja be a DELETE szót a megerősítéshez",
+      "deleteTitle": "Összes adat törlése",
+      "deleteDescription": "Az összes sablon és mappa végleges törlése, miközben a profil aktív marad."
+    }
   }
 }
