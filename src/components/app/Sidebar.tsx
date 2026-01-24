@@ -115,11 +115,11 @@ const DashboardSidebar: FC<DashboardSidebarProps> = memo(({
       <div className="h-full flex flex-col p-4 lg:p-0">
         {/* Close button for mobile */}
         <div className="lg:hidden flex justify-between items-center mb-4 shrink-0">
-          <h3 className="font-bold text-slate-900 dark:text-slate-50">Folders</h3>
+          <h3 className="font-bold text-slate-900 dark:text-slate-50">{t('folders.title')}</h3>
           <button
             onClick={onClose}
             className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
-            aria-label="Close menu"
+            aria-label={t('folders.closeMenu')}
           >
             <X className="w-5 h-5" />
           </button>

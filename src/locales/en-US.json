@@ -438,7 +438,8 @@
     "loadFailed": "Failed to load folders",
     "createFailed": "Failed to create folder",
     "renameFailed": "Failed to rename folder",
-    "deleteFailed": "Failed to delete folder"
+    "deleteFailed": "Failed to delete folder",
+    "closeMenu": "Close menu"
   },
   "templateMove": {
     "title": "Move Template",
