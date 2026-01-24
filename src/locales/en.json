@@ -86,6 +86,7 @@
       "title": "Activity Log",
       "showing": "Showing {{count}} of {{total}} logs",
       "filters": "Filters",
+      "resetFilters": "Reset Filters",
       "downloadCSV": "Download CSV",
       "searchPlaceholder": "Search logs...",
       "dateFrom": "From Date",

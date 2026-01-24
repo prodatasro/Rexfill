@@ -235,6 +235,7 @@
       "title": "Záznamy aktivít",
       "showing": "Zobrazených {{count}} z {{total}} záznamov",
       "filters": "Filtre",
+      "resetFilters": "Resetovať filtre",
       "downloadCSV": "Stiahnuť CSV",
       "searchPlaceholder": "Hľadať záznamy...",
       "dateFrom": "Od dátumu",

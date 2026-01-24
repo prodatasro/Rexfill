@@ -64,8 +64,8 @@ const ProfilePage: FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 sm:p-4 lg:p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 px-4 sm:px-6 lg:px-8 pt-0 sm:pt-1 lg:pt-1 pb-4 sm:pb-6 lg:pb-8">
+      <div className="mx-auto">
         {/* Header */}
         <div className="mb-6">
           <button
@@ -87,12 +87,14 @@ const ProfilePage: FC = () => {
         <ProfileMobileNav activeSection={activeSection} onSectionChange={setActiveSection} />
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
           {/* Sidebar Navigation (Desktop) */}
-          <ProfileNavigation activeSection={activeSection} onSectionChange={setActiveSection} />
+          <div className="lg:col-span-2">
+            <ProfileNavigation activeSection={activeSection} onSectionChange={setActiveSection} />
+          </div>
 
           {/* Content Area */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-6">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 sm:p-8">
               {renderContent()}
             </div>

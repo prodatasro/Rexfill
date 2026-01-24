@@ -20,7 +20,7 @@ export const ProfileNavigation: FC<ProfileNavigationProps> = ({ activeSection, o
   ];
 
   return (
-    <nav className="hidden lg:block w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 h-fit sticky top-6">
+    <nav className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 h-fit sticky top-6">
       <div className="space-y-2">
         {navItems.map(({ id, icon: Icon, labelKey }) => {
           const isActive = activeSection === id;
@@ -28,7 +28,7 @@ export const ProfileNavigation: FC<ProfileNavigationProps> = ({ activeSection, o
             <button
               key={id}
               onClick={() => onSectionChange(id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'

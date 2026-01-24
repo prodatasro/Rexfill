@@ -4,6 +4,7 @@ import { FileText, ClipboardList, Sparkles, X, Loader2, Rocket, Save, FilePlus, 
 import { WordTemplateData } from "../../types/word-template";
 import { FolderTreeNode } from "../../types/folder";
 import { useTranslation, Trans } from "react-i18next";
+import { useAuth } from "../../contexts/AuthContext";
 import { useProcessor } from "../../contexts/ProcessorContext";
 import { useWordTemplateProcessor } from "../../hooks/useWordTemplateProcessor";
 import { useMultiFileProcessor } from "../../hooks/useMultiFileProcessor";
@@ -16,6 +17,7 @@ import { VirtualizedFieldList } from "./VirtualizedFieldList";
 import { BatchStatusPanel } from "./BatchStatusPanel";
 import { FieldSearch } from "./FieldSearch";
 import { FieldSorting, SortOption } from "./FieldSorting";
+import { logActivity } from "../../utils/activityLogger";
 
 interface WordTemplateProcessorProps {
   // Single file mode
@@ -40,6 +42,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   onTemplateChange,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { setHasUnsavedChanges, setRequestNavigation } = useProcessor();
 
   // Determine if we're in multi-file mode
@@ -114,6 +117,79 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
 
   // Sorting state
   const [sortOption, setSortOption] = useState<SortOption>('default');
+
+  // Track if we've already logged file opening to prevent duplicates
+  const hasLoggedOpen = useRef(false);
+
+  // Log when file is opened for processing
+  useEffect(() => {
+    if (hasLoggedOpen.current) return;
+    
+    const logFileOpened = async () => {
+      hasLoggedOpen.current = true;
+      
+      if (isMultiFileMode) {
+        // Log each file in multi-file mode
+        for (const template of templates) {
+          await logActivity({
+            action: 'opened',
+            resource_type: 'template',
+            resource_id: template.key,
+            resource_name: template.data.name,
+            created_by: template.owner || 'unknown',
+            modified_by: user?.key || template.owner || 'unknown',
+            success: true,
+            file_size: template.data.size,
+            folder_path: template.data.folderPath,
+            mime_type: template.data.mimeType,
+          });
+        }
+        for (const file of files) {
+          await logActivity({
+            action: 'opened',
+            resource_type: 'onetime_file',
+            resource_id: `onetime_${file.name}_${Date.now()}`,
+            resource_name: file.name,
+            created_by: user?.key || 'unknown',
+            modified_by: user?.key || 'unknown',
+            success: true,
+            file_size: file.size,
+            mime_type: file.type,
+          });
+        }
+      } else {
+        // Log single file
+        if (template) {
+          await logActivity({
+            action: 'opened',
+            resource_type: 'template',
+            resource_id: template.key,
+            resource_name: template.data.name,
+            created_by: template.owner || 'unknown',
+            modified_by: user?.key || template.owner || 'unknown',
+            success: true,
+            file_size: template.data.size,
+            folder_path: template.data.folderPath,
+            mime_type: template.data.mimeType,
+          });
+        } else if (file) {
+          await logActivity({
+            action: 'opened',
+            resource_type: 'onetime_file',
+            resource_id: `onetime_${file.name}_${Date.now()}`,
+            resource_name: file.name,
+            created_by: user?.key || 'unknown',
+            modified_by: user?.key || 'unknown',
+            success: true,
+            file_size: file.size,
+            mime_type: file.type,
+          });
+        }
+      }
+    };
+
+    logFileOpened();
+  }, []); // Only run once on mount
 
   // Initialize all files as expanded (only when IDs change)
   const processingTemplateIds = processingTemplates.map(pt => pt.id).join(',');

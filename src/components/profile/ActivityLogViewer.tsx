@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileDown, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileDown, Search, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { ActivityLogData } from '../../types';
 import { fetchAllLogs, downloadLogCSV, generateLogCSV } from '../../utils/activityLogger';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -155,6 +155,24 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
     });
   };
 
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedActions(new Set());
+    setSelectedResourceTypes(new Set());
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const hasActiveFilters = useMemo(() => {
+    return (
+      searchQuery !== '' ||
+      selectedActions.size > 0 ||
+      selectedResourceTypes.size > 0 ||
+      dateFrom !== '' ||
+      dateTo !== ''
+    );
+  }, [searchQuery, selectedActions, selectedResourceTypes, dateFrom, dateTo]);
+
   const uniqueActions = useMemo(() => {
     return Array.from(new Set(logs.map((log) => log.action))).sort();
   }, [logs]);
@@ -165,6 +183,29 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
 
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const formatDetails = (log: ActivityLogData): string => {
+    let details = '';
+    if (log.action === 'renamed' && log.old_value && log.new_value) {
+      details = `${log.old_value} → ${log.new_value}`;
+    } else if (log.action === 'moved' && log.old_value && log.new_value) {
+      details = `${log.old_value} → ${log.new_value}`;
+    } else if (log.file_size !== undefined) {
+      details = `${formatFileSize(log.file_size)}`;
+    }
+    if (log.folder_path) {
+      details += details ? ` (${log.folder_path})` : log.folder_path;
+    }
+    return details || '-';
   };
 
   const getStatusBadge = (success: boolean) => {
@@ -202,6 +243,15 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
           </p>
         </div>
         <div className="flex gap-2">
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 font-semibold rounded-xl transition-colors"
+            >
+              <X size={16} />
+              {t('profile.activityLog.resetFilters')}
+            </button>
+          )}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2 px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition-colors"
@@ -331,6 +381,9 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
                 {t('profile.activityLog.resourceName')}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                {t('profile.activityLog.details')}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                 {t('profile.activityLog.status')}
               </th>
             </tr>
@@ -338,7 +391,7 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
             {visibleLogs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
                   {t('profile.activityLog.noLogs')}
                 </td>
               </tr>
@@ -361,6 +414,9 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
                         {log.error_message}
                       </div>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                    {formatDetails(log)}
                   </td>
                   <td className="px-4 py-3 text-sm">{getStatusBadge(log.success)}</td>
                 </tr>
