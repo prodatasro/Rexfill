@@ -372,28 +372,29 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
 
       {/* Pagination controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border-t-2 border-slate-200 dark:border-slate-700 rounded-b-xl">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-slate-800 border-t-2 border-slate-200 dark:border-slate-700 rounded-b-xl">
           <div className="flex items-center gap-2">
             <button
               onClick={goToPreviousPage}
               disabled={currentPage === 1}
-              className="flex items-center gap-1 px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               <ChevronLeft size={16} />
-              Previous
+              <span className="hidden sm:inline">Previous</span>
+              <span className="sm:hidden">Prev</span>
             </button>
             <button
               onClick={goToNextPage}
               disabled={currentPage === totalPages}
-              className="flex items-center gap-1 px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               Next
               <ChevronRight size={16} />
             </button>
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <span className="text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
               Page {currentPage} of {totalPages}
             </span>
             <div className="flex gap-1">
@@ -412,7 +413,7 @@ export const ActivityLogViewer: FC<ActivityLogViewerProps> = ({ className = '' }
                   <button
                     key={pageNum}
                     onClick={() => goToPage(pageNum)}
-                    className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-2.5 sm:px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
                       currentPage === pageNum
                         ? 'bg-blue-600 text-white'
                         : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'

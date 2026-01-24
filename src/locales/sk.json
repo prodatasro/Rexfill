@@ -172,7 +172,6 @@
   "profile": {
     "title": "Používateľský profil",
     "subtitle": "Spravujte nastavenia účtu a zobrazujte záznamy aktivít",
-    "profileInfo": "Informácie o profile",
     "editProfile": "Upraviť profil",
     "displayName": "Zobrazované meno",
     "displayNamePlaceholder": "Zadajte svoje meno",
@@ -186,6 +185,45 @@
     "sessionInfo": "Informácie o relácii",
     "principalId": "Principal ID",
     "notLoggedIn": "Prihláste sa pre zobrazenie profilu",
+    "nav": {
+      "section": "Sekcia",
+      "profile": "Môj profil",
+      "settings": "Nastavenia účtu",
+      "subscription": "Predplatné a využitie",
+      "activity": "Záznamy aktivít"
+    },
+    "profileInfo": {
+      "subtitle": "Spravujte svoje osobné informácie a avatar"
+    },
+    "settings": {
+      "subtitle": "Prispôsobte si prostredie a spravujte detaily účtu",
+      "theme": {
+        "title": "Vzhľad",
+        "light": "Svetlý režim",
+        "dark": "Tmavý režim",
+        "description": "Vyberte si preferovanú tému"
+      },
+      "language": {
+        "title": "Jazyk"
+      }
+    },
+    "subscription": {
+      "subtitle": "Zobrazenie detailov plánu a štatistík využitia",
+      "currentPlan": "Aktuálny plán",
+      "usage": "Štatistiky využitia",
+      "documentsToday": "Dokumenty dnes",
+      "documentsThisMonth": "Dokumenty tento mesiac",
+      "totalTemplates": "Celkový počet šablón",
+      "planDescription": {
+        "free": "Bezplatný plán so základnými funkciami",
+        "starter": "Štartovací plán s rozšírenými limitmi",
+        "professional": "Profesionálny plán s pokročilými funkciami",
+        "enterprise": "Podnikový plán s neobmedzeným prístupom"
+      }
+    },
+    "activity": {
+      "subtitle": "Zobrazenie aktivít účtu a auditného záznamu"
+    },
     "avatar": {
       "upload": "Nahrať",
       "remove": "Odstrániť",
@@ -227,15 +265,28 @@
       "exporting": "Exportujem vaše dáta...",
       "exportSuccess": "Dáta boli úspešne exportované",
       "exportFailed": "Nepodarilo sa exportovať dáta",
-      "blockchainWarning": "Dôležité: Trvalé uloženie dát",
-      "blockchainExplanation": "Záznamy aktivít sú uložené na blockchaine Internet Computer a sú trvalé. Hoci si môžete stiahnuť všetky svoje dáta, záznamy aktivít nie je možné z blockchainu zmazať. To zabezpečuje transparentnosť a bezpečnosť.",
+      "blockchainWarning": "Dôležité: Správa dát",
+      "blockchainExplanation": "Môžete vymazať všetky svoje šablóny, priečinky a ostatné dáta, pričom si zachováte aktívny profil pre budúce prihlásenie. Záznamy aktivít uložené na blockchaine sú trvalé kvôli transparentnosti a bezpečnosti, ale všetky ostatné dáta možno odstrániť.",
       "includedData": "Váš export obsahuje:",
       "dataProfile": "Informácie o profile (meno, email, avatar)",
       "dataTemplates": "Všetky šablóny dokumentov a súbory",
       "dataFolders": "Štruktúru priečinkov a metadáta",
       "dataLogs": "Kompletnú históriu záznamov aktivít (trvalé blockchain záznamy)",
       "dataSubscription": "Informácie o predplatnom a fakturácii",
-      "dataUsage": "Štatistiky využitia a kvóty"
+      "dataUsage": "Štatistiky využitia a kvóty",
+      "deleteAll": "Vymazať všetky dáta",
+      "deleteWarning": "Varovanie: Trvalé vymazanie",
+      "deleteExplanation": "Toto trvalo vymaže všetky vaše šablóny a priečinky. Váš profil zostane aktívny, takže sa budete môcť naďalej prihlasovať. Túto akciu nie je možné vrátiť späť.",
+      "deleteConfirm": "Napíšte DELETE na potvrdenie",
+      "deleteConfirmPlaceholder": "Napíšte DELETE",
+      "deleting": "Mažú sa vaše dáta...",
+      "deletingTemplates": "Mažú sa šablóny...",
+      "deletingFolders": "Mažú sa priečinky...",
+      "deleteSuccess": "Všetky dáta boli úspešne vymazané",
+      "deleteFailed": "Nepodarilo sa vymazať dáta",
+      "deleteIncomplete": "Prosím napíšte DELETE na potvrdenie",
+      "deleteTitle": "Vymazať všetky dáta",
+      "deleteDescription": "Trvalo vymazať všetky vaše šablóny a priečinky, pričom si zachováte aktívny profil."
     }
   }
 }

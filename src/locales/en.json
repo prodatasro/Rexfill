@@ -36,6 +36,45 @@
     "sessionInfo": "Session Information",
     "principalId": "Principal ID",
     "notLoggedIn": "Please log in to view your profile",
+    "nav": {
+      "section": "Section",
+      "profile": "My Profile",
+      "settings": "Account Settings",
+      "subscription": "Subscription & Usage",
+      "activity": "Activity Log"
+    },
+    "profileInfo": {
+      "subtitle": "Manage your personal information and avatar"
+    },
+    "settings": {
+      "subtitle": "Customize your experience and manage account details",
+      "theme": {
+        "title": "Appearance",
+        "light": "Light Mode",
+        "dark": "Dark Mode",
+        "description": "Choose your preferred theme"
+      },
+      "language": {
+        "title": "Language"
+      }
+    },
+    "subscription": {
+      "subtitle": "View your plan details and usage statistics",
+      "currentPlan": "Current Plan",
+      "usage": "Usage Statistics",
+      "documentsToday": "Documents Today",
+      "documentsThisMonth": "Documents This Month",
+      "totalTemplates": "Total Templates",
+      "planDescription": {
+        "free": "Free plan with basic features",
+        "starter": "Starter plan with enhanced limits",
+        "professional": "Professional plan with advanced features",
+        "enterprise": "Enterprise plan with unlimited access"
+      }
+    },
+    "activity": {
+      "subtitle": "View your account activity and audit trail"
+    },
     "avatar": {
       "upload": "Upload",
       "remove": "Remove",
@@ -77,15 +116,28 @@
       "exporting": "Exporting your data...",
       "exportSuccess": "Data exported successfully",
       "exportFailed": "Failed to export data",
-      "blockchainWarning": "Important: Data Permanence",
-      "blockchainExplanation": "Activity logs are stored on the Internet Computer blockchain and are permanent. While you can download all your data, activity logs cannot be deleted from the blockchain. This ensures transparency and security.",
+      "blockchainWarning": "Important: Data Management",
+      "blockchainExplanation": "You can delete all your templates, folders, and other data while keeping your profile active for future login. Activity logs stored on the blockchain are permanent for transparency and security, but all other data can be removed.",
       "includedData": "Your export includes:",
       "dataProfile": "Profile information (name, email, avatar)",
       "dataTemplates": "All document templates and files",
       "dataFolders": "Folder structure and metadata",
       "dataLogs": "Complete activity log history (permanent blockchain records)",
       "dataSubscription": "Subscription and billing information",
-      "dataUsage": "Usage statistics and quotas"
+      "dataUsage": "Usage statistics and quotas",
+      "deleteAll": "Delete All Data",
+      "deleteWarning": "Warning: Permanent Deletion",
+      "deleteExplanation": "This will permanently delete all your templates and folders. Your profile will remain active so you can continue to log in. This action cannot be undone.",
+      "deleteConfirm": "Type DELETE to confirm",
+      "deleteConfirmPlaceholder": "Type DELETE",
+      "deleting": "Deleting your data...",
+      "deletingTemplates": "Deleting templates...",
+      "deletingFolders": "Deleting folders...",
+      "deleteSuccess": "All data deleted successfully",
+      "deleteFailed": "Failed to delete data",
+      "deleteIncomplete": "Please type DELETE to confirm",
+      "deleteTitle": "Delete All Data",
+      "deleteDescription": "Permanently delete all your templates and folders while keeping your profile active."
     }
   }
 }

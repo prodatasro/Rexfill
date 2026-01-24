@@ -460,8 +460,13 @@ export async function createGDPRExportZip(
     activityLogs: logExports,
   };
 
+  // Custom JSON replacer to handle BigInt values
+  const bigIntReplacer = (_key: string, value: any) => {
+    return typeof value === 'bigint' ? value.toString() : value;
+  };
+
   // Add user data as JSON
-  zip.file('user_data.json', JSON.stringify(gdprData, null, 2));
+  zip.file('user_data.json', JSON.stringify(gdprData, bigIntReplacer, 2));
 
   // Add a README explaining the export
   const readme = `GDPR Data Export
