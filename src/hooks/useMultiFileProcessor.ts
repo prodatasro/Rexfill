@@ -9,6 +9,7 @@ import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
 import { useTranslation } from "react-i18next";
 import { ProcessingProgress } from "./useDocumentWorker";
 import { uploadFileWithTimeout, setDocWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
+import { useSubscription } from "../contexts/SubscriptionContext";
 
 const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
 
@@ -22,6 +23,7 @@ export const useMultiFileProcessor = ({
   files = [],
 }: UseMultiFileProcessorProps) => {
   const { t } = useTranslation();
+  const { canProcessDocument, incrementDocumentUsage, showUpgradePrompt, plan } = useSubscription();
 
   // State for extracted data from all files
   const [processingTemplates, setProcessingTemplates] = useState<ProcessingTemplate[]>([]);
@@ -280,6 +282,20 @@ export const useMultiFileProcessor = ({
   };
 
   const processAllDocuments = async (retryFileIds?: string[]): Promise<boolean> => {
+    // Check if batch processing is allowed on this plan
+    if (!plan.limits.batchProcessing) {
+      showErrorToast(t('subscription.batchProcessingNotAvailable'));
+      showUpgradePrompt();
+      return false;
+    }
+
+    // Check subscription limits before processing
+    if (!canProcessDocument()) {
+      showErrorToast(t('subscription.limitReached'));
+      showUpgradePrompt();
+      return false;
+    }
+
     setProcessing(true);
 
     // Determine which templates to process (all or only retry ones)
@@ -322,6 +338,24 @@ export const useMultiFileProcessor = ({
         });
 
         try {
+          // Check limits before processing each document (user may hit limit mid-batch)
+          if (!canProcessDocument()) {
+            const errorMessage = t('subscription.limitReached');
+            
+            // Update status to error
+            setFileStatuses(prev => prev.map(s =>
+              s.id === pt.id
+                ? { ...s, status: 'error' as const, error: errorMessage }
+                : s
+            ));
+            
+            errors.push({ id: pt.id, fileName: pt.fileName, error: errorMessage });
+            
+            // Stop processing and show upgrade prompt
+            showUpgradePrompt();
+            break;
+          }
+
           // Pass formData directly to avoid stale closure issues
           const blob = await generateProcessedBlob(pt, formData);
           results.push({
@@ -329,6 +363,9 @@ export const useMultiFileProcessor = ({
             fileName: pt.fileName,
             blob,
           });
+
+          // Increment usage counter for this document
+          await incrementDocumentUsage();
 
           // Update status to success
           setFileStatuses(prev => prev.map(s =>

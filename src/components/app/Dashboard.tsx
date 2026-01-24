@@ -26,6 +26,7 @@ import { useRecentTemplates } from '../../hooks/useRecentTemplates';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useFileProcessing } from '../../contexts/FileProcessingContext';
 import { useSearch } from '../../contexts/SearchContext';
+import { useSubscription } from '../../contexts/SubscriptionContext';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { updateTemplatePathAfterRename, buildTemplatePath } from '../../utils/templatePathUtils';
 import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../../utils/templateDeletion';
@@ -43,6 +44,7 @@ const Dashboard: FC = () => {
   const { setOneTimeFile } = useFileProcessing();
   const { setAllTemplates, setFolderTree, setOnSelectTemplate, setOnSelectFolder } = useSearch();
   const { user } = useAuth();
+  const { refreshUsage } = useSubscription();
 
   // Initialize selectedFolderId from URL params BEFORE any hook calls
   const folderIdFromParams = searchParams.get('folder');
@@ -271,6 +273,9 @@ const Dashboard: FC = () => {
       const storageAssetMap = await buildStorageAssetMap();
       await deleteTemplates(templatesInFolders, storageAssetMap);
 
+      // Refresh usage to update template count
+      await refreshUsage();
+
       // Remove deleted templates from recent list
       templatesInFolders.forEach(t => removeRecentTemplate(t.key));
 
@@ -326,6 +331,9 @@ const Dashboard: FC = () => {
       // Build storage asset map and delete all templates
       const storageAssetMap = await buildStorageAssetMap();
       await deleteTemplates(templatesInFolders, storageAssetMap);
+
+      // Refresh usage to update template count
+      await refreshUsage();
 
       // Remove deleted templates from recent list
       templatesInFolders.forEach(t => removeRecentTemplate(t.key));

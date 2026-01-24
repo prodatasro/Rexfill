@@ -1,11 +1,16 @@
 // Subscription and usage types
 
-export type PlanId = 'free' | 'starter' | 'professional' | 'enterprise';
+export type PlanId = 'free' | 'starter' | 'professional' | 'enterprise' | 'team' | 'business' | 'enterprise_org';
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing';
+export type SubscriptionType = 'individual' | 'organization';
 
 export interface SubscriptionData {
   planId: PlanId;
   status: SubscriptionStatus;
+  type: SubscriptionType; // Individual or organization subscription
+  organizationId?: string; // Reference to organization if this is an org subscription
+  seatsIncluded?: number; // Number of seats included in the plan (for org subscriptions)
+  seatsUsed?: number; // Number of seats currently used (for org subscriptions)
   paddleSubscriptionId?: string;
   paddleCustomerId?: string;
   currentPeriodStart: number;

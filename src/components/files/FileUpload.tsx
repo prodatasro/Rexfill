@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { listDocsWithTimeout, uploadFileWithTimeout, setDocWithTimeout } from '../../utils/junoWithTimeout';
 import { TimeoutError } from '../../utils/fetchWithTimeout';
 import { logActivity } from '../../utils/activityLogger';
-import { useAuth } from '../../contexts';
+import { useAuth, useSubscription } from '../../contexts';
 
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;
@@ -38,6 +38,7 @@ interface UploadProgress {
 const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, onSaveAndProcess, selectedFolderId, folderTree, compact = false }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { canUploadTemplate, incrementTemplateCount, showUpgradePrompt, plan, usage } = useSubscription();
   const [uploading, setUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<UploadMode>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -129,6 +130,38 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
     }
 
     // Save or Save and Process mode - upload with folder
+    
+    // Check subscription limits before uploading
+    const isUnlimited = plan.limits.maxTemplates === -1;
+    const availableSlots = isUnlimited ? Infinity : plan.limits.maxTemplates - usage.totalTemplates;
+    
+    if (!isUnlimited && selectedFiles.length > availableSlots) {
+      showErrorToast(
+        t('subscription.templateLimitExceeded', { 
+          available: availableSlots,
+          requested: selectedFiles.length 
+        }) || `You can upload ${availableSlots} more template(s). You're trying to upload ${selectedFiles.length}.`
+      );
+      showUpgradePrompt();
+      setUploadMode(null);
+      setSelectedFiles([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    if (!canUploadTemplate()) {
+      showErrorToast(t('subscription.templateLimitReached'));
+      showUpgradePrompt();
+      setUploadMode(null);
+      setSelectedFiles([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
     setUploading(true);
     let successCount = 0;
     let failedFiles: string[] = [];
@@ -230,6 +263,9 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
           // Track the template key for saveAndProcess mode
           savedTemplateKey = result.name;
           successCount++;
+
+          // Increment template count in subscription context
+          await incrementTemplateCount();
 
           // Log successful upload
           try {

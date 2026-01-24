@@ -1,19 +1,64 @@
 import { FC, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Check, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Check, X, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SUBSCRIPTION_PLANS, isUnlimited } from '../../config/plans';
+import { SUBSCRIPTION_PLANS, INDIVIDUAL_PLANS, ORGANIZATION_PLANS, isUnlimited } from '../../config/plans';
+import { openCheckout, initPaddle } from '../../lib/paddle';
+import { useAuth } from '../../contexts/AuthContext';
+import { showErrorToast } from '../../utils/toast';
 
 const PricingPage: FC = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  // Initialize Paddle on component mount
+  useState(() => {
+    initPaddle().catch(console.error);
+  });
 
   const plans = [
-    { ...SUBSCRIPTION_PLANS.free, popular: false },
-    { ...SUBSCRIPTION_PLANS.starter, popular: false },
-    { ...SUBSCRIPTION_PLANS.professional, popular: true },
-    { ...SUBSCRIPTION_PLANS.enterprise, popular: false },
+    { ...INDIVIDUAL_PLANS.free, popular: false },
+    { ...INDIVIDUAL_PLANS.starter, popular: false },
+    { ...INDIVIDUAL_PLANS.professional, popular: true },
+    { ...INDIVIDUAL_PLANS.enterprise, popular: false },
   ];
+
+  const handlePlanSelect = async (planId: string) => {
+    // Free plan - just navigate to app
+    if (planId === 'free') {
+      navigate('/app');
+      return;
+    }
+
+    // User must be logged in to purchase
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setCheckoutLoading(planId);
+debugger;
+    try {
+      await openCheckout(
+        planId as 'starter' | 'professional' | 'enterprise',
+        billingCycle,
+        {
+          customData: {
+            userId: user.key,
+          },
+        }
+      );
+    } catch (error) {
+      debugger;
+      console.error('Failed to open checkout:', error);
+      showErrorToast(t('pricing.checkoutError') || 'Failed to open checkout. Please try again.');
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
 
   const getPrice = (plan: typeof plans[0]) => {
     if (plan.price.monthly === 0) return t('pricing.free');
@@ -109,48 +154,56 @@ const PricingPage: FC = () => {
               </div>
 
               {/* CTA button */}
-              <Link
-                to="/app"
-                className={`block text-center py-3 px-4 rounded-lg font-semibold transition-all mb-8 ${
+              <button
+                onClick={() => handlePlanSelect(plan.id)}
+                disabled={checkoutLoading !== null}
+                className={`w-full text-center py-3 px-4 rounded-lg font-semibold transition-all mb-8 flex items-center justify-center gap-2 ${
                   plan.popular
-                    ? 'bg-primary-600 text-white hover:bg-primary-700'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600'
+                    ? 'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-primary-400'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50'
                 }`}
               >
-                {t(`pricing.plans.${plan.id}.cta`)}
-              </Link>
+                {checkoutLoading === plan.id ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {t('pricing.loading')}
+                  </>
+                ) : (
+                  t(`pricing.plans.${plan.id}.cta`)
+                )}
+              </button>
 
               {/* Features list */}
               <ul className="space-y-3">
                 <li className="flex items-center gap-3 text-sm">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <Check className="w-5 h-5 text-green-500 shrink-0" />
                   <span className="text-slate-700 dark:text-slate-300">
                     {t('pricing.features.documentsPerDay', { value: formatLimit(plan.limits.documentsPerDay, 'docs') })}
                   </span>
                 </li>
                 <li className="flex items-center gap-3 text-sm">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <Check className="w-5 h-5 text-green-500 shrink-0" />
                   <span className="text-slate-700 dark:text-slate-300">
                     {t('pricing.features.documentsPerMonth', { value: formatLimit(plan.limits.documentsPerMonth, 'docs') })}
                   </span>
                 </li>
                 <li className="flex items-center gap-3 text-sm">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <Check className="w-5 h-5 text-green-500 shrink-0" />
                   <span className="text-slate-700 dark:text-slate-300">
                     {t('pricing.features.maxTemplates', { value: formatLimit(plan.limits.maxTemplates, 'templates') })}
                   </span>
                 </li>
                 <li className="flex items-center gap-3 text-sm">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <Check className="w-5 h-5 text-green-500 shrink-0" />
                   <span className="text-slate-700 dark:text-slate-300">
                     {t('pricing.features.maxFileSize', { size: plan.limits.maxFileSize })}
                   </span>
                 </li>
                 <li className="flex items-center gap-3 text-sm">
                   {plan.limits.batchProcessing ? (
-                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <Check className="w-5 h-5 text-green-500 shrink-0" />
                   ) : (
-                    <X className="w-5 h-5 text-slate-300 dark:text-slate-600 flex-shrink-0" />
+                    <X className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0" />
                   )}
                   <span className={plan.limits.batchProcessing ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}>
                     {t('pricing.features.batchProcessing')}
@@ -158,9 +211,9 @@ const PricingPage: FC = () => {
                 </li>
                 <li className="flex items-center gap-3 text-sm">
                   {plan.limits.prioritySupport ? (
-                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <Check className="w-5 h-5 text-green-500 shrink-0" />
                   ) : (
-                    <X className="w-5 h-5 text-slate-300 dark:text-slate-600 flex-shrink-0" />
+                    <X className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0" />
                   )}
                   <span className={plan.limits.prioritySupport ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}>
                     {t('pricing.features.prioritySupport')}

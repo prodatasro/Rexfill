@@ -10,6 +10,7 @@ import {
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { TimeoutError } from '../utils/fetchWithTimeout';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 // Query keys for cache management
 export const templateKeys = {
@@ -64,6 +65,7 @@ export function useTemplatesByFolderQuery(folderId: string | null) {
 export function useDeleteTemplateMutation() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { decrementTemplateCount } = useSubscription();
 
   return useMutation({
     mutationFn: async (template: Doc<WordTemplateData>) => {
@@ -110,7 +112,9 @@ export function useDeleteTemplateMutation() {
         showErrorToast(t('fileList.deleteFailed'));
       }
     },
-    onSuccess: (template) => {
+    onSuccess: async (template) => {
+      // Decrement template count
+      await decrementTemplateCount();
       showSuccessToast(t('fileList.deleteSuccess', { filename: template.data.name }));
     },
     onSettled: () => {

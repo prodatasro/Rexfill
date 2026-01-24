@@ -17,7 +17,6 @@ declare global {
 
 interface PaddleInitOptions {
   token: string;
-  environment?: 'sandbox' | 'production';
   eventCallback?: (event: PaddleEvent) => void;
 }
 
@@ -43,7 +42,6 @@ interface PaddleEvent {
 
 // Environment variables for Paddle configuration
 const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN || '';
-const PADDLE_ENVIRONMENT = (import.meta.env.VITE_PADDLE_ENVIRONMENT || 'sandbox') as 'sandbox' | 'production';
 
 // Price IDs for each plan (configure in .env)
 export const PADDLE_PRICES = {
@@ -58,6 +56,18 @@ export const PADDLE_PRICES = {
   enterprise: {
     monthly: import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE_MONTHLY || '',
     annual: import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE_ANNUAL || '',
+  },
+  team: {
+    monthly: import.meta.env.VITE_PADDLE_PRICE_TEAM_MONTHLY || '',
+    annual: import.meta.env.VITE_PADDLE_PRICE_TEAM_ANNUAL || '',
+  },
+  business: {
+    monthly: import.meta.env.VITE_PADDLE_PRICE_BUSINESS_MONTHLY || '',
+    annual: import.meta.env.VITE_PADDLE_PRICE_BUSINESS_ANNUAL || '',
+  },
+  enterprise_org: {
+    monthly: import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE_ORG_MONTHLY || '',
+    annual: import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE_ORG_ANNUAL || '',
   },
 };
 
@@ -92,7 +102,6 @@ export const initPaddle = (): Promise<void> => {
       try {
         window.Paddle.Initialize({
           token: PADDLE_CLIENT_TOKEN,
-          environment: PADDLE_ENVIRONMENT,
           eventCallback: handlePaddleEvent,
         });
         isInitialized = true;
@@ -113,7 +122,6 @@ export const initPaddle = (): Promise<void> => {
         try {
           window.Paddle.Initialize({
             token: PADDLE_CLIENT_TOKEN,
-            environment: PADDLE_ENVIRONMENT,
             eventCallback: handlePaddleEvent,
           });
           isInitialized = true;
@@ -170,7 +178,7 @@ const handlePaddleEvent = (event: PaddleEvent) => {
  * Open Paddle checkout for a subscription
  */
 export const openCheckout = async (
-  planId: 'starter' | 'professional' | 'enterprise',
+  planId: 'starter' | 'professional' | 'enterprise' | 'team' | 'business' | 'enterprise_org',
   billingCycle: 'monthly' | 'annual',
   options?: {
     email?: string;
@@ -192,17 +200,23 @@ export const openCheckout = async (
     throw new Error(`Price ID not configured for ${planId} ${billingCycle}`);
   }
 
-  window.Paddle.Checkout.open({
-    items: [{ priceId, quantity: 1 }],
-    customData: options?.customData,
-    customer: options?.email ? { email: options.email } : undefined,
-    settings: {
-      displayMode: 'overlay',
-      theme: options?.theme || 'light',
-      locale: options?.locale || 'en',
-      allowLogout: false,
-    },
-  });
+  try {
+    window.Paddle.Checkout.open({
+      items: [{ priceId, quantity: 1 }],
+      ...(options?.customData && { customData: options.customData }),
+      ...(options?.email && { customer: { email: options.email } }),
+      settings: {
+        displayMode: 'overlay',
+        theme: options?.theme || 'light',
+        locale: options?.locale || 'en',
+        allowLogout: false,
+        successUrl: `${window.location.origin}/app/subscription?success=true`,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to open Paddle checkout:', error);
+    throw error;
+  }
 };
 
 /**
@@ -210,11 +224,4 @@ export const openCheckout = async (
  */
 export const isPaddleConfigured = (): boolean => {
   return Boolean(PADDLE_CLIENT_TOKEN);
-};
-
-/**
- * Check if Paddle is in sandbox mode
- */
-export const isPaddleSandbox = (): boolean => {
-  return PADDLE_ENVIRONMENT === 'sandbox';
 };

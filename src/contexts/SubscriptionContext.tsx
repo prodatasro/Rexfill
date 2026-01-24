@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from 'react';
+import { getDoc, setDoc, listDocs } from '@junobuild/core';
 import { useAuth } from './AuthContext';
 import { SUBSCRIPTION_PLANS, SubscriptionPlan, isUnlimited } from '../config/plans';
-import { SubscriptionData, UsageSummary, PlanId } from '../types/subscription';
+import { SubscriptionData, UsageSummary, PlanId, SubscriptionType } from '../types/subscription';
 import { logActivity } from '../utils/activityLogger';
 
 interface SubscriptionContextType {
@@ -14,12 +15,14 @@ interface SubscriptionContextType {
   canProcessDocument: () => boolean;
   canUploadTemplate: () => boolean;
   incrementDocumentUsage: () => Promise<void>;
+  incrementTemplateCount: () => Promise<void>;
+  decrementTemplateCount: () => Promise<void>;
   checkLimits: () => { withinLimits: boolean; message?: string };
   upgradePromptVisible: boolean;
   showUpgradePrompt: () => void;
   hideUpgradePrompt: () => void;
   refreshUsage: () => Promise<void>;
-  updateSubscription: (planId: PlanId) => Promise<void>;
+  updateSubscription: (planId: PlanId, paddleData?: { subscriptionId: string; customerId: string }) => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -45,7 +48,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
     ? SUBSCRIPTION_PLANS[subscription.planId]
     : SUBSCRIPTION_PLANS.free;
 
-  // Load subscription and usage data
+  // Load subscription and usage data from Juno
   useEffect(() => {
     const loadSubscriptionData = async () => {
       if (!user) {
@@ -62,44 +65,122 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
 
       setIsLoading(true);
       try {
-        // TODO: Load subscription data from Juno datastore
-        // For now, default to free plan
-        const storedSubscription = localStorage.getItem(`subscription_${user.key}`);
-        if (storedSubscription) {
-          setSubscription(JSON.parse(storedSubscription));
+        // Load subscription from Juno datastore
+        const subscriptionDoc = await getDoc({
+          collection: 'subscriptions',
+          key: user.key,
+        });
+
+        if (subscriptionDoc) {
+          setSubscription(subscriptionDoc.data as SubscriptionData);
         } else {
-          // Default free subscription
-          setSubscription({
+          // Create default free subscription for new users
+          const defaultSubscription: SubscriptionData = {
             planId: 'free' as PlanId,
             status: 'active',
+            type: 'individual' as SubscriptionType,
             currentPeriodStart: Date.now(),
             currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
             cancelAtPeriodEnd: false,
             createdAt: Date.now(),
             updatedAt: Date.now(),
+          };
+
+          await setDoc({
+            collection: 'subscriptions',
+            doc: {
+              key: user.key,
+              data: defaultSubscription,
+            },
           });
+
+          setSubscription(defaultSubscription);
         }
 
-        // Load usage from localStorage (will be replaced with Juno)
-        const storedUsage = localStorage.getItem(`usage_${user.key}`);
-        if (storedUsage) {
-          const parsedUsage = JSON.parse(storedUsage);
-          // Reset daily usage if it's a new day
-          const today = new Date().toDateString();
-          const lastUpdated = new Date(parsedUsage.lastUpdated).toDateString();
-          if (today !== lastUpdated) {
-            parsedUsage.documentsToday = 0;
-          }
-          // Reset monthly usage if it's a new month
-          const thisMonth = new Date().toISOString().slice(0, 7);
-          const lastMonth = new Date(parsedUsage.lastUpdated).toISOString().slice(0, 7);
-          if (thisMonth !== lastMonth) {
-            parsedUsage.documentsThisMonth = 0;
-          }
-          setUsage(parsedUsage);
+        // Load usage from Juno datastore
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const usageDoc = await getDoc({
+          collection: 'usage',
+          key: `${user.key}_${today}`,
+        });
+
+        if (usageDoc) {
+          const usageData = usageDoc.data as any;
+          
+          // Calculate monthly usage by querying all docs for current month
+          const thisMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+          const monthlyDocs = await listDocs({
+            collection: 'usage',
+            filter: {
+              matcher: {
+                key: `${user.key}_${thisMonth}`,
+              },
+            },
+          });
+
+          let documentsThisMonth = 0;
+          monthlyDocs.items.forEach(doc => {
+            documentsThisMonth += (doc.data as any).documentsProcessed || 0;
+          });
+
+          // Get total templates count (from templates_meta collection)
+          const templateDocs = await listDocs({
+            collection: 'templates_meta',
+            filter: {
+              owner: user.key,
+            },
+          });
+
+          setUsage({
+            documentsToday: usageData.documentsProcessed || 0,
+            documentsThisMonth,
+            totalTemplates: templateDocs.items.length,
+            lastUpdated: Date.now(),
+          });
+        } else {
+          // Create initial usage document
+          const initialUsage = {
+            documentsProcessed: 0,
+            templatesUploaded: 0,
+          };
+
+          await setDoc({
+            collection: 'usage',
+            doc: {
+              key: `${user.key}_${today}`,
+              data: initialUsage,
+            },
+          });
+
+          // Get total templates count
+          const templateDocs = await listDocs({
+            collection: 'templates_meta',
+            filter: {
+              owner: user.key,
+            },
+          });
+
+          setUsage({
+            documentsToday: 0,
+            documentsThisMonth: 0,
+            totalTemplates: templateDocs.items.length,
+            lastUpdated: Date.now(),
+          });
         }
       } catch (error) {
         console.error('Failed to load subscription data:', error);
+        
+        // Fallback to default free plan
+        setSubscription({
+          planId: 'free' as PlanId,
+          status: 'active',
+          type: 'individual' as SubscriptionType,
+          currentPeriodStart: Date.now(),
+          currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          cancelAtPeriodEnd: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       } finally {
         setIsLoading(false);
       }
@@ -108,12 +189,36 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
     loadSubscriptionData();
   }, [user]);
 
-  // Save usage to localStorage when it changes
+  // Listen for Paddle checkout completion events
   useEffect(() => {
-    if (user && usage.lastUpdated) {
-      localStorage.setItem(`usage_${user.key}`, JSON.stringify(usage));
-    }
-  }, [user, usage]);
+    const handleCheckoutCompleted = async (event: CustomEvent) => {
+      console.log('Paddle checkout completed, refreshing subscription...', event.detail);
+      
+      // Wait a bit for Paddle webhook to update our backend
+      setTimeout(async () => {
+        if (user) {
+          try {
+            const subscriptionDoc = await getDoc({
+              collection: 'subscriptions',
+              key: user.key,
+            });
+            
+            if (subscriptionDoc) {
+              setSubscription(subscriptionDoc.data as SubscriptionData);
+            }
+          } catch (error) {
+            console.error('Failed to refresh subscription after checkout:', error);
+          }
+        }
+      }, 2000); // 2 second delay to allow webhook processing
+    };
+
+    window.addEventListener('paddle:checkout-completed', handleCheckoutCompleted as EventListener);
+    
+    return () => {
+      window.removeEventListener('paddle:checkout-completed', handleCheckoutCompleted as EventListener);
+    };
+  }, [user]);
 
   const canProcessDocument = useCallback(() => {
     if (isUnlimited(plan.limits.documentsPerDay)) return true;
@@ -128,13 +233,57 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
   }, [plan, usage]);
 
   const incrementDocumentUsage = useCallback(async () => {
+    if (!user) return;
+
+    const newUsage = {
+      ...usage,
+      documentsToday: usage.documentsToday + 1,
+      documentsThisMonth: usage.documentsThisMonth + 1,
+      lastUpdated: Date.now(),
+    };
+
+    setUsage(newUsage);
+
+    // Persist to Juno datastore
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const usageDoc = await getDoc({
+        collection: 'usage',
+        key: `${user.key}_${today}`,
+      });
+
+      const currentData = usageDoc?.data as any || { documentsProcessed: 0, templatesUploaded: 0 };
+
+      await setDoc({
+        collection: 'usage',
+        doc: {
+          key: `${user.key}_${today}`,
+          data: {
+            ...currentData,
+            documentsProcessed: currentData.documentsProcessed + 1,
+          },
+          updated_at: Date.now(),
+        },
+      });
+    } catch (error) {
+      console.error('Failed to persist usage:', error);
+    }
+  }, [user, usage]);
+
+  const incrementTemplateCount = useCallback(async () => {
     setUsage((prev) => ({
       ...prev,
-      documentsToday: prev.documentsToday + 1,
-      documentsThisMonth: prev.documentsThisMonth + 1,
+      totalTemplates: prev.totalTemplates + 1,
       lastUpdated: Date.now(),
     }));
-    // TODO: Persist to Juno datastore
+  }, []);
+
+  const decrementTemplateCount = useCallback(async () => {
+    setUsage((prev) => ({
+      ...prev,
+      totalTemplates: Math.max(0, prev.totalTemplates - 1),
+      lastUpdated: Date.now(),
+    }));
   }, []);
 
   const checkLimits = useCallback(() => {
@@ -169,34 +318,95 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
   }, []);
 
   const refreshUsage = useCallback(async () => {
-    // TODO: Reload usage from Juno
-    // For now, just update the lastUpdated timestamp
-    setUsage((prev) => ({ ...prev, lastUpdated: Date.now() }));
-  }, []);
+    if (!user) return;
 
-  const updateSubscription = useCallback(async (planId: PlanId) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const usageDoc = await getDoc({
+        collection: 'usage',
+        key: `${user.key}_${today}`,
+      });
+
+      if (usageDoc) {
+        const usageData = usageDoc.data as any;
+        
+        // Calculate monthly usage
+        const thisMonth = new Date().toISOString().slice(0, 7);
+        const monthlyDocs = await listDocs({
+          collection: 'usage',
+          filter: {
+            matcher: {
+              key: `${user.key}_${thisMonth}`,
+            },
+          },
+        });
+
+        let documentsThisMonth = 0;
+        monthlyDocs.items.forEach(doc => {
+          documentsThisMonth += (doc.data as any).documentsProcessed || 0;
+        });
+
+        // Get total templates count
+        const templateDocs = await listDocs({
+          collection: 'templates_meta',
+          filter: {
+            owner: user.key,
+          },
+        });
+
+        setUsage({
+          documentsToday: usageData.documentsProcessed || 0,
+          documentsThisMonth,
+          totalTemplates: templateDocs.items.length,
+          lastUpdated: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh usage:', error);
+    }
+  }, [user]);
+
+  const updateSubscription = useCallback(async (planId: PlanId, paddleData?: { subscriptionId: string; customerId: string }) => {
     if (!user) return;
 
     const oldPlan = subscription?.planId || 'free';
     
     try {
-      // TODO: Implement actual subscription update via Paddle/Juno
+      const planConfig = SUBSCRIPTION_PLANS[planId];
       const newSubscription: SubscriptionData = {
         planId,
         status: 'active',
+        type: planConfig.type === 'organization' ? 'organization' : 'individual',
         currentPeriodStart: Date.now(),
         currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
         cancelAtPeriodEnd: false,
         createdAt: subscription?.createdAt || Date.now(),
         updatedAt: Date.now(),
+        ...(paddleData && {
+          paddleSubscriptionId: paddleData.subscriptionId,
+          paddleCustomerId: paddleData.customerId,
+        }),
+        ...(planConfig.limits.seatsIncluded && {
+          seatsIncluded: planConfig.limits.seatsIncluded,
+          seatsUsed: 1, // Initial user
+        }),
       };
 
+      // Save to Juno datastore
+      await setDoc({
+        collection: 'subscriptions',
+        doc: {
+          key: user.key,
+          data: newSubscription,
+          updated_at: Date.now(),
+        },
+      });
+
       setSubscription(newSubscription);
-      localStorage.setItem(`subscription_${user.key}`, JSON.stringify(newSubscription));
 
       // Log subscription change
       await logActivity({
-        action: planId === 'free' || (subscription && planId < subscription.planId) ? 'updated' : 'updated',
+        action: 'updated',
         resource_type: 'subscription',
         resource_id: user.key,
         resource_name: `Subscription Change`,
@@ -239,6 +449,8 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         canProcessDocument,
         canUploadTemplate,
         incrementDocumentUsage,
+        incrementTemplateCount,
+        decrementTemplateCount,
         checkLimits,
         upgradePromptVisible,
         showUpgradePrompt,

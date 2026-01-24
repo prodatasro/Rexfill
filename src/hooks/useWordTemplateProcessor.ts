@@ -14,6 +14,7 @@ import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
 import { uploadFileWithTimeout, setDocWithTimeout, listDocsWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
 import { logActivity, computeFileHash } from "../utils/activityLogger";
 import { useAuth } from "../contexts/AuthContext";
+import { useSubscription } from "../contexts/SubscriptionContext";
 
 const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
 
@@ -32,6 +33,7 @@ export const useWordTemplateProcessor = ({
 }: UseWordTemplateProcessorProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { canProcessDocument, incrementDocumentUsage, showUpgradePrompt, plan } = useSubscription();
   const { processDocument: workerProcessDocument, extractCustomProperties: workerExtractCustomProperties, progress: workerProgress, isWorkerReady } = useDocumentWorker();
 
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -266,6 +268,13 @@ export const useWordTemplateProcessor = ({
   };
 
   const processDocument = async () => {
+    // Check subscription limits before processing
+    if (!canProcessDocument()) {
+      showErrorToast(t('subscription.limitReached'));
+      showUpgradePrompt();
+      return false;
+    }
+
     setProcessing(true);
     const startTime = Date.now();
     const fileName = file ? file.name : template?.data.name || 'document.docx';
@@ -313,6 +322,9 @@ export const useWordTemplateProcessor = ({
           mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         });
       }
+
+      // Increment document usage counter
+      await incrementDocumentUsage();
 
       showSuccessToast(t('templateProcessor.processSuccess'));
       return true;
