@@ -9,6 +9,7 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 // Lazy load pages to reduce initial bundle size
 const Dashboard = lazy(() => import('../app/Dashboard'));
 const ProcessorPage = lazy(() => import('../../pages/app/ProcessorPage'));
+const ProfilePage = lazy(() => import('../../pages/app/ProfilePage'));
 const NotFoundPage = lazy(() => import('../../pages/NotFoundPage'));
 
 const AppLayout: FC = () => {
@@ -73,6 +74,7 @@ const AppLayout: FC = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/process" element={<ProcessorPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

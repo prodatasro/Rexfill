@@ -27,7 +27,9 @@
   },
   "header": {
     "logout": "Odhlásiť sa",
-    "toggleTheme": "Prepnúť tému"
+    "toggleTheme": "Prepnúť tému",
+    "userMenu": "Používateľské menu",
+    "profile": "Profil"
   },
   "globalSearch": {
     "title": "Vyhľadávanie",
@@ -158,8 +160,7 @@
     "downloadingLogs": "Sťahovanie záznamov...",
     "downloadLogsSuccess": "Záznamy boli úspešne stiahnuté",
     "downloadLogsFailed": "Nepodarilo sa stiahnuť záznamy",
-    "noLogsAvailable": "Pre tento súbor nie sú k dispozícii žiadne záznamy aktivít",
-    "previewTemplate": "Zobraziť náhľad"
+    "noLogsAvailable": "Pre tento súbor nie sú k dispozícii žiadne záznamy aktivít"
   },
   "preview": {
     "title": "Náhľad",
@@ -167,5 +168,74 @@
   },
   "common": {
     "close": "Zavrieť"
+  },
+  "profile": {
+    "title": "Používateľský profil",
+    "subtitle": "Spravujte nastavenia účtu a zobrazujte záznamy aktivít",
+    "profileInfo": "Informácie o profile",
+    "editProfile": "Upraviť profil",
+    "displayName": "Zobrazované meno",
+    "displayNamePlaceholder": "Zadajte svoje meno",
+    "email": "E-mail",
+    "emailPlaceholder": "vas@email.com",
+    "bio": "Bio",
+    "bioPlaceholder": "Povedzte nám o sebe...",
+    "notSet": "Nenastavené",
+    "save": "Uložiť zmeny",
+    "cancel": "Zrušiť",
+    "sessionInfo": "Informácie o relácii",
+    "principalId": "Principal ID",
+    "notLoggedIn": "Prihláste sa pre zobrazenie profilu",
+    "avatar": {
+      "upload": "Nahrať",
+      "remove": "Odstrániť",
+      "maxSize": "Max 5MB (bude zmenené na 256x256)",
+      "invalidFileType": "Vyberte prosím obrázok",
+      "fileTooLarge": "Obrázok je príliš veľký (max 5MB)"
+    },
+    "activityLog": {
+      "title": "Záznamy aktivít",
+      "showing": "Zobrazených {{count}} z {{total}} záznamov",
+      "filters": "Filtre",
+      "downloadCSV": "Stiahnuť CSV",
+      "searchPlaceholder": "Hľadať záznamy...",
+      "dateFrom": "Od dátumu",
+      "dateTo": "Do dátumu",
+      "actionType": "Typ akcie",
+      "resourceType": "Typ zdroja",
+      "timestamp": "Čas",
+      "action": "Akcia",
+      "resourceName": "Zdroj",
+      "status": "Stav",
+      "success": "Úspech",
+      "failed": "Zlyhalo",
+      "noLogs": "Neboli nájdené žiadne záznamy aktivít",
+      "blockchainDisclaimer": "Záznamy aktivít sú trvalo uložené na blockchaine a nie je možné ich zmazať. To zabezpečuje úplnú transparentnosť auditných záznamov."
+    },
+    "gdpr": {
+      "title": "Exportovať vaše dáta",
+      "subtitle": "Stiahnite všetky vaše dáta v súlade s GDPR",
+      "description": "Stiahnite si kompletný archív všetkých vašich dát vrátane profilu, šablón, priečinkov, záznamov aktivít a informácií o predplatnom.",
+      "export": "Exportovať dáta",
+      "cancel": "Zrušiť",
+      "notLoggedIn": "Prihláste sa pre export vašich dát",
+      "fetchingTemplates": "Načítavam šablóny...",
+      "fetchingFolders": "Načítavam priečinky...",
+      "fetchingLogs": "Načítavam záznamy aktivít...",
+      "creatingArchive": "Vytváram archív...",
+      "downloading": "Pripravujem sťahovanie...",
+      "exporting": "Exportujem vaše dáta...",
+      "exportSuccess": "Dáta boli úspešne exportované",
+      "exportFailed": "Nepodarilo sa exportovať dáta",
+      "blockchainWarning": "Dôležité: Trvalé uloženie dát",
+      "blockchainExplanation": "Záznamy aktivít sú uložené na blockchaine Internet Computer a sú trvalé. Hoci si môžete stiahnuť všetky svoje dáta, záznamy aktivít nie je možné z blockchainu zmazať. To zabezpečuje transparentnosť a bezpečnosť.",
+      "includedData": "Váš export obsahuje:",
+      "dataProfile": "Informácie o profile (meno, email, avatar)",
+      "dataTemplates": "Všetky šablóny dokumentov a súbory",
+      "dataFolders": "Štruktúru priečinkov a metadáta",
+      "dataLogs": "Kompletnú históriu záznamov aktivít (trvalé blockchain záznamy)",
+      "dataSubscription": "Informácie o predplatnom a fakturácii",
+      "dataUsage": "Štatistiky využitia a kvóty"
+    }
   }
 }

@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode, FC } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, FC, useRef } from 'react';
 import { initSatellite, onAuthStateChange, signIn, signOut, User, SignInUserInterruptError } from '@junobuild/core';
 import { initOrbiter } from '@junobuild/analytics';
 import { showErrorToast } from '../utils/toast';
+import { logActivity } from '../utils/activityLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +20,9 @@ interface AuthProviderProps {
 export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const previousUserRef = useRef<User | null>(null);
+  const isInitialLoadRef = useRef(true);
+  const lastLoggedLoginKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -40,9 +44,43 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      unsubscribe = onAuthStateChange((user) => {
-        setUser(user);
+      unsubscribe = onAuthStateChange(async (newUser) => {
+        const wasLoggedOut = previousUserRef.current === null;
+        const isNowLoggedIn = newUser !== null;
+        
+        setUser(newUser);
         setLoading(false);
+        
+        // Log login event only when transitioning from null to user (not on initial load)
+        // and only if we haven't already logged this user's login
+        if (wasLoggedOut && isNowLoggedIn && !isInitialLoadRef.current && lastLoggedLoginKeyRef.current !== newUser.key) {
+          // Set the flag IMMEDIATELY before async operation to prevent race condition
+          lastLoggedLoginKeyRef.current = newUser.key;
+          
+          try {
+            await logActivity({
+              action: 'login',
+              resource_type: 'auth_event',
+              resource_id: newUser.key,
+              resource_name: 'User Login',
+              created_by: newUser.key,
+              modified_by: newUser.key,
+              success: true,
+            });
+          } catch (error) {
+            console.error('Failed to log login activity:', error);
+            // Reset on error so we can retry
+            lastLoggedLoginKeyRef.current = null;
+          }
+        }
+        
+        // After first auth state change, mark initial load as complete
+        if (isInitialLoadRef.current) {
+          isInitialLoadRef.current = false;
+        }
+        
+        // Update the ref for next comparison
+        previousUserRef.current = newUser;
       });
     };
 
@@ -76,6 +114,24 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
+      const currentUser = user;
+      
+      // Log logout before signing out
+      if (currentUser) {
+        await logActivity({
+          action: 'logout',
+          resource_type: 'auth_event',
+          resource_id: currentUser.key,
+          resource_name: 'User Logout',
+          created_by: currentUser.key,
+          modified_by: currentUser.key,
+          success: true,
+        });
+        
+        // Clear the last logged login key so next login will be logged
+        lastLoggedLoginKeyRef.current = null;
+      }
+      
       await signOut({ windowReload: false });
       setUser(null);
       // Redirect to landing page after logout

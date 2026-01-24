@@ -7,6 +7,7 @@ import { FileProcessingProvider } from "./contexts/FileProcessingContext";
 import { ProcessorProvider } from "./contexts/ProcessorContext";
 import { SearchProvider } from "./contexts/SearchContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+import { UserProfileProvider } from "./contexts/UserProfileContext";
 import { Toaster } from "sonner";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
@@ -49,11 +50,12 @@ const App: FC = () => {
         <ThemeProvider>
           <ErrorBoundary>
             <AuthProvider>
-              <SubscriptionProvider>
-                <FileProcessingProvider>
-                  <ProcessorProvider>
-                    <ConfirmProvider>
-                      <SearchProvider>
+              <UserProfileProvider>
+                <SubscriptionProvider>
+                  <FileProcessingProvider>
+                    <ProcessorProvider>
+                      <ConfirmProvider>
+                        <SearchProvider>
                       <Suspense
                         fallback={
                           <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
@@ -90,6 +92,7 @@ const App: FC = () => {
                   </ProcessorProvider>
                 </FileProcessingProvider>
               </SubscriptionProvider>
+              </UserProfileProvider>
             </AuthProvider>
           </ErrorBoundary>
         </ThemeProvider>

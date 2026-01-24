@@ -6,10 +6,10 @@ export interface ActivityLogData {
   timestamp: number;
   
   /** Type of action performed */
-  action: 'created' | 'updated' | 'deleted' | 'renamed' | 'moved' | 'downloaded' | 'processed_onetime';
+  action: 'created' | 'updated' | 'deleted' | 'renamed' | 'moved' | 'downloaded' | 'processed_onetime' | 'login' | 'logout' | 'exported' | 'imported';
   
   /** Type of resource being logged */
-  resource_type: 'template' | 'folder' | 'onetime_file';
+  resource_type: 'template' | 'folder' | 'onetime_file' | 'auth_event' | 'user_profile' | 'export' | 'import' | 'subscription';
   
   /** Unique identifier of the resource */
   resource_id: string;

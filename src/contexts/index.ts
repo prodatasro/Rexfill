@@ -5,3 +5,4 @@ export { ProcessorProvider, useProcessor } from './ProcessorContext';
 export { FileProcessingProvider, useFileProcessing } from './FileProcessingContext';
 export { SearchProvider, useSearch } from './SearchContext';
 export { SubscriptionProvider, useSubscription } from './SubscriptionContext';
+export { UserProfileProvider, useUserProfile } from './UserProfileContext';

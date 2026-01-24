@@ -2,6 +2,7 @@ import PizZip from 'pizzip';
 import type { Doc } from '@junobuild/core';
 import type { WordTemplateData } from '../types/word-template';
 import type { Folder, FolderData } from '../types/folder';
+import type { UserProfile, ActivityLogData, SubscriptionData, UsageSummary } from '../types';
 import { buildStoragePath } from './templatePathUtils';
 
 /**
@@ -367,4 +368,128 @@ export function buildFolderKeyMapping(
   }
 
   return mapping;
+}
+
+/**
+ * GDPR Export - Complete user data export
+ */
+export interface GDPRExportData {
+  version: string;
+  exportedAt: number;
+  exportType: 'GDPR_DATA_EXPORT';
+  profile: UserProfile | null;
+  subscription: SubscriptionData | null;
+  usage: UsageSummary | null;
+  folders: FolderExportData[];
+  templates: TemplateExportData[];
+  activityLogs: Array<{ key: string; data: ActivityLogData }>;
+}
+
+/**
+ * Create a GDPR-compliant export ZIP containing all user data
+ */
+export async function createGDPRExportZip(
+  userProfile: UserProfile | null,
+  templates: Doc<WordTemplateData>[],
+  folders: Folder[],
+  activityLogs: Doc<ActivityLogData>[],
+  subscriptionData: SubscriptionData | null,
+  usageData: UsageSummary | null,
+  fetchTemplateBlob: (template: Doc<WordTemplateData>) => Promise<Blob | null>
+): Promise<Blob> {
+  const zip = new PizZip();
+
+  // Create templates folder in ZIP
+  const templatesFolder = zip.folder(TEMPLATES_FOLDER);
+  if (!templatesFolder) {
+    throw new Error('Failed to create templates folder in ZIP');
+  }
+
+  // Prepare metadata
+  const templateExports: TemplateExportData[] = [];
+
+  // Add each template file to the ZIP
+  for (const template of templates) {
+    const blob = await fetchTemplateBlob(template);
+    if (!blob) {
+      console.warn(`Failed to fetch template: ${template.data.name}`);
+      continue;
+    }
+
+    // Generate unique filename in ZIP based on fullPath or key
+    const zipFilename = template.data.fullPath
+      ? buildStoragePath(template.data.fullPath)
+      : template.key;
+
+    // Add file to ZIP
+    const arrayBuffer = await blob.arrayBuffer();
+    templatesFolder.file(zipFilename, arrayBuffer);
+
+    templateExports.push({
+      key: template.key,
+      data: {
+        ...template.data,
+        url: undefined, // Remove URLs for privacy
+      },
+      filename: `${TEMPLATES_FOLDER}/${zipFilename}`,
+    });
+  }
+
+  // Prepare folder exports
+  const folderExports: FolderExportData[] = folders.map((folder) => ({
+    key: folder.key,
+    data: folder.data,
+  }));
+
+  // Prepare activity logs
+  const logExports = activityLogs.map((log) => ({
+    key: log.key,
+    data: log.data,
+  }));
+
+  // Create GDPR export data
+  const gdprData: GDPRExportData = {
+    version: '1.0',
+    exportedAt: Date.now(),
+    exportType: 'GDPR_DATA_EXPORT',
+    profile: userProfile,
+    subscription: subscriptionData,
+    usage: usageData,
+    folders: folderExports,
+    templates: templateExports,
+    activityLogs: logExports,
+  };
+
+  // Add user data as JSON
+  zip.file('user_data.json', JSON.stringify(gdprData, null, 2));
+
+  // Add a README explaining the export
+  const readme = `GDPR Data Export
+================
+
+This archive contains all your personal data from Rexfill, exported on ${new Date().toISOString()}.
+
+Contents:
+- user_data.json: Your profile, subscription, usage statistics, folders, templates metadata, and complete activity logs
+- templates/: All your document templates
+
+Privacy Notice:
+- Activity logs are permanently stored on the Internet Computer blockchain and cannot be deleted
+- This export includes your complete audit trail for transparency
+- Template files and user profile data can be deleted from your account at any time
+
+For questions or data deletion requests, please contact support.
+`;
+
+  zip.file('README.txt', readme);
+
+  // Generate ZIP blob
+  const content = zip.generate({
+    type: 'blob',
+    mimeType: 'application/zip',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 },
+  }) as Blob;
+
+  return content;
 }

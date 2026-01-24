@@ -2,11 +2,14 @@ import { createContext, useContext, useState, useEffect, useCallback, FC, ReactN
 import { useAuth } from './AuthContext';
 import { SUBSCRIPTION_PLANS, SubscriptionPlan, isUnlimited } from '../config/plans';
 import { SubscriptionData, UsageSummary, PlanId } from '../types/subscription';
+import { logActivity } from '../utils/activityLogger';
 
 interface SubscriptionContextType {
   plan: SubscriptionPlan;
   subscription: SubscriptionData | null;
+  subscriptionData: SubscriptionData | null;
   usage: UsageSummary;
+  usageSummary: UsageSummary;
   isLoading: boolean;
   canProcessDocument: () => boolean;
   canUploadTemplate: () => boolean;
@@ -16,6 +19,7 @@ interface SubscriptionContextType {
   showUpgradePrompt: () => void;
   hideUpgradePrompt: () => void;
   refreshUsage: () => Promise<void>;
+  updateSubscription: (planId: PlanId) => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -170,12 +174,67 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
     setUsage((prev) => ({ ...prev, lastUpdated: Date.now() }));
   }, []);
 
+  const updateSubscription = useCallback(async (planId: PlanId) => {
+    if (!user) return;
+
+    const oldPlan = subscription?.planId || 'free';
+    
+    try {
+      // TODO: Implement actual subscription update via Paddle/Juno
+      const newSubscription: SubscriptionData = {
+        planId,
+        status: 'active',
+        currentPeriodStart: Date.now(),
+        currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        cancelAtPeriodEnd: false,
+        createdAt: subscription?.createdAt || Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      setSubscription(newSubscription);
+      localStorage.setItem(`subscription_${user.key}`, JSON.stringify(newSubscription));
+
+      // Log subscription change
+      await logActivity({
+        action: planId === 'free' || (subscription && planId < subscription.planId) ? 'updated' : 'updated',
+        resource_type: 'subscription',
+        resource_id: user.key,
+        resource_name: `Subscription Change`,
+        created_by: user.key,
+        modified_by: user.key,
+        success: true,
+        old_value: oldPlan,
+        new_value: planId,
+      });
+    } catch (error) {
+      console.error('Failed to update subscription:', error);
+      
+      // Log failed subscription change
+      await logActivity({
+        action: 'updated',
+        resource_type: 'subscription',
+        resource_id: user.key,
+        resource_name: `Subscription Change`,
+        created_by: user.key,
+        modified_by: user.key,
+        success: false,
+        old_value: oldPlan,
+        new_value: planId,
+        error_message: error instanceof Error ? error.message : 'Update failed',
+      });
+
+      throw error;
+    }
+  }, [user, subscription]);
+
   return (
     <SubscriptionContext.Provider
       value={{
         plan,
         subscription,
+        subscriptionData: subscription,
         usage,
+        usageSummary: usage,
         isLoading,
         canProcessDocument,
         canUploadTemplate,
@@ -185,6 +244,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         showUpgradePrompt,
         hideUpgradePrompt,
         refreshUsage,
+        updateSubscription,
       }}
     >
       {children}
