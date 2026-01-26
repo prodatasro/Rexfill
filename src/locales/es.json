@@ -300,7 +300,12 @@
         "title": "Idioma"
       }
     },
-    "subscription": {
+    "fileUpload": {
+    "uploadRolledBack": "Upload of \"{{filename}}\" failed and was rolled back."
+  },
+  "subscription": {
+    "templateLimitReached": "You've reached your template limit for this plan",
+    "templateLimitExceeded": "You can upload {{available}} more template(s). You're trying to upload {{requested}}."
       "subtitle": "Ver los detalles de su plan y estadísticas de uso",
       "currentPlan": "Plan actual",
       "usage": "Estadísticas de uso",

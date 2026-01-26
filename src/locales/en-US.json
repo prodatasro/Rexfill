@@ -207,6 +207,7 @@
     "uploadMultipleSuccess": "{{count}} templates uploaded successfully!",
     "uploadMultipleFailed": "{{count}} file(s) failed to upload",
     "uploadFailed": "Upload failed. Please try again.",
+    "uploadRolledBack": "Upload of \"{{filename}}\" failed and was rolled back.",
     "uploadModeTitle": "How would you like to use this file?",
     "saveOnly": "Save Only",
     "saveOnlyDesc": "Save template without processing",
@@ -852,7 +853,9 @@
       "limitReached": "You've reached your plan limit",
       "upgradeNow": "Upgrade Now"
     },
-    "limitReached": "Plan limit reached"
+    "limitReached": "Plan limit reached",
+    "templateLimitReached": "You've reached your template limit for this plan",
+    "templateLimitExceeded": "You can upload {{available}} more template(s). You're trying to upload {{requested}}."
   },
   "logs": {
     "downloadLogs": "Download Logs",

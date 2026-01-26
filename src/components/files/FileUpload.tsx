@@ -10,7 +10,7 @@ import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import FolderSelector from '../folders/FolderSelector';
 import { useTranslation } from 'react-i18next';
 import { templateKeys } from '../../hooks/useTemplatesQuery';
-import { uploadFileWithTimeout, setDocWithTimeout } from '../../utils/junoWithTimeout';
+import { uploadFileWithTimeout, setDocWithTimeout, deleteAssetWithTimeout } from '../../utils/junoWithTimeout';
 import { TimeoutError } from '../../utils/fetchWithTimeout';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth, useSubscription } from '../../contexts';
@@ -242,6 +242,9 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
           });
 
+          // Save fullPath for potential rollback
+          const uploadedAssetPath = result.fullPath;
+
           // Update progress - saving metadata
           setUploadProgress({
             currentFile: i + 1,
@@ -250,27 +253,42 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             status: 'saving'
           });
 
-          // Store template metadata in datastore
-          await setDocWithTimeout({
-            collection: 'templates_meta',
-            doc: {
-              key: result.name, // Use the uploaded file name as key
-              data: {
-                ...templateData,
-                url: result.downloadUrl
+          try {
+            // Store template metadata in datastore
+            await setDocWithTimeout({
+              collection: 'templates_meta',
+              doc: {
+                key: result.name, // Use the uploaded file name as key
+                data: {
+                  ...templateData,
+                  url: result.downloadUrl
+                }
               }
+            });
+
+            // Invalidate cache to refetch templates
+            queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
+
+            // Track the template key for saveAndProcess mode
+            savedTemplateKey = result.name;
+            successCount++;
+
+            // Increment template count (fire-and-forget)
+            incrementTemplateCount();
+          } catch (metadataError) {
+            // Rollback: Delete from storage
+            console.error(`Metadata save failed for ${file.name}, rolling back:`, metadataError);
+            try {
+              await deleteAssetWithTimeout({
+                collection: 'templates',
+                fullPath: uploadedAssetPath
+              });
+            } catch (rollbackError) {
+              console.error('Rollback failed:', rollbackError);
             }
-          });
-
-          // Invalidate cache to refetch templates
-          queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
-
-          // Track the template key for saveAndProcess mode
-          savedTemplateKey = result.name;
-          successCount++;
-
-          // Increment template count in subscription context
-          await incrementTemplateCount();
+            showErrorToast(t('fileUpload.uploadRolledBack', { filename: file.name }));
+            throw metadataError;
+          }
 
           // Log successful upload
           try {

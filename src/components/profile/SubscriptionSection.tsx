@@ -39,6 +39,9 @@ export const SubscriptionSection: FC = () => {
       setProgress(t('profile.gdpr.deletingTemplates'));
       const templatesResult = await listDocsWithTimeout<WordTemplateData>({
         collection: 'templates_meta',
+        filter: {
+          owner: user.key,
+        },
       });
       const templates = templatesResult.items;
 

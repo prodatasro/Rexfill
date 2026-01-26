@@ -40,6 +40,9 @@ export const GDPRExportDialog: FC<GDPRExportDialogProps> = ({ isOpen, onClose })
       setProgress(t('profile.gdpr.fetchingTemplates'));
       const templatesResult = await listDocsWithTimeout<WordTemplateData>({
         collection: 'templates_meta',
+        filter: {
+          owner: user.key,
+        },
       });
       const templates = templatesResult.items;
 

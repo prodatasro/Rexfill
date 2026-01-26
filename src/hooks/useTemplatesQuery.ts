@@ -26,16 +26,12 @@ export const templateKeys = {
 
 // Fetch all templates
 async function fetchTemplates(userKey?: string | null, isAdmin?: boolean): Promise<Doc<WordTemplateData>[]> {
-  const result = await listDocsWithTimeout({ collection: 'templates_meta' });
-  const items = result.items as Doc<WordTemplateData>[];
-  
-  // Admin users see all templates; regular users see only their own
-  if (isAdmin || !userKey) {
-    return items;
-  }
-  
-  // Filter to show only user's own templates as a client-side safety layer
-  return items.filter(item => item.owner === userKey);
+  // Admin users see all templates; regular users filtered by owner
+  const result = await listDocsWithTimeout({
+    collection: 'templates_meta',
+    ...(!isAdmin && userKey ? { filter: { owner: userKey } } : {})
+  });
+  return result.items as Doc<WordTemplateData>[];
 }
 
 /**

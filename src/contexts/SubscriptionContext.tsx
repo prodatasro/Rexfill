@@ -186,9 +186,11 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
           });
 
           // Get total templates count (from templates_meta collection)
-          // Note: listDocs automatically filters by authenticated user when no owner specified
           const templateDocs = await listDocs({
             collection: 'templates_meta',
+            filter: {
+              owner: user.key,
+            },
           });
 
           setUsage({
@@ -213,9 +215,11 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
           });
 
           // Get total templates count
-          // Note: listDocs automatically filters by authenticated user when no owner specified
           const templateDocs = await listDocs({
             collection: 'templates_meta',
+            filter: {
+              owner: user.key,
+            },
           });
 
           setUsage({
@@ -502,9 +506,11 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         });
 
         // Get total templates count
-        // Note: listDocs automatically filters by authenticated user when no owner specified
         const templateDocs = await listDocs({
           collection: 'templates_meta',
+          filter: {
+            owner: user.key,
+          },
         });
 
         setUsage({

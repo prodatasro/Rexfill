@@ -300,7 +300,12 @@
         "title": "语言"
       }
     },
-    "subscription": {
+    "fileUpload": {
+    "uploadRolledBack": "Upload of \"{{filename}}\" failed and was rolled back."
+  },
+  "subscription": {
+    "templateLimitReached": "You've reached your template limit for this plan",
+    "templateLimitExceeded": "You can upload {{available}} more template(s). You're trying to upload {{requested}}."
       "subtitle": "查看您的计划详情和使用统计",
       "currentPlan": "当前计划",
       "usage": "使用统计",

@@ -5,7 +5,7 @@ import { Doc } from '@junobuild/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { WordTemplateData } from '../../types/word-template';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
-import { setDocWithTimeout, uploadFileWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
+import { setDocWithTimeout, uploadFileWithTimeout, listDocsWithTimeout, deleteAssetWithTimeout } from '../../utils/junoWithTimeout';
 import type { Folder } from '../../types/folder';
 import FileList from '../files/FileList';
 import { VIRTUAL_FOLDER_FAVORITES, VIRTUAL_FOLDER_RECENT } from '../folders/FolderTree';
@@ -46,7 +46,7 @@ const Dashboard: FC = () => {
   const { setOneTimeFile } = useFileProcessing();
   const { setAllTemplates, setFolderTree, setOnSelectTemplate, setOnSelectFolder } = useSearch();
   const { user } = useAuth();
-  const { refreshUsage } = useSubscription();
+  const { refreshUsage, incrementTemplateCount, showUpgradePrompt, plan, usage } = useSubscription();
   const queryClient = useQueryClient();
 
   // Initialize selectedFolderId from URL params BEFORE any hook calls
@@ -604,6 +604,24 @@ const Dashboard: FC = () => {
     }
 
     // Save or Save and Process mode
+    
+    // Check subscription limits before uploading
+    const isUnlimited = plan.limits.maxTemplates === -1;
+    const availableSlots = isUnlimited ? Infinity : plan.limits.maxTemplates - usage.totalTemplates;
+    
+    if (!isUnlimited && draggedFiles.length > availableSlots) {
+      showErrorToast(
+        t('subscription.templateLimitExceeded', { 
+          available: availableSlots,
+          requested: draggedFiles.length 
+        }) || `You can upload ${availableSlots} more template(s). You're trying to upload ${draggedFiles.length}.`
+      );
+      showUpgradePrompt();
+      setShowDropModeDialog(false);
+      setDraggedFiles([]);
+      return;
+    }
+
     setIsFolderUploading(true);
     setShowDropModeDialog(false);
     let successCount = 0;
@@ -673,6 +691,9 @@ const Dashboard: FC = () => {
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
           });
 
+          // Save fullPath for potential rollback
+          const uploadedAssetPath = result.fullPath;
+
           // Update progress - saving metadata
           setUploadProgress({
             currentFile: i + 1,
@@ -681,22 +702,40 @@ const Dashboard: FC = () => {
             status: 'saving'
           });
 
-          await setDocWithTimeout({
-            collection: 'templates_meta',
-            doc: {
-              key: result.name,
-              data: {
-                ...templateData,
-                url: result.downloadUrl
+          try {
+            await setDocWithTimeout({
+              collection: 'templates_meta',
+              doc: {
+                key: result.name,
+                data: {
+                  ...templateData,
+                  url: result.downloadUrl
+                }
               }
+            });
+
+            // Invalidate cache to refetch templates
+            queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
+
+            savedTemplateKey = result.name;
+            successCount++;
+
+            // Increment template count (fire-and-forget)
+            incrementTemplateCount();
+          } catch (metadataError) {
+            // Rollback: Delete from storage
+            console.error(`Metadata save failed for ${file.name}, rolling back:`, metadataError);
+            try {
+              await deleteAssetWithTimeout({
+                collection: 'templates',
+                fullPath: uploadedAssetPath
+              });
+            } catch (rollbackError) {
+              console.error('Rollback failed:', rollbackError);
             }
-          });
-
-          // Invalidate cache to refetch templates
-          queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
-
-          savedTemplateKey = result.name;
-          successCount++;
+            showErrorToast(t('fileUpload.uploadRolledBack', { filename: file.name }));
+            throw metadataError;
+          }
 
           // Log successful upload
           try {
@@ -787,6 +826,25 @@ const Dashboard: FC = () => {
       showWarningToast(t('fileUpload.someFilesInvalid'));
     }
 
+    // Check subscription limits before uploading
+    const isUnlimited = plan.limits.maxTemplates === -1;
+    const availableSlots = isUnlimited ? Infinity : plan.limits.maxTemplates - usage.totalTemplates;
+    
+    if (!isUnlimited && validFiles.length > availableSlots) {
+      showErrorToast(
+        t('subscription.templateLimitExceeded', { 
+          available: availableSlots,
+          requested: validFiles.length 
+        }) || `You can upload ${availableSlots} more template(s). You're trying to upload ${validFiles.length}.`
+      );
+      showUpgradePrompt();
+      if (folderUploadInputRef.current) {
+        folderUploadInputRef.current.value = '';
+      }
+      setUploadToFolderId(null);
+      return;
+    }
+
     // Upload the files
     setIsFolderUploading(true);
     let successCount = 0;
@@ -857,6 +915,9 @@ const Dashboard: FC = () => {
             filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
           });
 
+          // Save fullPath for potential rollback
+          const uploadedAssetPath = result.fullPath;
+
           // Update progress - saving metadata
           setUploadProgress({
             currentFile: i + 1,
@@ -865,21 +926,39 @@ const Dashboard: FC = () => {
             status: 'saving'
           });
 
-          await setDocWithTimeout({
-            collection: 'templates_meta',
-            doc: {
-              key: result.name,
-              data: {
-                ...templateData,
-                url: result.downloadUrl
+          try {
+            await setDocWithTimeout({
+              collection: 'templates_meta',
+              doc: {
+                key: result.name,
+                data: {
+                  ...templateData,
+                  url: result.downloadUrl
+                }
               }
+            });
+
+            // Invalidate cache to refetch templates
+            queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
+
+            successCount++;
+
+            // Increment template count (fire-and-forget)
+            incrementTemplateCount();
+          } catch (metadataError) {
+            // Rollback: Delete from storage
+            console.error(`Metadata save failed for ${file.name}, rolling back:`, metadataError);
+            try {
+              await deleteAssetWithTimeout({
+                collection: 'templates',
+                fullPath: uploadedAssetPath
+              });
+            } catch (rollbackError) {
+              console.error('Rollback failed:', rollbackError);
             }
-          });
-
-          // Invalidate cache to refetch templates
-          queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
-
-          successCount++;
+            showErrorToast(t('fileUpload.uploadRolledBack', { filename: file.name }));
+            throw metadataError;
+          }
 
           // Log successful upload
           try {

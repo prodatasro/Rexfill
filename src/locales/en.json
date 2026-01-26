@@ -74,7 +74,9 @@
         "title": "Upgrade Your Plan",
         "limitReached": "You've reached your plan limit"
       },
-      "limitReached": "Plan limit reached"
+      "limitReached": "Plan limit reached",
+      "templateLimitReached": "You've reached your template limit for this plan",
+      "templateLimitExceeded": "You can upload {{available}} more template(s). You're trying to upload {{requested}}."
     },
     "activity": {
       "subtitle": "View your account activity and audit trail"

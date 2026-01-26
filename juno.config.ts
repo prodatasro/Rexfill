@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => ({
     },
     collections: {
       datastore: [
-        { collection: 'templates_meta', read: 'private', write: 'private', memory: 'stable' },
+        { collection: 'templates_meta', read: 'managed', write: 'private', memory: 'stable' },
         { collection: 'folders', read: 'private', write: 'private', memory: 'stable' },
 
         { collection: 'subscriptions', read: 'managed', write: 'private', memory: 'stable' },
