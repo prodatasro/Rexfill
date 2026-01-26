@@ -57,7 +57,7 @@ const FileList: FC<FileListProps> = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { incrementDocumentUsage, canProcessDocument, showUpgradePrompt } = useSubscription();
+  const { incrementDocumentUsage, canProcessDocument, showUpgradePrompt, decrementTemplateCount } = useSubscription();
   const moveTemplateMutation = useMoveTemplateMutation();
   const updateTemplateMutation = useUpdateTemplateMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
@@ -240,6 +240,9 @@ const FileList: FC<FileListProps> = ({
 
       // Remove from recent templates list
       onRemoveFromRecent?.(template.key);
+
+      // Decrement template count in usage statistics
+      await decrementTemplateCount();
 
       // Log successful deletion
       await logActivity({
@@ -599,6 +602,9 @@ const FileList: FC<FileListProps> = ({
 
           // Remove from recent templates list
           onRemoveFromRecent?.(template.key);
+
+          // Decrement template count in usage statistics
+          await decrementTemplateCount();
 
           successCount++;
         } catch (error) {
