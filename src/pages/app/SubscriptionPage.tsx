@@ -1,7 +1,8 @@
 import { FC, useState, useEffect } from 'react';
-import { CreditCard, Calendar, AlertCircle, CheckCircle, XCircle, ArrowUpRight, Loader2 } from 'lucide-react';
+import { CreditCard, Calendar, AlertCircle, CheckCircle, XCircle, ArrowUpRight, Loader2, Building2, AlertTriangle, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSubscription } from '../../contexts/SubscriptionContext';
+import { useOrganization } from '../../contexts/OrganizationContext';
 import { SUBSCRIPTION_PLANS, isUnlimited } from '../../config/plans';
 import { openCheckout } from '../../lib/paddle';
 import { showErrorToast, showSuccessToast } from '../../utils/toast';
@@ -10,8 +11,10 @@ import { useAuth } from '../../contexts/AuthContext';
 const SubscriptionPage: FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { plan, subscription, usage, isLoading } = useSubscription();
+  const { plan, subscription, individualSubscription, organizationSubscription, gracePeriodEndsAt, usage, isLoading } = useSubscription();
+  const { currentOrganization, exportOrganizationData } = useOrganization();
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Handle success parameter from Paddle redirect
   useEffect(() => {
@@ -83,6 +86,19 @@ const SubscriptionPage: FC = () => {
     }
   };
 
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      await exportOrganizationData();
+      showSuccessToast(t('organization.exportSuccess') || 'Data exported successfully');
+    } catch (error) {
+      console.error('Failed to export data:', error);
+      showErrorToast(t('organization.exportError') || 'Failed to export data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const calculateUsagePercentage = (current: number, limit: number) => {
     if (isUnlimited(limit)) return 0;
     return Math.min(Math.round((current / limit) * 100), 100);
@@ -109,13 +125,87 @@ const SubscriptionPage: FC = () => {
           </p>
         </div>
 
+        {/* Grace Period Banner */}
+        {gracePeriodEndsAt && currentOrganization && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
+                  {t('subscription.gracePeriod.title')}
+                </h3>
+                <p className="text-red-800 dark:text-red-200 mb-4">
+                  {t('subscription.gracePeriod.message', {
+                    days: Math.ceil((gracePeriodEndsAt - Date.now()) / (24 * 60 * 60 * 1000)),
+                    date: formatDate(gracePeriodEndsAt)
+                  })}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleExport}
+                    disabled={exportLoading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {exportLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t('common.loading')}
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        {t('organization.exportData')}
+                      </>
+                    )}
+                  </button>
+                  <a
+                    href={`https://customer-portal.paddle.com/subscriptions/${organizationSubscription?.paddleSubscriptionId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    {t('subscription.resubscribe')}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Individual Subscription Cancellation Banner */}
+        {individualSubscription?.cancelAtPeriodEnd && organizationSubscription && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-xl p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  {t('subscription.individualCancelling.title')}
+                </h3>
+                <p className="text-blue-800 dark:text-blue-200">
+                  {t('subscription.individualCancelling.message', {
+                    date: formatDate(individualSubscription.currentPeriodEnd)
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Current Plan Card */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-1">
-                {plan.name}
-              </h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                  {plan.name}
+                </h2>
+                {currentOrganization && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-medium rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    {t('subscription.organizationPlan')}
+                  </span>
+                )}
+              </div>
               <p className="text-slate-600 dark:text-slate-400 text-sm">
                 {plan.description}
               </p>

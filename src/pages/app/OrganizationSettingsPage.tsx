@@ -1,11 +1,13 @@
 import { FC, useState } from 'react';
-import { Users, UserPlus, Settings, Crown, Shield, User as UserIcon, Mail, Hash, X, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Settings, Crown, Shield, User as UserIcon, Mail, Hash, X, Loader2, AlertTriangle, Download } from 'lucide-react';
 import { useOrganization } from '../../contexts/OrganizationContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { OrganizationRole } from '../../types/organization';
-import { showErrorToast } from '../../utils/toast';
+import { showErrorToast, showSuccessToast } from '../../utils/toast';
+import { useTranslation } from 'react-i18next';
 
 const OrganizationSettingsPage: FC = () => {
+  const { t } = useTranslation();
   const {
     currentOrganization,
     userRole,
@@ -19,9 +21,10 @@ const OrganizationSettingsPage: FC = () => {
     canInviteMembers,
     canManageMembers,
     availableSeats,
+    exportOrganizationData,
   } = useOrganization();
 
-  const { subscription, plan, usage } = useSubscription();
+  const { subscription, plan, usage, gracePeriodEndsAt, organizationSubscription } = useSubscription();
 
   const [inviteType, setInviteType] = useState<'email' | 'principal'>('email');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -29,6 +32,7 @@ const OrganizationSettingsPage: FC = () => {
   const [inviteRole, setInviteRole] = useState<OrganizationRole>('member');
   const [inviting, setInviting] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'invitations'>('overview');
+  const [exportLoading, setExportLoading] = useState(false);
 
   const handleSendInvitation = async () => {
     setInviting(true);
@@ -51,6 +55,27 @@ const OrganizationSettingsPage: FC = () => {
     } finally {
       setInviting(false);
     }
+  };
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      await exportOrganizationData();
+      showSuccessToast(t('organization.exportSuccess') || 'Data exported successfully');
+    } catch (error) {
+      console.error('Failed to export data:', error);
+      showErrorToast(t('organization.exportError') || 'Failed to export data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   const getRoleIcon = (role: OrganizationRole) => {
@@ -110,9 +135,58 @@ const OrganizationSettingsPage: FC = () => {
             {currentOrganization.data.name}
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Manage your organization settings and team members
+            {t('organization.manageTeam') || 'Manage your organization settings and team members'}
           </p>
         </div>
+
+        {/* Grace Period Banner */}
+        {gracePeriodEndsAt && userRole === 'owner' && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
+                  {t('organization.gracePeriod.title')}
+                </h3>
+                <p className="text-red-800 dark:text-red-200 mb-4">
+                  {t('organization.gracePeriod.message', {
+                    days: Math.ceil((gracePeriodEndsAt - Date.now()) / (24 * 60 * 60 * 1000)),
+                    date: formatDate(gracePeriodEndsAt)
+                  })}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleExport}
+                    disabled={exportLoading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {exportLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t('common.loading')}
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        {t('organization.exportData')}
+                      </>
+                    )}
+                  </button>
+                  {organizationSubscription?.paddleSubscriptionId && (
+                    <a
+                      href={`https://customer-portal.paddle.com/subscriptions/${organizationSubscription.paddleSubscriptionId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      {t('subscription.resubscribe')}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700">

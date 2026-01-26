@@ -200,6 +200,7 @@ export const openCheckout = async (
     customData?: Record<string, string>;
     theme?: 'light' | 'dark';
     locale?: string;
+    organizationName?: string; // For organization plan checkouts
   }
 ): Promise<void> => {
   // Ensure Paddle is initialized
@@ -215,10 +216,21 @@ export const openCheckout = async (
     throw new Error(`Price ID not configured for ${planId} ${billingCycle}`);
   }
 
+  // Check if this is an organization plan
+  const isOrgPlan = ['team', 'business', 'enterprise_org'].includes(planId);
+
   try {
+    const customData = {
+      ...options?.customData,
+      ...(isOrgPlan && options?.organizationName && { 
+        organizationName: options.organizationName,
+        isOrganizationPlan: 'true'
+      }),
+    };
+
     window.Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
-      ...(options?.customData && { customData: options.customData }),
+      ...(Object.keys(customData).length > 0 && { customData }),
       ...(options?.email && { customer: { email: options.email } }),
       settings: {
         displayMode: 'overlay',

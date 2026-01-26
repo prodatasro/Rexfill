@@ -7,3 +7,4 @@ export { SearchProvider, useSearch } from './SearchContext';
 export { SubscriptionProvider, useSubscription } from './SubscriptionContext';
 export { UserProfileProvider, useUserProfile } from './UserProfileContext';
 export { OrganizationProvider, useOrganization } from './OrganizationContext';
+export { NotificationProvider, useNotifications } from './NotificationContext';

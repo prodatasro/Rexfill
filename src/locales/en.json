@@ -145,5 +145,109 @@
       "deleteTitle": "Delete All Data",
       "deleteDescription": "Permanently delete all your templates and folders while keeping your profile active."
     }
+  },
+  "guides": {
+    "title": "User Guides & Documentation",
+    "subtitle": "Learn how to make the most of custom properties and DOCPROPERTY fields in your Word documents",
+    "sections": {
+      "customProperties": {
+        "title": "Understanding Custom Document Properties",
+        "intro": "Custom document properties are metadata fields embedded within Word documents that can store dynamic information. They act as variables that can be referenced throughout your document using DOCPROPERTY fields, enabling automatic updates and consistent data management.",
+        "howTo": "How to create custom properties in Microsoft Word:",
+        "step1": "Open your Word document and click on File → Info → Properties → Advanced Properties",
+        "step2": "Navigate to the 'Custom' tab in the Properties dialog",
+        "step3": "Enter a property name (e.g., 'ClientName', 'ContractDate', 'ProjectID') - avoid spaces and special characters",
+        "step4": "Select the data type (Text, Number, Date, or Yes/No) and enter the initial value",
+        "step5": "Click 'Add' to create the property, then 'OK' to save your changes",
+        "benefit": "Once created, these properties become reusable variables that can be inserted anywhere in your document and will automatically update when the property value changes."
+      },
+      "docproperty": {
+        "title": "Using DOCPROPERTY Fields",
+        "intro": "DOCPROPERTY fields are dynamic placeholders that display the value of custom document properties. When you update a property value, all DOCPROPERTY fields referencing it automatically refresh throughout the document.",
+        "howToInsert": "How to insert DOCPROPERTY fields:",
+        "insertStep1": "Position your cursor where you want the property value to appear",
+        "insertStep2": "Press Ctrl+F9 to insert field brackets { } - do not type these manually",
+        "insertStep3": "Type 'DOCPROPERTY PropertyName' between the brackets (e.g., { DOCPROPERTY ClientName })",
+        "insertStep4": "Press F9 to update the field and display the property value",
+        "alternativeMethod": "Alternative method using the Insert menu:",
+        "altStep1": "Go to Insert → Quick Parts → Field",
+        "altStep2": "In the Field dialog, select 'DocProperty' from the field names list",
+        "altStep3": "Choose your custom property from the dropdown menu",
+        "altStep4": "Click 'OK' to insert the field",
+        "updating": "Fields update automatically when you open the document or print. To manually update all fields, press Ctrl+A to select all, then press F9."
+      },
+      "bestPractices": {
+        "title": "Best Practices & Recommendations",
+        "tip1": "Use descriptive, camelCase naming conventions for properties (e.g., 'contractStartDate' instead of 'date1') to make them easily identifiable and prevent naming conflicts",
+        "tip2": "Define all custom properties before distributing templates to ensure consistency. Recipients can update values without needing to create properties from scratch",
+        "tip3": "Choose the correct data type for each property: Text for names and descriptions, Number for quantities and IDs, Date for time-based information, and Yes/No for boolean flags",
+        "tip4": "Use field formatting codes to control how values display. For dates, add format switches like { DOCPROPERTY ContractDate \\@ \"MMMM d, yyyy\" } to display 'January 15, 2026'",
+        "tip5": "Create a properties reference section in your template documentation listing all available custom properties, their purpose, data type, and expected format",
+        "tip6": "Lock fields that shouldn't be accidentally deleted by selecting the field and pressing Ctrl+F11. Unlock with Ctrl+Shift+F11 when editing is needed",
+        "tip7": "Test your template thoroughly by updating property values and verifying all DOCPROPERTY fields update correctly throughout the document"
+      },
+      "advanced": {
+        "title": "Advanced Techniques",
+        "formulas": "Combining DOCPROPERTY with formulas:",
+        "formulaTip1": "Use = (Formula) fields with DOCPROPERTY for calculations. Example: { = { DOCPROPERTY Quantity } * { DOCPROPERTY UnitPrice } } for automatic total calculation",
+        "formulaTip2": "Apply number formatting to formula results using switches: { = { DOCPROPERTY Total } \\# \"$#,##0.00\" } displays currency format",
+        "conditionalText": "Creating conditional content:",
+        "conditionalTip1": "Use IF fields with DOCPROPERTY to show different text based on property values: { IF { DOCPROPERTY Status } = \"Active\" \"Contract is active\" \"Contract is inactive\" }",
+        "conditionalTip2": "Nest multiple conditions for complex logic: { IF { DOCPROPERTY Amount } > 10000 \"Large contract\" \"{ IF { DOCPROPERTY Amount } > 5000 \"Medium contract\" \"Small contract\" }\" }",
+        "automation": "Automation and macros:",
+        "autoTip1": "Create VBA macros to batch-update multiple properties simultaneously, saving time when processing many documents",
+        "autoTip2": "Use Document_Open event in VBA to automatically prompt users for property values when opening templates",
+        "autoTip3": "Implement custom ribbon buttons or form dialogs to provide user-friendly interfaces for updating document properties"
+      },
+      "troubleshooting": {
+        "title": "Common Issues & Solutions",
+        "issue1": {
+          "title": "Fields displaying { DOCPROPERTY PropertyName } instead of the value",
+          "solution": "This means field codes are visible instead of field results. Press Alt+F9 to toggle between viewing field codes and field values. If the field still shows the code after toggling, press F9 while the field is selected to update it."
+        },
+        "issue2": {
+          "title": "Property value not updating when changed",
+          "solution": "DOCPROPERTY fields don't auto-update while editing. After changing a property value in Advanced Properties, select all fields (Ctrl+A) and press F9 to manually update. For automatic updates, ensure 'Update fields before printing' is enabled in Word Options → Display."
+        },
+        "issue3": {
+          "title": "Error! Bookmark not defined message appears",
+          "solution": "This error indicates the custom property referenced by the DOCPROPERTY field doesn't exist. Check spelling and case sensitivity - property names are case-sensitive. Verify the property exists in File → Info → Properties → Advanced Properties → Custom tab."
+        },
+        "issue4": {
+          "title": "Properties lost when document is shared or converted",
+          "solution": "Custom properties are preserved in .docx and .doc formats but may be lost when converting to PDF or other formats. Always keep the original Word document as the master copy. When sharing, distribute as .docx or .dotx (template) to maintain all properties and fields."
+        },
+        "issue5": {
+          "title": "Fields locked and won't update",
+          "solution": "Fields may be locked to prevent accidental changes. Select the field and press Ctrl+Shift+F11 to unlock it. If the document is protected, you'll need to unprotect it first via Review → Restrict Editing → Stop Protection."
+        },
+        "issue6": {
+          "title": "Date properties displaying in wrong format",
+          "solution": "Add format switches to control date display: { DOCPROPERTY DateProp \\@ \"dddd, MMMM d, yyyy\" } for 'Monday, January 26, 2026'. Common switches: 'dd/MM/yyyy' for 26/01/2026, 'MMMM yyyy' for January 2026, 'M/d/yy' for 1/26/26."
+        }
+      },
+      "examples": {
+        "title": "Practical Examples",
+        "subtitle": "Real-world scenarios demonstrating custom properties and DOCPROPERTY fields in action",
+        "example1": {
+          "title": "Contract Template",
+          "description": "Create a contract template with properties for ClientName, ContractDate, Amount, and ServiceDescription. Use DOCPROPERTY fields throughout the document so updating these four properties automatically populates all references.",
+          "properties": "Properties: ClientName (Text), ContractDate (Date), Amount (Number), ServiceDescription (Text)",
+          "usage": "Insert fields like: 'This agreement, dated { DOCPROPERTY ContractDate \\@ \"MMMM d, yyyy\" }, is between [Company] and { DOCPROPERTY ClientName } for { DOCPROPERTY ServiceDescription } services.'"
+        },
+        "example2": {
+          "title": "Invoice System",
+          "description": "Build an invoice template using properties for InvoiceNumber, ClientName, InvoiceDate, and multiple line items. Use formulas to calculate subtotals and totals automatically.",
+          "properties": "Properties: InvoiceNumber (Text), ClientName (Text), InvoiceDate (Date), Item1Price (Number), Item2Price (Number), TaxRate (Number)",
+          "usage": "Calculate total: { = ({ DOCPROPERTY Item1Price } + { DOCPROPERTY Item2Price }) * (1 + { DOCPROPERTY TaxRate }) \\# \"$#,##0.00\" }"
+        },
+        "example3": {
+          "title": "Report Generation",
+          "description": "Create report templates with properties for ReportTitle, AuthorName, DateGenerated, and Department. Enable consistent branding and metadata across all organizational reports.",
+          "properties": "Properties: ReportTitle (Text), AuthorName (Text), DateGenerated (Date), Department (Text), ReportPeriod (Text)",
+          "usage": "Header example: '{ DOCPROPERTY ReportTitle } | { DOCPROPERTY Department } | { DOCPROPERTY ReportPeriod }'"
+        }
+      }
+    }
   }
 }

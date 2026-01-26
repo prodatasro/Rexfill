@@ -5,3 +5,4 @@ export type { PlanId, SubscriptionStatus, SubscriptionType, SubscriptionData, Us
 export type { UserProfile, UserProfileData } from './user-profile';
 export type { ActivityLogData } from './activity-log';
 export type { OrganizationData, OrganizationMemberData, InvitationData, OrganizationWithMembers, OrganizationRole, InvitationStatus } from './organization';
+export type { NotificationData, NotificationType, NotificationContextType } from './notification';

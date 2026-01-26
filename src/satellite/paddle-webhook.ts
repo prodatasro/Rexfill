@@ -16,6 +16,7 @@
 import { id } from '@junobuild/functions/ic-cdk';
 import {
   encodeDocData,
+  decodeDocData,
   setDocStore,
   getDocStore,
 } from '@junobuild/functions/sdk';
@@ -58,6 +59,8 @@ interface PaddleWebhookEvent {
     custom_data?: {
       userId?: string;
       organizationId?: string;
+      organizationName?: string;
+      isOrganizationPlan?: string;
     };
     items: Array<{
       price: {
@@ -211,6 +214,8 @@ export async function paddleWebhook(request: Request): Promise<Response> {
     // Extract user ID from custom data
     const userId = event.data.custom_data?.userId;
     const organizationId = event.data.custom_data?.organizationId;
+    const organizationName = event.data.custom_data?.organizationName;
+    const isOrganizationPlan = event.data.custom_data?.isOrganizationPlan === 'true';
 
     if (!userId && !organizationId) {
       console.error('No userId or organizationId in webhook data');
@@ -233,6 +238,99 @@ export async function paddleWebhook(request: Request): Promise<Response> {
       case 'subscription.created':
       case 'subscription.updated':
       case 'subscription.resumed': {
+        let finalOrganizationId = organizationId;
+
+        // If this is a new organization subscription, create the organization
+        if (event.event_type === 'subscription.created' && isOrganizationPlan && !organizationId && userId && organizationName) {
+          const newOrgId = `org_${Date.now()}_${userId}`;
+          
+          const organizationData = {
+            name: organizationName,
+            ownerId: userId,
+            seatsUsed: 1, // Owner takes one seat
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+
+          const encodedOrgData = encodeDocData(organizationData);
+
+          await retryOperation(async () =>
+            await setDocStore({
+              caller: id(),
+              collection: 'organizations',
+              key: newOrgId,
+              doc: {
+                data: encodedOrgData,
+              },
+            })
+          );
+
+          // Create organization member entry for the owner
+          const memberData = {
+            organizationId: newOrgId,
+            userId,
+            role: 'owner',
+            joinedAt: Date.now(),
+          };
+
+          const encodedMemberData = encodeDocData(memberData);
+          const memberKey = `${newOrgId}_${userId}`;
+
+          await retryOperation(async () =>
+            await setDocStore({
+              caller: id(),
+              collection: 'organization_members',
+              key: memberKey,
+              doc: {
+                data: encodedMemberData,
+              },
+            })
+          );
+
+          // If user has an individual subscription, mark it for cancellation at period end
+          try {
+            const individualSub = await getDocStore({
+              caller: id(),
+              collection: 'subscriptions',
+              key: userId,
+            });
+
+            if (individualSub) {
+              const decodedData = decodeDocData<{ type?: string; [key: string]: unknown }>(individualSub.data);
+              
+              if (decodedData.type === 'individual') {
+                const updatedIndividualData = {
+                  ...decodedData,
+                  cancelAtPeriodEnd: true,
+                  updatedAt: Date.now(),
+                };
+
+                const encodedIndividualData = encodeDocData(updatedIndividualData);
+
+                await retryOperation(async () =>
+                  await setDocStore({
+                    caller: id(),
+                    collection: 'subscriptions',
+                    key: userId,
+                    doc: {
+                      data: encodedIndividualData,
+                      version: individualSub.version,
+                    },
+                  })
+                );
+
+                console.log(`Marked individual subscription for ${userId} to cancel at period end`);
+              }
+            }
+          } catch (error) {
+            console.error('Error updating individual subscription:', error);
+            // Don't fail the webhook if individual subscription update fails
+          }
+
+          finalOrganizationId = newOrgId;
+          console.log(`Created organization ${newOrgId} for subscription`);
+        }
+
         // Create or update subscription
         const subscriptionData = {
           planId,
@@ -245,7 +343,7 @@ export async function paddleWebhook(request: Request): Promise<Response> {
           cancelAtPeriodEnd: Boolean(event.data.cancel_at),
           createdAt: Date.now(),
           updatedAt: Date.now(),
-          ...(organizationId && { organizationId }),
+          ...(finalOrganizationId && { organizationId: finalOrganizationId }),
           ...(seatsIncluded && {
             seatsIncluded,
             seatsUsed: event.data.items[0]?.quantity || 1,
@@ -253,7 +351,7 @@ export async function paddleWebhook(request: Request): Promise<Response> {
         };
 
         // Determine which key to use (organization or user)
-        const key = organizationId || userId!;
+        const key = finalOrganizationId || userId!;
         
         // Encode the data for storage
         const encodedData = encodeDocData(subscriptionData);
@@ -286,13 +384,22 @@ export async function paddleWebhook(request: Request): Promise<Response> {
         });
 
         if (existingDoc) {
+          const decodedData = decodeDocData<{ type?: string; [key: string]: unknown }>(existingDoc.data);
+          const isOrgSubscription = decodedData.type === 'organization';
+          
+          // For organization subscriptions that are canceled, set grace period (7 days)
+          const gracePeriodEndsAt = isOrgSubscription && event.event_type === 'subscription.canceled'
+            ? Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days from now
+            : undefined;
+
           const updatedData = {
-            ...existingDoc.data,
+            ...decodedData,
             status: event.data.status,
             updatedAt: Date.now(),
             ...(event.data.cancel_at && {
               cancelAtPeriodEnd: true,
             }),
+            ...(gracePeriodEndsAt && { gracePeriodEndsAt }),
           };
           
           // Encode the updated data
@@ -310,7 +417,57 @@ export async function paddleWebhook(request: Request): Promise<Response> {
             })
           );
 
-          console.log(`Subscription ${event.event_type} for ${key}`);
+          console.log(`Subscription ${event.event_type} for ${key}${gracePeriodEndsAt ? ' with grace period' : ''}`);
+
+          // If grace period started, create notifications for all organization members
+          if (gracePeriodEndsAt && isOrgSubscription && organizationId) {
+            try {
+              // Get organization to find owner
+              const orgDoc = await getDocStore({
+                caller: id(),
+                collection: 'organizations',
+                key: organizationId,
+              });
+
+              if (orgDoc) {
+                const orgData = decodeDocData<{ ownerId?: string; name?: string; [key: string]: unknown }>(orgDoc.data);
+                
+                if (orgData.ownerId) {
+                  // Create notification for owner about grace period
+                  const notificationData = {
+                    userId: orgData.ownerId,
+                    type: 'grace_period_started',
+                    read: false,
+                    metadata: {
+                      organizationId,
+                      organizationName: orgData.name || 'Your organization',
+                      gracePeriodEndsAt: gracePeriodEndsAt.toString(),
+                    },
+                    createdAt: Date.now(),
+                  };
+
+                  const notificationKey = `notif_${Date.now()}_${orgData.ownerId}`;
+                  const encodedNotificationData = encodeDocData(notificationData);
+
+                  await retryOperation(async () =>
+                    await setDocStore({
+                      caller: id(),
+                      collection: 'notifications',
+                      key: notificationKey,
+                      doc: {
+                        data: encodedNotificationData,
+                      },
+                    })
+                  );
+
+                  console.log(`Created grace period notification for owner ${orgData.ownerId}`);
+                }
+              }
+            } catch (error) {
+              console.error('Error creating grace period notification:', error);
+              // Don't fail the webhook if notification creation fails
+            }
+          }
         }
         break;
       }

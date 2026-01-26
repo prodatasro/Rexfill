@@ -208,17 +208,37 @@
       }
     },
     "subscription": {
-      "subtitle": "Zobrazenie detailov plánu a štatistík využitia",
+      "title": "Predplatné",
+      "subtitle": "Správa predplatného a zobrazenie štatistík využitia",
       "currentPlan": "Aktuálny plán",
+      "organizationPlan": "Organizačný plán",
+      "price": "Cena",
+      "renewsOn": "Obnovuje sa",
+      "features": "Funkcie plánu",
+      "documentsPerDay": "Dokumentov za deň",
+      "documentsPerMonth": "Dokumentov za mesiac",
+      "maxTemplates": "Max. šablón",
+      "maxFileSize": "Max. veľkosť súboru",
+      "batchProcessing": "Dávkové spracovanie",
+      "prioritySupport": "Prioritná podpora",
       "usage": "Štatistiky využitia",
       "documentsToday": "Dokumenty dnes",
       "documentsThisMonth": "Dokumenty tento mesiac",
-      "totalTemplates": "Celkový počet šablón",
-      "planDescription": {
-        "free": "Bezplatný plán so základnými funkciami",
-        "starter": "Štartovací plán s rozšírenými limitmi",
-        "professional": "Profesionálny plán s pokročilými funkciami",
-        "enterprise": "Podnikový plán s neobmedzeným prístupom"
+      "templateCount": "Šablóny",
+      "upgradePlans": "Dostupné upgrady",
+      "upgrade": "Upgradovať",
+      "upgradeError": "Nepodarilo sa upgradovať. Skúste to znova.",
+      "checkoutSuccess": "Predplatné bolo úspešne aktivované!",
+      "managePayment": "Spravujte svoju platobnú metódu a fakturačné údaje",
+      "openPaddlePortal": "Otvoriť zákaznícky portál",
+      "resubscribe": "Reaktivovať predplatné",
+      "gracePeriod": {
+        "title": "Predplatné organizácie zrušené",
+        "message": "Vaše predplatné organizácie bolo zrušené. Máte {{days}} dní (do {{date}}) na export údajov a opätovné predplatenie predtým, ako budú členovia odstránení."
+      },
+      "individualCancelling": {
+        "title": "Individuálne predplatné sa zruší",
+        "message": "Vaše individuálne predplatné bude zrušené {{date}}, pretože ste sa pripojili k organizácii."
       }
     },
     "activity": {
@@ -349,5 +369,161 @@
     "renameFailed": "Nepodarilo sa premenovať priečinok",
     "deleteFailed": "Nepodarilo sa zmazať priečinok",
     "closeMenu": "Zavrieť menu"
+  },
+  "organization": {
+    "name": "Názov organizácie",
+    "nameRequired": "Názov organizácie je povinný",
+    "nameTooShort": "Názov musí mať aspoň 2 znaky",
+    "nameTooLong": "Názov musí mať menej ako 100 znakov",
+    "checkout": {
+      "title": "Vytvoriť organizáciu",
+      "subtitle": "Zadajte názov organizácie pre pokračovanie k platbe",
+      "namePlaceholder": "Názov spoločnosti",
+      "planInfo": "Predplácate si",
+      "whatHappensNext": "Čo sa stane ďalej?",
+      "step1": "Dokončite platbu cez Paddle",
+      "step2": "Vaša organizácia bude vytvorená automaticky",
+      "step3": "Budete nastavení ako trvalý vlastník",
+      "continue": "Pokračovať k platbe",
+      "cancel": "Zrušiť"
+    },
+    "manageTeam": "Spravujte nastavenia organizácie a členov tímu",
+    "gracePeriod": {
+      "title": "Predplatné zrušené - Aktivná ochranná lehota",
+      "message": "Vaše predplatné organizácie bolo zrušené. Máte {{days}} dní (do {{date}}) na export údajov a opätovné predplatenie predtým, ako budú všetci členovia odstránení a organizácia sa vráti na bezplatný plán."
+    },
+    "exportData": "Exportovať údaje organizácie",
+    "exportSuccess": "Údaje organizácie boli úspešne exportované",
+    "exportError": "Nepodarilo sa exportovať údaje organizácie",
+    "seats": "{{used}}/{{total}} miest",
+    "availableSeats": "{{count}} dostupné miesto",
+    "availableSeats_plural": "{{count}} dostupných miest",
+    "gracePeriodEnds": "Predplatné končí o {{days}} dní",
+    "gracePeriodWarning": "Vaše predplatné organizácie bolo zrušené. Máte {{days}} dní pred odstránením členov.",
+    "exportDataWarning": "Exportujte svoje údaje pred skončením ochrannej lehoty",
+    "resubscribe": "Reaktivovať predplatné",
+    "subscriptionInfo": "Budete nastavení ako vlastník organizácie"
+  },
+  "invitations": {
+    "notifications": "Notifikácie",
+    "pending": "Čakajúce pozvánky",
+    "noPending": "Žiadne čakajúce pozvánky",
+    "invitedTo": "Pozvaný do {{orgName}}",
+    "role": "Rola",
+    "expires": "Vyprší",
+    "expiresIn": "Vyprší o {{days}} dní",
+    "expired": "Vypršané",
+    "expiringSoon": "Čoskoro vyprší",
+    "accept": "Prijať",
+    "reject": "Odmietnuť",
+    "accepting": "Prijímanie...",
+    "rejecting": "Odmietanie...",
+    "acceptSuccess": "Pozvánka prijatá",
+    "rejectSuccess": "Pozvánka odmietnutá",
+    "noNotifications": "Žiadne notifikácie"
+  },
+  "guides": {
+    "title": "Používateľské príručky a dokumentácia",
+    "subtitle": "Naučte sa maximálne využiť vlastné vlastnosti a polia DOCPROPERTY vo vašich Word dokumentoch",
+    "sections": {
+      "customProperties": {
+        "title": "Pochopenie vlastných vlastností dokumentu",
+        "intro": "Vlastné vlastnosti dokumentu sú metadátové polia vložené v Word dokumentoch, ktoré môžu uchovávať dynamické informácie. Fungujú ako premenné, na ktoré možno odkazovať v celom dokumente pomocou polí DOCPROPERTY, čo umožňuje automatické aktualizácie a konzistentnú správu dát.",
+        "howTo": "Ako vytvoriť vlastné vlastnosti v Microsoft Word:",
+        "step1": "Otvorte váš Word dokument a kliknite na Súbor → Informácie → Vlastnosti → Rozšírené vlastnosti",
+        "step2": "Prejdite na kartu 'Vlastné' v dialógovom okne Vlastnosti",
+        "step3": "Zadajte názov vlastnosti (napr. 'MenoKlienta', 'DatumZmluvy', 'IDProjektu') - vyhnite sa medzerám a špeciálnym znakom",
+        "step4": "Vyberte typ dát (Text, Číslo, Dátum alebo Áno/Nie) a zadajte počiatočnú hodnotu",
+        "step5": "Kliknite na 'Pridať' pre vytvorenie vlastnosti, potom na 'OK' pre uloženie zmien",
+        "benefit": "Po vytvorení sa tieto vlastnosti stanú opätovne použiteľnými premennými, ktoré možno vložiť kdekoľvek v dokumente a automaticky sa aktualizujú pri zmene hodnoty vlastnosti."
+      },
+      "docproperty": {
+        "title": "Používanie polí DOCPROPERTY",
+        "intro": "Polia DOCPROPERTY sú dynamické zástupné symboly, ktoré zobrazujú hodnotu vlastných vlastností dokumentu. Keď aktualizujete hodnotu vlastnosti, všetky polia DOCPROPERTY odkazujúce na ňu sa automaticky obnovia v celom dokumente.",
+        "howToInsert": "Ako vložiť polia DOCPROPERTY:",
+        "insertStep1": "Umiestnite kurzor tam, kde chcete, aby sa zobrazila hodnota vlastnosti",
+        "insertStep2": "Stlačte Ctrl+F9 pre vloženie hranatých zátvoriek poľa { } - nezadávajte ich manuálne",
+        "insertStep3": "Napíšte 'DOCPROPERTY NázovVlastnosti' medzi zátvorky (napr. { DOCPROPERTY MenoKlienta })",
+        "insertStep4": "Stlačte F9 pre aktualizáciu poľa a zobrazenie hodnoty vlastnosti",
+        "alternativeMethod": "Alternatívna metóda pomocou menu Vložiť:",
+        "altStep1": "Prejdite na Vložiť → Rýchle časti → Pole",
+        "altStep2": "V dialógovom okne Pole vyberte 'DocProperty' zo zoznamu názvov polí",
+        "altStep3": "Vyberte vašu vlastnú vlastnosť z rozbaľovacieho menu",
+        "altStep4": "Kliknite na 'OK' pre vloženie poľa",
+        "updating": "Polia sa automaticky aktualizujú pri otvorení dokumentu alebo tlači. Pre manuálnu aktualizáciu všetkých polí stlačte Ctrl+A pre výber všetkého, potom stlačte F9."
+      },
+      "bestPractices": {
+        "title": "Osvedčené postupy a odporúčania",
+        "tip1": "Používajte popisné pomenovania vlastností v štýle camelCase (napr. 'datumZaciatiaZmluvy' namiesto 'datum1'), aby boli ľahko identifikovateľné a predišlo konfliktom názvov",
+        "tip2": "Definujte všetky vlastné vlastnosti pred distribúciou šablón pre zabezpečenie konzistentnosti. Príjemcovia môžu aktualizovať hodnoty bez potreby vytvárať vlastnosti od začiatku",
+        "tip3": "Vyberte správny typ dát pre každú vlastnosť: Text pre mená a popisy, Číslo pre množstvá a ID, Dátum pre časové informácie a Áno/Nie pre boolean príznaky",
+        "tip4": "Používajte formátovacie kódy polí na kontrolu spôsobu zobrazenia hodnôt. Pre dátumy pridajte formátovacie prepínače ako { DOCPROPERTY DatumZmluvy \\@ \"d. MMMM yyyy\" } pre zobrazenie '26. január 2026'",
+        "tip5": "Vytvorte referenčnú sekciu vlastností v dokumentácii vašej šablóny so zoznamom všetkých dostupných vlastných vlastností, ich účelom, typom dát a očakávaným formátom",
+        "tip6": "Uzamknite polia, ktoré by nemali byť omylom zmazané, výberom poľa a stlačením Ctrl+F11. Odomknite pomocou Ctrl+Shift+F11, keď je potrebná úprava",
+        "tip7": "Dôkladne otestujte vašu šablónu aktualizáciou hodnôt vlastností a overením, že všetky polia DOCPROPERTY sa správne aktualizujú v celom dokumente"
+      },
+      "advanced": {
+        "title": "Pokročilé techniky",
+        "formulas": "Kombinácia DOCPROPERTY s vzorcami:",
+        "formulaTip1": "Používajte polia = (Vzorec) s DOCPROPERTY pre výpočty. Príklad: { = { DOCPROPERTY Mnozstvo } * { DOCPROPERTY JednotkovaCena } } pre automatický výpočet celkovej sumy",
+        "formulaTip2": "Aplikujte formátovanie čísiel na výsledky vzorcov pomocou prepínačov: { = { DOCPROPERTY Celkom } \\# \"#,##0.00 €\" } zobrazí formát meny",
+        "conditionalText": "Vytváranie podmieneného obsahu:",
+        "conditionalTip1": "Používajte polia IF s DOCPROPERTY na zobrazenie rôzneho textu na základe hodnôt vlastností: { IF { DOCPROPERTY Stav } = \"Aktívny\" \"Zmluva je aktívna\" \"Zmluva je neaktívna\" }",
+        "conditionalTip2": "Vnárajte viacero podmienok pre komplexnú logiku: { IF { DOCPROPERTY Suma } > 10000 \"Veľká zmluva\" \"{ IF { DOCPROPERTY Suma } > 5000 \"Stredná zmluva\" \"Malá zmluva\" }\" }",
+        "automation": "Automatizácia a makrá:",
+        "autoTip1": "Vytvorte VBA makrá pre hromadnú aktualizáciu viacerých vlastností súčasne, čo šetrí čas pri spracovaní mnohých dokumentov",
+        "autoTip2": "Použite udalosť Document_Open vo VBA na automatické vyzvanie používateľov k zadaniu hodnôt vlastností pri otvorení šablón",
+        "autoTip3": "Implementujte vlastné tlačidlá na páse nástrojov alebo formulárové dialógy na poskytnutie používateľsky prívetivých rozhraní pre aktualizáciu vlastností dokumentu"
+      },
+      "troubleshooting": {
+        "title": "Bežné problémy a riešenia",
+        "issue1": {
+          "title": "Polia zobrazujú { DOCPROPERTY NázovVlastnosti } namiesto hodnoty",
+          "solution": "To znamená, že sú viditeľné kódy polí namiesto výsledkov polí. Stlačte Alt+F9 pre prepínanie medzi zobrazením kódov polí a hodnôt polí. Ak pole stále zobrazuje kód po prepnutí, stlačte F9 pri vybranom poli pre jeho aktualizáciu."
+        },
+        "issue2": {
+          "title": "Hodnota vlastnosti sa neaktualizuje pri zmene",
+          "solution": "Polia DOCPROPERTY sa automaticky neaktualizujú počas úprav. Po zmene hodnoty vlastnosti v Rozšírených vlastnostiach vyberte všetky polia (Ctrl+A) a stlačte F9 pre manuálnu aktualizáciu. Pre automatické aktualizácie sa uistite, že je povolené 'Aktualizovať polia pred tlačou' v Možnosti Word → Zobrazenie."
+        },
+        "issue3": {
+          "title": "Zobrazuje sa správa Chyba! Záložka nie je definovaná",
+          "solution": "Táto chyba indikuje, že vlastná vlastnosť odkazovaná poľom DOCPROPERTY neexistuje. Skontrolujte pravopis a rozlišovanie veľkých a malých písmen - názvy vlastností rozlišujú veľké a malé písmená. Overte, že vlastnosť existuje v Súbor → Informácie → Vlastnosti → Rozšírené vlastnosti → karta Vlastné."
+        },
+        "issue4": {
+          "title": "Vlastnosti sa stratia pri zdieľaní alebo konverzii dokumentu",
+          "solution": "Vlastné vlastnosti sú zachované vo formátoch .docx a .doc, ale môžu sa stratiť pri konverzii do PDF alebo iných formátov. Vždy uchovávajte pôvodný Word dokument ako hlavnú kópiu. Pri zdieľaní distribuujte ako .docx alebo .dotx (šablóna) na zachovanie všetkých vlastností a polí."
+        },
+        "issue5": {
+          "title": "Polia sú uzamknuté a nebudú sa aktualizovať",
+          "solution": "Polia môžu byť uzamknuté na zabránenie náhodným zmenám. Vyberte pole a stlačte Ctrl+Shift+F11 pre jeho odomknutie. Ak je dokument chránený, budete ho musieť najprv odchániť cez Revízia → Obmedziť úpravy → Zastaviť ochranu."
+        },
+        "issue6": {
+          "title": "Vlastnosti dátumu sa zobrazujú v nesprávnom formáte",
+          "solution": "Pridajte formátovacie prepínače na kontrolu zobrazenia dátumu: { DOCPROPERTY VlastnostDatum \\@ \"dddd, d. MMMM yyyy\" } pre 'pondelok, 26. január 2026'. Bežné prepínače: 'dd.MM.yyyy' pre 26.01.2026, 'MMMM yyyy' pre január 2026, 'd.M.yy' pre 26.1.26."
+        }
+      },
+      "examples": {
+        "title": "Praktické príklady",
+        "subtitle": "Reálne scenáre demonštrujúce vlastné vlastnosti a polia DOCPROPERTY v akcii",
+        "example1": {
+          "title": "Šablóna zmluvy",
+          "description": "Vytvorte šablónu zmluvy s vlastnosťami pre MenoKlienta, DatumZmluvy, Suma a PopisSluzby. Použite polia DOCPROPERTY v celom dokumente, takže aktualizácia týchto štyroch vlastností automaticky vyplní všetky odkazy.",
+          "properties": "Vlastnosti: MenoKlienta (Text), DatumZmluvy (Dátum), Suma (Číslo), PopisSluzby (Text)",
+          "usage": "Vložte polia ako: 'Táto zmluva, datovaná { DOCPROPERTY DatumZmluvy \\@ \"d. MMMM yyyy\" }, je medzi [Spoločnosť] a { DOCPROPERTY MenoKlienta } pre služby { DOCPROPERTY PopisSluzby }.'"
+        },
+        "example2": {
+          "title": "Systém faktúr",
+          "description": "Vytvorte šablónu faktúry pomocou vlastností pre CisloFaktury, MenoKlienta, DatumFaktury a viacero riadkových položiek. Použite vzorce na automatický výpočet medzisúčtov a celkových súm.",
+          "properties": "Vlastnosti: CisloFaktury (Text), MenoKlienta (Text), DatumFaktury (Dátum), CenaPolozky1 (Číslo), CenaPolozky2 (Číslo), SadzbaDPH (Číslo)",
+          "usage": "Výpočet celkovej sumy: { = ({ DOCPROPERTY CenaPolozky1 } + { DOCPROPERTY CenaPolozky2 }) * (1 + { DOCPROPERTY SadzbaDPH }) \\# \"#,##0.00 €\" }"
+        },
+        "example3": {
+          "title": "Generovanie reportov",
+          "description": "Vytvorte šablóny reportov s vlastnosťami pre NazovReportu, MenoAutora, DatumGenerovania a Oddelenie. Umožnite konzistentný branding a metadáta naprieč všetkými organizačnými reportmi.",
+          "properties": "Vlastnosti: NazovReportu (Text), MenoAutora (Text), DatumGenerovania (Dátum), Oddelenie (Text), ObdobieReportu (Text)",
+          "usage": "Príklad hlavičky: '{ DOCPROPERTY NazovReportu } | { DOCPROPERTY Oddelenie } | { DOCPROPERTY ObdobieReportu }'"
+        }
+      }
+    }
   }
 }

@@ -1,12 +1,15 @@
 import { FC, useState, useRef, useEffect } from 'react';
-import { Sun, Moon, User, ChevronDown } from 'lucide-react';
+import { Sun, Moon, User, Building2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSearch } from '../../contexts/SearchContext';
+import { useOrganization } from '../../contexts/OrganizationContext';
+import { useSubscription } from '../../contexts/SubscriptionContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../ui/LanguageSelector';
 import { GlobalSearch } from '../ui/GlobalSearch';
+import NotificationBell from './NotificationBell';
 
 const PADDLE_ENVIRONMENT = import.meta.env.VITE_PADDLE_ENVIRONMENT || 'production';
 
@@ -20,6 +23,8 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { allTemplates, folderTree, onSelectTemplate, onSelectFolder } = useSearch();
+  const { currentOrganization } = useOrganization();
+  const { subscription, gracePeriodEndsAt } = useSubscription();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +52,11 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
   const handleProfileClick = () => {
     setShowUserMenu(false);
     navigate('/app/profile');
+  };
+
+  const handleOrganizationClick = () => {
+    setShowUserMenu(false);
+    navigate('/app/organization');
   };
 
   const handleLogoutClick = () => {
@@ -85,6 +95,8 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
               onSelectFolder={handleSelectFolder}
             />
 
+            <NotificationBell />
+
             <LanguageSelector />
 
             <button
@@ -103,11 +115,10 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
                 aria-label={t('header.userMenu')}
               >
                 <User className="w-5 h-5" />
-                <ChevronDown className="w-4 h-4" />
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
                   <button
                     onClick={handleProfileClick}
                     className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
@@ -115,6 +126,31 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
                     <User size={16} />
                     {t('header.profile')}
                   </button>
+                  
+                  {currentOrganization && (
+                    <>
+                      <hr className="my-1 border-slate-200 dark:border-slate-700" />
+                      <button
+                        onClick={handleOrganizationClick}
+                        className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Building2 size={16} />
+                          <div className="flex-1">
+                            <div className="font-medium">{(currentOrganization.data as any).name}</div>
+                            {subscription && subscription.seatsIncluded && (
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                {subscription.seatsUsed || 0}/{subscription.seatsIncluded} {t('organization.seats')}
+                                {gracePeriodEndsAt && gracePeriodEndsAt > Date.now() && (
+                                  <span className="ml-1 text-orange-600 dark:text-orange-400">⚠</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    </>
+                  )}
                   <hr className="my-1 border-slate-200 dark:border-slate-700" />
                   <button
                     onClick={handleLogoutClick}

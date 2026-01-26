@@ -10,6 +10,8 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 const Dashboard = lazy(() => import('../app/Dashboard'));
 const ProcessorPage = lazy(() => import('../../pages/app/ProcessorPage'));
 const ProfilePage = lazy(() => import('../../pages/app/ProfilePage'));
+const SubscriptionPage = lazy(() => import('../../pages/app/SubscriptionPage'));
+const OrganizationSettingsPage = lazy(() => import('../../pages/app/OrganizationSettingsPage'));
 const NotFoundPage = lazy(() => import('../../pages/NotFoundPage'));
 
 const AppLayout: FC = () => {
@@ -75,6 +77,8 @@ const AppLayout: FC = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/process" element={<ProcessorPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/organization" element={<OrganizationSettingsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

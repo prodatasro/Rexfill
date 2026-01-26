@@ -3,6 +3,7 @@ import { getDoc, setDoc, listDocs, deleteDoc } from '@junobuild/core';
 import type { Doc } from '@junobuild/core';
 import { useAuth } from './AuthContext';
 import { useSubscription } from './SubscriptionContext';
+import { useUserProfile } from './UserProfileContext';
 import { 
   OrganizationData, 
   OrganizationMemberData, 
@@ -18,6 +19,7 @@ interface OrganizationContextType {
   userRole: OrganizationRole | null;
   members: Doc<OrganizationMemberData>[];
   pendingInvitations: Doc<InvitationData>[];
+  userInvitations: Doc<InvitationData>[]; // Invitations received by the current user
   isLoading: boolean;
   createOrganization: (name: string) => Promise<void>;
   inviteByEmail: (email: string, role: OrganizationRole) => Promise<void>;
@@ -30,6 +32,7 @@ interface OrganizationContextType {
   canInviteMembers: () => boolean;
   canManageMembers: () => boolean;
   availableSeats: number;
+  exportOrganizationData: () => Promise<void>;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
@@ -41,17 +44,87 @@ interface OrganizationProviderProps {
 export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const { subscription } = useSubscription();
+  const { profile } = useUserProfile();
   
   const [currentOrganization, setCurrentOrganization] = useState<Doc<OrganizationData> | null>(null);
   const [userRole, setUserRole] = useState<OrganizationRole | null>(null);
   const [members, setMembers] = useState<Doc<OrganizationMemberData>[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<Doc<InvitationData>[]>([]);
+  const [userInvitations, setUserInvitations] = useState<Doc<InvitationData>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Calculate available seats
   const availableSeats = currentOrganization && subscription?.seatsIncluded
     ? (subscription.seatsIncluded - (subscription.seatsUsed || 0))
     : 0;
+
+  // Helper function to send email invitations (stub for future email service)
+  const sendInvitationEmail = useCallback(async (
+    email: string,
+    organizationName: string,
+    role: OrganizationRole,
+    inviterName: string
+  ) => {
+    // TODO: Implement email sending via email service when available
+    console.log(`[Email Service] Invitation email would be sent to ${email} for ${organizationName} (${role}) from ${inviterName}`);
+  }, []);
+
+  // Helper function to cleanup expired invitations (>30 days old)
+  const cleanupExpiredInvitations = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const allInvitations = await listDocs({
+        collection: 'organization_invitations',
+      });
+
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const expiredInvitations = allInvitations.items.filter(doc => {
+        const invitation = doc.data as InvitationData;
+        return invitation.expiresAt < Date.now() && invitation.createdAt < thirtyDaysAgo;
+      });
+
+      for (const invDoc of expiredInvitations) {
+        try {
+          await deleteDoc({
+            collection: 'organization_invitations',
+            doc: invDoc,
+          });
+        } catch (error) {
+          console.error('Failed to delete expired invitation:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to cleanup expired invitations:', error);
+    }
+  }, [user]);
+
+  // Helper function to load user's pending invitations
+  const loadUserInvitations = useCallback(async () => {
+    if (!user) {
+      setUserInvitations([]);
+      return;
+    }
+
+    try {
+      const allInvitations = await listDocs({
+        collection: 'organization_invitations',
+      });
+
+      // Filter invitations for this user by principalId
+      const userInvites = allInvitations.items.filter(doc => {
+        const invitation = doc.data as InvitationData;
+        return (
+          invitation.status === 'pending' &&
+          invitation.principalId === user.key
+        );
+      });
+
+      setUserInvitations(userInvites as Doc<InvitationData>[]);
+    } catch (error) {
+      console.error('Failed to load user invitations:', error);
+    }
+  }, [user]);
 
   // Load organization data
   useEffect(() => {
@@ -61,23 +134,32 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         setUserRole(null);
         setMembers([]);
         setPendingInvitations([]);
+        setUserInvitations([]);
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
       try {
+        // Cleanup expired invitations on user login
+        await cleanupExpiredInvitations();
+
+        // Load user's pending invitations
+        await loadUserInvitations();
+
         // Check if user is a member of any organization
-        const membershipDocs = await listDocs({
+        // Since member docs are keyed by ${orgId}_${userId}, we need to list all and filter
+        const allMembershipDocs = await listDocs({
           collection: 'organization_members',
-          filter: {
-            matcher: {
-              key: user.key, // Assuming member docs are keyed by userId
-            },
-          },
         });
 
-        if (membershipDocs.items.length === 0) {
+        // Filter to find this user's memberships
+        const userMemberships = allMembershipDocs.items.filter(doc => {
+          const memberData = doc.data as OrganizationMemberData;
+          return memberData.userId === user.key;
+        });
+
+        if (userMemberships.length === 0) {
           // User is not in any organization
           setCurrentOrganization(null);
           setUserRole(null);
@@ -88,7 +170,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         }
 
         // Get the first membership (users can only be in one org for now)
-        const membership = membershipDocs.items[0].data as OrganizationMemberData;
+        const membership = userMemberships[0].data as OrganizationMemberData;
         setUserRole(membership.role);
 
         // Load organization details
@@ -237,6 +319,14 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         },
       });
 
+      // Send invitation email (stub for future email service)
+      await sendInvitationEmail(
+        email,
+        currentOrganization.data.name,
+        role,
+        profile?.data.displayName || profile?.data.email || 'Team member'
+      );
+
       setPendingInvitations((prev) => [
         ...prev,
         { key: invitationId, data: invitationData } as Doc<InvitationData>,
@@ -364,6 +454,36 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
             },
           },
         });
+      }
+
+      // Cancel user's individual subscription at period end (if they have one)
+      try {
+        const userSubscription = await getDoc({
+          collection: 'subscriptions',
+          key: user.key,
+        });
+
+        if (userSubscription) {
+          const subData = userSubscription.data as any;
+          // Only cancel if it's an individual subscription (not organization)
+          if (subData.type === 'individual' && subData.planId !== 'free') {
+            await setDoc({
+              collection: 'subscriptions',
+              doc: {
+                ...userSubscription,
+                data: {
+                  ...subData,
+                  cancelAtPeriodEnd: true,
+                  updatedAt: Date.now(),
+                },
+                updated_at: BigInt(Date.now()),
+              },
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to cancel individual subscription:', error);
+        // Don't throw - invitation was still accepted successfully
       }
 
       showSuccessToast('Invitation accepted');
@@ -530,6 +650,58 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
     }
   }, [user, currentOrganization, userRole, members]);
 
+  const exportOrganizationData = useCallback(async () => {
+    if (!user || !currentOrganization) throw new Error('Not in an organization');
+
+    try {
+      // Get all templates owned by organization members
+      const templates = await listDocs({
+        collection: 'templates_meta',
+      });
+
+      const memberIds = (currentOrganization.data as OrganizationData).memberIds;
+      const orgTemplates = templates.items.filter(doc => 
+        memberIds.includes(doc.owner ?? '')
+      );
+
+      // Create export data
+      const exportData = {
+        organization: {
+          name: (currentOrganization.data as OrganizationData).name,
+          createdAt: (currentOrganization.data as OrganizationData).createdAt,
+          members: members.map(m => ({
+            role: (m.data as OrganizationMemberData).role,
+            joinedAt: (m.data as OrganizationMemberData).joinedAt,
+          })),
+        },
+        templates: orgTemplates.map(t => ({
+          key: t.key,
+          name: (t.data as any).name,
+          createdAt: t.created_at,
+          updatedAt: t.updated_at,
+        })),
+        exportedAt: Date.now(),
+      };
+
+      // Download as JSON
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(currentOrganization.data as OrganizationData).name.replace(/\s+/g, '_')}_export_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showSuccessToast('Organization data exported successfully');
+    } catch (error) {
+      console.error('Failed to export organization data:', error);
+      showErrorToast('Failed to export organization data');
+      throw error;
+    }
+  }, [user, currentOrganization, members]);
+
   return (
     <OrganizationContext.Provider
       value={{
@@ -537,6 +709,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         userRole,
         members,
         pendingInvitations,
+        userInvitations,
         isLoading,
         createOrganization,
         inviteByEmail,
@@ -549,6 +722,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         canInviteMembers,
         canManageMembers,
         availableSeats,
+        exportOrganizationData,
       }}
     >
       {children}

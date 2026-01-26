@@ -9,6 +9,8 @@ interface SubscriptionContextType {
   plan: SubscriptionPlan;
   subscription: SubscriptionData | null;
   subscriptionData: SubscriptionData | null;
+  individualSubscription: SubscriptionData | null; // User's personal subscription
+  organizationSubscription: SubscriptionData | null; // Organization's subscription if user is member
   usage: UsageSummary;
   usageSummary: UsageSummary;
   isLoading: boolean;
@@ -23,6 +25,7 @@ interface SubscriptionContextType {
   hideUpgradePrompt: () => void;
   refreshUsage: () => Promise<void>;
   updateSubscription: (planId: PlanId, paddleData?: { subscriptionId: string; customerId: string }) => Promise<void>;
+  gracePeriodEndsAt: number | null; // If organization subscription is in grace period
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -34,6 +37,9 @@ interface SubscriptionProviderProps {
 export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [individualSubscription, setIndividualSubscription] = useState<SubscriptionData | null>(null);
+  const [organizationSubscription, setOrganizationSubscription] = useState<SubscriptionData | null>(null);
+  const [gracePeriodEndsAt, setGracePeriodEndsAt] = useState<number | null>(null);
   const [usage, setUsage] = useState<UsageSummary>({
     documentsToday: 0,
     documentsThisMonth: 0,
@@ -44,6 +50,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
   const [upgradePromptVisible, setUpgradePromptVisible] = useState(false);
 
   // Get the current plan based on subscription
+  // Organization subscription takes precedence over individual
   const plan = subscription?.planId
     ? SUBSCRIPTION_PLANS[subscription.planId]
     : SUBSCRIPTION_PLANS.free;
@@ -65,14 +72,17 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
 
       setIsLoading(true);
       try {
-        // Load subscription from Juno datastore
+        // Load individual subscription from Juno datastore
         const subscriptionDoc = await getDoc({
           collection: 'subscriptions',
           key: user.key,
         });
 
+        let userIndividualSub: SubscriptionData | null = null;
+
         if (subscriptionDoc) {
-          setSubscription(subscriptionDoc.data as SubscriptionData);
+          userIndividualSub = subscriptionDoc.data as SubscriptionData;
+          setIndividualSubscription(userIndividualSub);
         } else {
           // Create default free subscription for new users
           const defaultSubscription: SubscriptionData = {
@@ -94,7 +104,59 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
             },
           });
 
-          setSubscription(defaultSubscription);
+          userIndividualSub = defaultSubscription;
+          setIndividualSubscription(defaultSubscription);
+        }
+
+        // Check if user is member of an organization
+        const membershipDocs = await listDocs({
+          collection: 'organization_members',
+        });
+
+        const userMembership = membershipDocs.items.find(
+          doc => (doc.data as any).userId === user.key
+        );
+
+        let orgSub: SubscriptionData | null = null;
+
+        if (userMembership) {
+          const memberData = userMembership.data as any;
+          const organizationId = memberData.organizationId;
+
+          // Load organization
+          const orgDoc = await getDoc({
+            collection: 'organizations',
+            key: organizationId,
+          });
+
+          if (orgDoc) {
+            const orgData = orgDoc.data as any;
+            
+            // Load organization's subscription if it has one
+            if (orgData.subscriptionId) {
+              const orgSubDoc = await getDoc({
+                collection: 'subscriptions',
+                key: orgData.subscriptionId,
+              });
+
+              if (orgSubDoc) {
+                orgSub = orgSubDoc.data as SubscriptionData;
+                setOrganizationSubscription(orgSub);
+
+                // Check for grace period
+                if ((orgSub as any).gracePeriodEndsAt) {
+                  setGracePeriodEndsAt((orgSub as any).gracePeriodEndsAt);
+                }
+              }
+            }
+          }
+        }
+
+        // Set active subscription: organization takes precedence
+        if (orgSub && orgSub.status === 'active') {
+          setSubscription(orgSub);
+        } else {
+          setSubscription(userIndividualSub);
         }
 
         // Load usage from Juno datastore
@@ -461,6 +523,8 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         plan,
         subscription,
         subscriptionData: subscription,
+        individualSubscription,
+        organizationSubscription,
         usage,
         usageSummary: usage,
         isLoading,
@@ -475,6 +539,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         hideUpgradePrompt,
         refreshUsage,
         updateSubscription,
+        gracePeriodEndsAt,
       }}
     >
       {children}

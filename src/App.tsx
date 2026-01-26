@@ -8,6 +8,8 @@ import { ProcessorProvider } from "./contexts/ProcessorContext";
 import { SearchProvider } from "./contexts/SearchContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { UserProfileProvider } from "./contexts/UserProfileContext";
+import { OrganizationProvider } from "./contexts/OrganizationContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import { Toaster } from "sonner";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
@@ -52,46 +54,50 @@ const App: FC = () => {
             <AuthProvider>
               <UserProfileProvider>
                 <SubscriptionProvider>
-                  <FileProcessingProvider>
-                    <ProcessorProvider>
-                      <ConfirmProvider>
-                        <SearchProvider>
-                      <Suspense
-                        fallback={
-                          <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-                            <LoadingSpinner />
-                          </div>
-                        }
-                      >
-                        <Routes>
-                          {/* Public routes */}
-                          <Route element={<PublicLayout />}>
-                            <Route path="/" element={<LandingPage />} />
-                            <Route path="/pricing" element={<PricingPage />} />
-                            <Route path="/guides" element={<GuidesPage />} />
-                            <Route path="/contact" element={<ContactPage />} />
-                            <Route path="/privacy" element={<PrivacyPage />} />
-                            <Route path="/terms" element={<TermsPage />} />
-                          </Route>
+                  <NotificationProvider>
+                    <OrganizationProvider>
+                      <FileProcessingProvider>
+                        <ProcessorProvider>
+                          <ConfirmProvider>
+                            <SearchProvider>
+                              <Suspense
+                                fallback={
+                                  <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+                                    <LoadingSpinner />
+                                  </div>
+                                }
+                              >
+                                <Routes>
+                                  {/* Public routes */}
+                                  <Route element={<PublicLayout />}>
+                                    <Route path="/" element={<LandingPage />} />
+                                    <Route path="/pricing" element={<PricingPage />} />
+                                    <Route path="/guides" element={<GuidesPage />} />
+                                    <Route path="/contact" element={<ContactPage />} />
+                                    <Route path="/privacy" element={<PrivacyPage />} />
+                                    <Route path="/terms" element={<TermsPage />} />
+                                  </Route>
 
-                          {/* Authenticated app routes */}
-                          <Route path="/app/*" element={<AppLayout />} />
+                                  {/* Authenticated app routes */}
+                                  <Route path="/app/*" element={<AppLayout />} />
 
-                          {/* 404 fallback */}
-                          <Route path="*" element={<NotFoundPage />} />
-                        </Routes>
-                      </Suspense>
-                    </SearchProvider>
-                      <Toaster
-                        position="bottom-right"
-                        richColors
-                        closeButton
-                        duration={5000}
-                      />
-                    </ConfirmProvider>
-                  </ProcessorProvider>
-                </FileProcessingProvider>
-              </SubscriptionProvider>
+                                  {/* 404 fallback */}
+                                  <Route path="*" element={<NotFoundPage />} />
+                                </Routes>
+                              </Suspense>
+                            </SearchProvider>
+                            <Toaster
+                              position="bottom-right"
+                              richColors
+                              closeButton
+                              duration={5000}
+                            />
+                          </ConfirmProvider>
+                        </ProcessorProvider>
+                      </FileProcessingProvider>
+                    </OrganizationProvider>
+                  </NotificationProvider>
+                </SubscriptionProvider>
               </UserProfileProvider>
             </AuthProvider>
           </ErrorBoundary>

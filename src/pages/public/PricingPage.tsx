@@ -1,18 +1,22 @@
 import { FC, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { INDIVIDUAL_PLANS, isUnlimited } from '../../config/plans';
+import { INDIVIDUAL_PLANS, ORGANIZATION_PLANS, isUnlimited } from '../../config/plans';
 import { openCheckout, initPaddle } from '../../lib/paddle';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOrganization } from '../../contexts/OrganizationContext';
 import { showErrorToast } from '../../utils/toast';
+import OrganizationCheckoutModal from '../../components/app/OrganizationCheckoutModal';
 
 const PricingPage: FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { currentOrganization } = useOrganization();
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [selectedOrgPlan, setSelectedOrgPlan] = useState<'team' | 'business' | 'enterprise_org' | null>(null);
 
   // Initialize Paddle on component mount
   useEffect(() => {
@@ -56,6 +60,51 @@ const PricingPage: FC = () => {
     } finally {
       setCheckoutLoading(null);
     }
+  };
+
+  const handleOrgPlanSelect = async (planId: 'team' | 'business' | 'enterprise_org') => {
+    // User must be logged in
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    // If user already has an organization, redirect to settings
+    if (currentOrganization) {
+      navigate('/app/organization');
+      return;
+    }
+
+    // Set selected plan to open modal
+    setSelectedOrgPlan(planId);
+  };
+
+  const handleOrgCheckoutConfirm = async (organizationName: string) => {
+    if (!selectedOrgPlan || !user) return;
+
+    setCheckoutLoading(selectedOrgPlan);
+    try {
+      await openCheckout(
+        selectedOrgPlan,
+        billingCycle,
+        {
+          customData: {
+            userId: user.key,
+          },
+          organizationName,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to open checkout:', error);
+      showErrorToast(t('pricing.checkoutError') || 'Failed to open checkout. Please try again.');
+    } finally {
+      setCheckoutLoading(null);
+      setSelectedOrgPlan(null);
+    }
+  };
+
+  const handleOrgCheckoutCancel = () => {
+    setSelectedOrgPlan(null);
   };
 
   const getPrice = (plan: typeof plans[0]) => {
@@ -222,6 +271,115 @@ const PricingPage: FC = () => {
           ))}
         </div>
 
+        {/* Organization Plans */}
+        <div className="mt-24 max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 px-4 py-2 rounded-full mb-4">
+              <Users className="w-4 h-4" />
+              <span className="text-sm font-medium">{t('pricing.forTeams')}</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              {t('pricing.organizationPlans')}
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+              {t('pricing.organizationSubtitle')}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+            {Object.values(ORGANIZATION_PLANS).map((plan) => {
+              const price = billingCycle === 'monthly' ? plan.price.monthly : Math.round(plan.price.annual / 12);
+              const isLoading = checkoutLoading === plan.id;
+
+              return (
+                <div
+                  key={plan.id}
+                  className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-400 transition-all"
+                >
+                  {/* Plan name */}
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                    {t(`pricing.plans.${plan.id}.name`)}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                    {t(`pricing.plans.${plan.id}.description`)}
+                  </p>
+
+                  {/* Price */}
+                  <div className="mb-2">
+                    <span className="text-4xl font-bold text-slate-900 dark:text-white">
+                      ${price}
+                    </span>
+                    <span className="text-slate-600 dark:text-slate-400 ml-1">
+                      {t('pricing.perMonth')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                    {t('pricing.seats', { count: plan.limits.seatsIncluded })}
+                  </p>
+
+                  {/* CTA button */}
+                  <button
+                    onClick={() => handleOrgPlanSelect(plan.id as 'team' | 'business' | 'enterprise_org')}
+                    disabled={isLoading}
+                    className="w-full text-center py-3 px-4 rounded-lg font-semibold transition-all mb-8 flex items-center justify-center gap-2 bg-primary-600 text-white hover:bg-primary-700 disabled:bg-primary-400"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t('pricing.loading')}
+                      </>
+                    ) : currentOrganization ? (
+                      t('pricing.manageOrganization')
+                    ) : (
+                      t(`pricing.plans.${plan.id}.cta`)
+                    )}
+                  </button>
+
+                  {/* Features list */}
+                  <ul className="space-y-3">
+                    <li className="flex items-center gap-3 text-sm">
+                      <Check className="w-5 h-5 text-green-500 shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {t('pricing.features.documentsPerDay', { value: formatLimit(plan.limits.documentsPerDay, 'docs') })}
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <Check className="w-5 h-5 text-green-500 shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {t('pricing.features.documentsPerMonth', { value: formatLimit(plan.limits.documentsPerMonth, 'docs') })}
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <Check className="w-5 h-5 text-green-500 shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {t('pricing.features.maxTemplates', { value: formatLimit(plan.limits.maxTemplates, 'templates') })}
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <Check className="w-5 h-5 text-green-500 shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {t('pricing.features.maxFileSize', { size: plan.limits.maxFileSize })}
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <Check className="w-5 h-5 text-green-500 shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {t('pricing.features.batchProcessing')}
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <Check className="w-5 h-5 text-green-500 shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {t('pricing.features.prioritySupport')}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* FAQ or additional info */}
         <div className="mt-16 text-center">
           <p className="text-slate-600 dark:text-slate-400">
@@ -232,6 +390,19 @@ const PricingPage: FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Organization Checkout Modal */}
+      {selectedOrgPlan && (
+        <OrganizationCheckoutModal
+          planId={selectedOrgPlan}
+          planName={t(`pricing.plans.${selectedOrgPlan}.name`)}
+          price={billingCycle === 'monthly' 
+            ? ORGANIZATION_PLANS[selectedOrgPlan].price.monthly 
+            : Math.round(ORGANIZATION_PLANS[selectedOrgPlan].price.annual / 12)}
+          onConfirm={handleOrgCheckoutConfirm}
+          onCancel={handleOrgCheckoutCancel}
+        />
+      )}
     </div>
   );
 };
