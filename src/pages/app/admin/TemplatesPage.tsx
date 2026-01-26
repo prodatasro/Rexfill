@@ -1,12 +1,15 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { listDocs } from '@junobuild/core';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import { Button } from '../../../components/ui';
 import { HardDrive } from 'lucide-react';
 
 const TemplatesPage: FC = () => {
   const { t } = useTranslation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
 
   const { data: templateMeta, isLoading } = useQuery({
     queryKey: ['admin_templates_meta'],
@@ -41,9 +44,15 @@ const TemplatesPage: FC = () => {
     byUser[userId].size += (t.data as any).size || 0;
   });
 
-  const topUsers = Object.entries(byUser)
-    .sort((a, b) => b[1].size - a[1].size)
-    .slice(0, 10);
+  const allUsers = Object.entries(byUser)
+    .sort((a, b) => b[1].size - a[1].size);
+
+  // Pagination
+  const totalPages = Math.ceil(allUsers.length / pageSize);
+  const topUsers = allUsers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="space-y-6">
@@ -90,27 +99,58 @@ const TemplatesPage: FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-          {t('admin.templates.topUsers', 'Top Users by Storage')}
-        </h2>
-        <div className="space-y-3">
-          {topUsers.map(([userId, stats]) => (
-            <div key={userId} className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="text-sm text-slate-900 dark:text-white">
-                  {userId.substring(0, 30)}...
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+            {t('admin.templates.topUsers', 'Top Users by Storage')}
+          </h2>
+          <div className="space-y-1">
+            {topUsers.map(([userId, stats]) => (
+              <div key={userId} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <div className="flex-1">
+                  <div className="text-sm text-slate-900 dark:text-white">
+                    {userId.substring(0, 30)}...
+                  </div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                    {stats.count} templates
+                  </div>
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  {stats.count} templates
+                <div className="text-sm font-medium text-slate-900 dark:text-white">
+                  {(stats.size / (1024 * 1024)).toFixed(2)} MB
                 </div>
               </div>
-              <div className="text-sm font-medium text-slate-900 dark:text-white">
-                {(stats.size / (1024 * 1024)).toFixed(2)} MB
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              {t('admin.pagination.showing', 'Showing')} {((currentPage - 1) * pageSize) + 1} -{' '}
+              {Math.min(currentPage * pageSize, allUsers.length)} {t('admin.pagination.of', 'of')}{' '}
+              {allUsers.length}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                {t('admin.pagination.previous', 'Previous')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                {t('admin.pagination.next', 'Next')}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

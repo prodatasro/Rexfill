@@ -11,7 +11,7 @@ import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
 import { extractMetadataFromBlob } from "../utils/extractMetadata";
 import { useTranslation } from "react-i18next";
 import { useDocumentWorker, ProcessingProgress } from "./useDocumentWorker";
-import { uploadFileWithTimeout, setDocWithTimeout, listDocsWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
+import { uploadFileWithRetry, setDocWithTimeout, listDocsWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
 import { logActivity, computeFileHash } from "../utils/activityLogger";
 import { useAuth } from "../contexts/AuthContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
@@ -33,7 +33,7 @@ export const useWordTemplateProcessor = ({
 }: UseWordTemplateProcessorProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { canProcessDocument, incrementDocumentUsage, showUpgradePrompt, plan } = useSubscription();
+  const { canProcessDocument, incrementDocumentUsage, showUpgradePrompt } = useSubscription();
   const { processDocument: workerProcessDocument, extractCustomProperties: workerExtractCustomProperties, progress: workerProgress, isWorkerReady } = useDocumentWorker();
 
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -366,19 +366,42 @@ export const useWordTemplateProcessor = ({
       // Skip processing if no changes were made - preserves original file size and compression
       const { blob, fileName } = await generateProcessedBlob(!hasChanges);
 
+      console.log('Saving template:', {
+        fileName,
+        blobSize: blob.size,
+        blobType: blob.type,
+        hasChanges,
+        templateKey: template.key
+      });
+
       const storagePath = template.data.fullPath?.startsWith('/')
         ? template.data.fullPath.substring(1)
         : template.data.fullPath || fileName;
 
+      // Validate blob before uploading
+      if (blob.size === 0) {
+        throw new Error('Generated blob is empty');
+      }
+
       const fileToUpload = new File([blob], fileName, {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        lastModified: Date.now()
       });
 
-      const result = await uploadFileWithTimeout({
+      console.log('Uploading file:', {
+        name: fileToUpload.name,
+        size: fileToUpload.size,
+        type: fileToUpload.type,
+        storagePath
+      });
+
+      const result = await uploadFileWithRetry({
         data: fileToUpload,
         collection: 'templates',
         filename: storagePath
       });
+
+      console.log('Upload successful, updating metadata...');
 
       // Extract metadata from the blob to update custom property count
       const { customPropertyCount } = await extractMetadataFromBlob(blob);
@@ -432,6 +455,10 @@ export const useWordTemplateProcessor = ({
     } catch (error) {
       console.error('Save failed:', error);
       
+      // Provide more specific error message for batch commit errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isBatchError = errorMessage.includes('cannot_commit_batch');
+      
       // Log failed template update
       await logActivity({
         action: 'updated',
@@ -441,13 +468,18 @@ export const useWordTemplateProcessor = ({
         created_by: template.owner || 'unknown',
         modified_by: user?.key || template.owner || 'unknown',
         success: false,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
+        error_message: errorMessage,
         file_size: template.data.size,
         folder_path: template.data.folderPath,
         mime_type: template.data.mimeType,
       });
       
-      showErrorToast(t('templateProcessor.saveFailed'));
+      if (isBatchError) {
+        showErrorToast(t('templateProcessor.saveFailed') + ' ' + 
+          'The file may be too large or the network connection is unstable. Please try again.');
+      } else {
+        showErrorToast(t('templateProcessor.saveFailed'));
+      }
       return false;
     } finally {
       setSaving(false);
@@ -579,7 +611,7 @@ export const useWordTemplateProcessor = ({
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
 
-      const result = await uploadFileWithTimeout({
+      const result = await uploadFileWithRetry({
         data: fileToUpload,
         collection: 'templates',
         filename: storagePath
@@ -622,7 +654,17 @@ export const useWordTemplateProcessor = ({
       return true;
     } catch (error) {
       console.error('Save As failed:', error);
-      showErrorToast(t('templateProcessor.saveAsFailed'));
+      
+      // Provide more specific error message for batch commit errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isBatchError = errorMessage.includes('cannot_commit_batch');
+      
+      if (isBatchError) {
+        showErrorToast(t('templateProcessor.saveAsFailed') + ' ' + 
+          'The file may be too large or the network connection is unstable. Please try again.');
+      } else {
+        showErrorToast(t('templateProcessor.saveAsFailed'));
+      }
       return false;
     } finally {
       setSaving(false);

@@ -1,12 +1,15 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { listDocs } from '@junobuild/core';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import { Button } from '../../../components/ui';
 import { CreditCard } from 'lucide-react';
 
 const SubscriptionsPage: FC = () => {
   const { t } = useTranslation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
 
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ['admin_all_subscriptions'],
@@ -34,6 +37,13 @@ const SubscriptionsPage: FC = () => {
     }
     return acc;
   }, 0) || 0;
+
+  // Pagination
+  const totalPages = Math.ceil((subscriptions?.length || 0) / pageSize);
+  const paginatedSubscriptions = subscriptions?.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="space-y-6">
@@ -93,7 +103,7 @@ const SubscriptionsPage: FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {subscriptions?.map(sub => {
+              {paginatedSubscriptions?.map(sub => {
                 const data = sub.data as any;
                 return (
                   <tr key={sub.key} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
@@ -126,6 +136,35 @@ const SubscriptionsPage: FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              {t('admin.pagination.showing', 'Showing')} {((currentPage - 1) * pageSize) + 1} -{' '}
+              {Math.min(currentPage * pageSize, subscriptions?.length || 0)} {t('admin.pagination.of', 'of')}{' '}
+              {subscriptions?.length || 0}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                {t('admin.pagination.previous', 'Previous')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                {t('admin.pagination.next', 'Next')}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

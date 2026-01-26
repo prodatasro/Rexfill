@@ -15,10 +15,12 @@ import TemplateDuplicateDialog from '../dialogs/TemplateDuplicateDialog';
 import DocxPreviewModal from '../modals/DocxPreviewModal';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
-import { setDocWithTimeout, deleteDocWithTimeout, deleteAssetWithTimeout, listAssetsWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
+import { useMoveTemplateMutation, useUpdateTemplateMutation, useToggleFavoriteMutation, useCreateTemplateMutation } from '../../hooks/useTemplatesQuery';
+import { deleteDocWithTimeout, deleteAssetWithTimeout, listAssetsWithTimeout } from '../../utils/junoWithTimeout';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { fetchLogsForResource, generateLogCSV, downloadLogCSV, logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSubscription } from '../../contexts/SubscriptionContext';
 
 // Threshold for enabling virtualization - only virtualize when we have many items
 const VIRTUALIZATION_THRESHOLD = 20;
@@ -55,9 +57,15 @@ const FileList: FC<FileListProps> = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { incrementDocumentUsage, canProcessDocument, showUpgradePrompt } = useSubscription();
+  const moveTemplateMutation = useMoveTemplateMutation();
+  const updateTemplateMutation = useUpdateTemplateMutation();
+  const toggleFavoriteMutation = useToggleFavoriteMutation();
+  const createTemplateMutation = useCreateTemplateMutation();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
   const [togglingFavoriteIds, setTogglingFavoriteIds] = useState<Set<string>>(new Set());
+  const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
   const [downloadingLogsIds, setDownloadingLogsIds] = useState<Set<string>>(new Set());
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [templateToMove, setTemplateToMove] = useState<Doc<WordTemplateData> | null>(null);
@@ -82,6 +90,14 @@ const FileList: FC<FileListProps> = ({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const handleDownload = async (template: Doc<WordTemplateData>) => {
+    // Check if user can process documents before allowing download
+    if (!canProcessDocument()) {
+      showErrorToast(t('subscription.limitReached'));
+      showUpgradePrompt();
+      return;
+    }
+
+    setDownloadingIds(prev => new Set([...prev, template.key]));
     try {
       if (!template.data.url) {
         showErrorToast(t('fileList.downloadFailed'));
@@ -106,6 +122,9 @@ const FileList: FC<FileListProps> = ({
       // Cleanup
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      // Increment usage count
+      await incrementDocumentUsage();
 
       // Log successful download
       await logActivity({
@@ -141,6 +160,12 @@ const FileList: FC<FileListProps> = ({
       });
       
       showErrorToast(t('fileList.downloadFailed'));
+    } finally {
+      setDownloadingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(template.key);
+        return newSet;
+      });
     }
   };
 
@@ -264,16 +289,12 @@ const FileList: FC<FileListProps> = ({
     if (!templateToMove) return;
 
     try {
-      // Check for duplicate in target folder
-      const checkDuplicate = async (): Promise<boolean> => {
-        const docs = await listDocsWithTimeout({ collection: 'templates_meta' });
-        return docs.items.some(doc => {
-          const data = doc.data as WordTemplateData;
-          return data.name === templateToMove.data.name && (data.folderId ?? null) === targetFolderId;
-        });
-      };
+      // Check for duplicate in target folder using cached data
+      const isDuplicate = allTemplates.some(doc => {
+        const data = doc.data as WordTemplateData;
+        return data.name === templateToMove.data.name && (data.folderId ?? null) === targetFolderId;
+      });
 
-      const isDuplicate = await checkDuplicate();
       if (isDuplicate) {
         showWarningToast(t('fileList.moveFailed') + ': File exists in target folder');
         return;
@@ -301,18 +322,12 @@ const FileList: FC<FileListProps> = ({
       const newFolderPath = targetFolder?.data.path || '/';
       const newFullPath = buildTemplatePath(newFolderPath, templateToMove.data.name);
 
-      // Update template metadata
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: {
-          ...templateToMove,
-          data: {
-            ...templateToMove.data,
-            folderId: targetFolderId,
-            folderPath: newFolderPath,
-            fullPath: newFullPath
-          }
-        }
+      // Use mutation to update template metadata
+      await moveTemplateMutation.mutateAsync({
+        template: templateToMove,
+        newFolderId: targetFolderId,
+        newFolderPath,
+        newFullPath,
       });
 
       // Log successful move
@@ -622,17 +637,7 @@ const FileList: FC<FileListProps> = ({
     setTogglingFavoriteIds(prev => new Set([...prev, template.key]));
     try {
       const newIsFavorite = !template.data.isFavorite;
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: {
-          ...template,
-          data: {
-            ...template.data,
-            isFavorite: newIsFavorite,
-          }
-        }
-      });
-      onFileDeleted(); // Refresh to show updated favorite status
+      await toggleFavoriteMutation.mutateAsync(template);
 
       // Log successful favorite toggle
       try {
@@ -679,7 +684,7 @@ const FileList: FC<FileListProps> = ({
         return newSet;
       });
     }
-  }, [onFileDeleted, t, user, logActivity]);
+  }, [t, user, logActivity, toggleFavoriteMutation]);
 
   // Duplicate template handler
   // Mobile action menu state
@@ -811,19 +816,20 @@ const FileList: FC<FileListProps> = ({
 
       // Create new metadata entry with a new key
       const newKey = `${Date.now()}_${newName}`;
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: {
-          key: newKey,
-          data: {
-            ...templateToDuplicate.data,
-            name: newName,
-            fullPath: newFullPath,
-            uploadedAt: Date.now(),
-            isFavorite: false, // Don't copy favorite status
-          }
-        }
-      });
+      await createTemplateMutation.mutateAsync({
+        key: newKey,
+        data: {
+          ...templateToDuplicate.data,
+          name: newName,
+          fullPath: newFullPath,
+          uploadedAt: Date.now(),
+          isFavorite: false, // Don't copy favorite status
+        },
+        owner: user?.key || templateToDuplicate.owner || 'unknown',
+        created_at: BigInt(Date.now() * 1_000_000),
+        updated_at: BigInt(Date.now() * 1_000_000),
+        version: 1n,
+      } as Doc<WordTemplateData>);
 
       // Log successful duplicate (treated as created)
       await logActivity({
@@ -840,7 +846,6 @@ const FileList: FC<FileListProps> = ({
       });
 
       showSuccessToast(t('fileList.duplicateSuccess', { filename: newName }));
-      onFileDeleted(); // Refresh the list
     } catch (error) {
       console.error('Failed to duplicate template:', error);
       
@@ -879,15 +884,12 @@ const FileList: FC<FileListProps> = ({
       const newFullPath = buildTemplatePath(templateToRename.data.folderPath || '/', newName);
 
       // Update template metadata with new name and fullPath
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: {
-          ...templateToRename,
-          data: {
-            ...templateToRename.data,
-            name: newName,
-            fullPath: newFullPath,
-          }
+      await updateTemplateMutation.mutateAsync({
+        ...templateToRename,
+        data: {
+          ...templateToRename.data,
+          name: newName,
+          fullPath: newFullPath,
         }
       });
 
@@ -908,7 +910,6 @@ const FileList: FC<FileListProps> = ({
       });
 
       showSuccessToast(t('templateRename.renameSuccess', { filename: newName }));
-      onFileDeleted(); // Refresh the list
     } catch (error) {
       console.error('Failed to rename template:', error);
       
@@ -1221,6 +1222,7 @@ const FileList: FC<FileListProps> = ({
                     isDeleting={deletingIds.has(template.key)}
                     isDuplicating={duplicatingIds.has(template.key)}
                     isTogglingFavorite={togglingFavoriteIds.has(template.key)}
+                    isDownloading={downloadingIds.has(template.key)}
                     isDownloadingLogs={downloadingLogsIds.has(template.key)}
                     isMenuOpen={openMenuId === template.key}
                     onSelect={handleItemSelect}
@@ -1252,6 +1254,7 @@ const FileList: FC<FileListProps> = ({
                 isDeleting={deletingIds.has(template.key)}
                 isDuplicating={duplicatingIds.has(template.key)}
                 isTogglingFavorite={togglingFavoriteIds.has(template.key)}
+                isDownloading={downloadingIds.has(template.key)}
                 isDownloadingLogs={downloadingLogsIds.has(template.key)}
                 isMenuOpen={openMenuId === template.key}
                 onSelect={handleItemSelect}

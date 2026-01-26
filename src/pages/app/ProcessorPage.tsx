@@ -1,10 +1,10 @@
 import { FC, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { listDocs, Doc } from '@junobuild/core';
+import { Doc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word-template';
 import { WordTemplateProcessor } from '../../components/processor/WordTemplateProcessor';
 import { useFolders } from '../../hooks/useFolders';
-import { useTemplatesByFolder } from '../../hooks/useTemplatesByFolder';
+import { useTemplatesQuery } from '../../hooks/useTemplatesQuery';
 import { useFileProcessing } from '../../contexts/FileProcessingContext';
 import { useProcessor } from '../../contexts/ProcessorContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -22,8 +22,8 @@ const ProcessorPage: FC = () => {
   const { oneTimeFile, clearProcessingData } = useFileProcessing();
   const { setCurrentFolderId } = useProcessor();
 
-  // Load all templates to build folder tree
-  const { allTemplates } = useTemplatesByFolder(null);
+  // Load all templates to build folder tree using TanStack Query
+  const { data: allTemplates = [], isLoading: templatesLoading } = useTemplatesQuery();
   const { folderTree } = useFolders(allTemplates);
 
   // Determine if we're in multi-file mode
@@ -50,14 +50,14 @@ const ProcessorPage: FC = () => {
             return;
           }
 
-          // Fetch all templates
-          const docs = await listDocs<WordTemplateData>({
-            collection: 'templates_meta',
-            filter: {}
-          });
+          // Wait for templates to load from cache
+          if (templatesLoading) {
+            return; // Keep loading state
+          }
 
+          // Use cached templates
           const foundTemplates = ids
-            .map(id => docs.items.find(doc => doc.key === id))
+            .map(id => allTemplates.find(doc => doc.key === id))
             .filter((t): t is Doc<WordTemplateData> => t !== undefined);
 
           if (foundTemplates.length === 0) {
@@ -91,12 +91,13 @@ const ProcessorPage: FC = () => {
       }
 
       try {
-        const docs = await listDocs<WordTemplateData>({
-          collection: 'templates_meta',
-          filter: {}
-        });
+        // Wait for templates to load from cache
+        if (templatesLoading) {
+          return; // Keep loading state
+        }
 
-        const foundTemplate = docs.items.find(doc => doc.key === templateId);
+        // Use cached templates
+        const foundTemplate = allTemplates.find(doc => doc.key === templateId);
 
         if (foundTemplate) {
           setTemplate(foundTemplate);
@@ -113,7 +114,7 @@ const ProcessorPage: FC = () => {
     };
 
     loadData();
-  }, [searchParams, navigate, oneTimeFile, setCurrentFolderId]);
+  }, [searchParams, navigate, oneTimeFile, setCurrentFolderId, allTemplates, templatesLoading]);
 
   const handleClose = () => {
     // Clear all processing data from context

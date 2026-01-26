@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from 'react';
-import { getDoc, setDoc, listDocs, deleteDoc } from '@junobuild/core';
+import { setDoc, listDocs, deleteDoc } from '@junobuild/core';
 import { useAuth } from './AuthContext';
 import { NotificationData, NotificationContextType } from '../types/notification';
 import type { Doc } from '@junobuild/core';

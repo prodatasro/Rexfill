@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Search, Download, Ban, CheckCircle, Settings } from 'lucide-react';
 import type { UserProfile, SubscriptionData, SubscriptionOverride, SuspendedUser } from '../../../types';
 import { useAuth } from '../../../contexts';
-import { logAdminAction, isUserSuspended as checkSuspension } from '../../../utils/adminLogger';
+import { logAdminAction } from '../../../utils/adminLogger';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Dialog, Button } from '../../../components/ui';
 

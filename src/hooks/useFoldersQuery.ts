@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import { TimeoutError } from '../utils/fetchWithTimeout';
 import { validateFolderName, buildFolderPath, buildFolderTree } from '../utils/folderUtils';
 import { templateKeys } from './useTemplatesQuery';
+import { useAuth } from '../contexts';
+import { useAdmin } from '../contexts/AdminContext';
 
 // Query keys for cache management
 export const folderKeys = {
@@ -22,18 +24,30 @@ export const folderKeys = {
 };
 
 // Fetch all folders
-async function fetchFolders(): Promise<Folder[]> {
+async function fetchFolders(userKey?: string | null, isAdmin?: boolean): Promise<Folder[]> {
   const result = await listDocsWithTimeout({ collection: 'folders' });
-  return result.items as Folder[];
+  const items = result.items as Folder[];
+  
+  // Admin users see all folders; regular users see only their own
+  if (isAdmin || !userKey) {
+    return items;
+  }
+  
+  // Filter to show only user's own folders as a client-side safety layer
+  return items.filter(item => item.owner === userKey);
 }
 
 /**
  * Hook to fetch all folders with TanStack Query
+ * Filters folders by owner (except for admin users)
  */
 export function useFoldersQuery() {
+  const { user } = useAuth();
+  const { isAdmin } = useAdmin();
+  
   return useQuery({
     queryKey: folderKeys.lists(),
-    queryFn: fetchFolders,
+    queryFn: () => fetchFolders(user?.key, isAdmin),
   });
 }
 

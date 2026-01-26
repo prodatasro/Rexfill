@@ -11,6 +11,8 @@ import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { TimeoutError } from '../utils/fetchWithTimeout';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { useAuth } from '../contexts';
+import { useAdmin } from '../contexts/AdminContext';
 
 // Query keys for cache management
 export const templateKeys = {
@@ -23,19 +25,31 @@ export const templateKeys = {
 };
 
 // Fetch all templates
-async function fetchTemplates(): Promise<Doc<WordTemplateData>[]> {
+async function fetchTemplates(userKey?: string | null, isAdmin?: boolean): Promise<Doc<WordTemplateData>[]> {
   const result = await listDocsWithTimeout({ collection: 'templates_meta' });
-  return result.items as Doc<WordTemplateData>[];
+  const items = result.items as Doc<WordTemplateData>[];
+  
+  // Admin users see all templates; regular users see only their own
+  if (isAdmin || !userKey) {
+    return items;
+  }
+  
+  // Filter to show only user's own templates as a client-side safety layer
+  return items.filter(item => item.owner === userKey);
 }
 
 /**
  * Hook to fetch all templates with TanStack Query
  * Provides automatic caching, background refetching, and retry logic
+ * Filters templates by owner (except for admin users)
  */
 export function useTemplatesQuery() {
+  const { user } = useAuth();
+  const { isAdmin } = useAdmin();
+  
   return useQuery({
     queryKey: templateKeys.lists(),
-    queryFn: fetchTemplates,
+    queryFn: () => fetchTemplates(user?.key, isAdmin),
   });
 }
 
@@ -350,6 +364,56 @@ export function useBulkUpdateTemplatesMutation() {
         showErrorToast(t('errors.timeout'));
       }
       // Bulk update failures are silent - individual operations handle their own errors
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Hook for creating a new template with optimistic update
+ */
+export function useCreateTemplateMutation() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { incrementTemplateCount } = useSubscription();
+
+  return useMutation({
+    mutationFn: async (template: Doc<WordTemplateData>) => {
+      await setDocWithTimeout({
+        collection: 'templates_meta',
+        doc: template,
+      });
+      return template;
+    },
+    onMutate: async (template) => {
+      await queryClient.cancelQueries({ queryKey: templateKeys.lists() });
+
+      const previousTemplates = queryClient.getQueryData<Doc<WordTemplateData>[]>(
+        templateKeys.lists()
+      );
+
+      // Optimistically add to cache
+      queryClient.setQueryData<Doc<WordTemplateData>[]>(
+        templateKeys.lists(),
+        (old) => [...(old ?? []), template]
+      );
+
+      return { previousTemplates };
+    },
+    onError: (err, _template, context) => {
+      if (context?.previousTemplates) {
+        queryClient.setQueryData(templateKeys.lists(), context.previousTemplates);
+      }
+      if (err instanceof TimeoutError) {
+        showErrorToast(t('errors.timeout'));
+      } else {
+        showErrorToast(t('fileUpload.uploadFailed'));
+      }
+    },
+    onSuccess: () => {
+      incrementTemplateCount();
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: templateKeys.lists() });

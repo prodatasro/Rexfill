@@ -1,5 +1,5 @@
 import { FC, useState, useRef, useEffect } from 'react';
-import { Sun, Moon, User, Building2, ShieldCheck } from 'lucide-react';
+import { Sun, Moon, User, Building2, ShieldCheck, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSearch } from '../../contexts/SearchContext';
@@ -175,8 +175,9 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
                   <hr className="my-1 border-slate-200 dark:border-slate-700" />
                   <button
                     onClick={handleLogoutClick}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                   >
+                    <LogOut size={16} />
                     {t('header.logout')}
                   </button>
                 </div>

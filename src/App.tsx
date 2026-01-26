@@ -11,10 +11,11 @@ import { UserProfileProvider } from "./contexts/UserProfileContext";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { AdminProvider } from "./contexts/AdminContext";
-import { Toaster } from "sonner";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import LoadingSpinner from "./components/ui/LoadingSpinner";
+import UpgradePrompt from "./components/billing/UpgradePrompt";
+import { CenteredToast } from "./components/ui/CenteredToast";
 
 // Lazy load layouts
 const PublicLayout = lazy(() => import("./components/layouts/PublicLayout"));
@@ -34,11 +35,11 @@ const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 minutes - data considered fresh
+      staleTime: 1000 * 30, // 30 seconds - data considered fresh
       gcTime: 1000 * 60 * 10, // 10 minutes - cache garbage collection
       retry: 3, // Retry failed requests 3 times
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      refetchOnWindowFocus: true, // Refetch when window regains focus to prevent stale data
     },
     mutations: {
       retry: 2, // Retry failed mutations 2 times
@@ -92,12 +93,8 @@ const App: FC = () => {
                                 </Routes>
                               </Suspense>
                             </SearchProvider>
-                            <Toaster
-                              position="bottom-right"
-                              richColors
-                              closeButton
-                              duration={5000}
-                            />
+                            <UpgradePrompt />
+                            <CenteredToast />
                           </ConfirmProvider>
                         </ProcessorProvider>
                       </FileProcessingProvider>

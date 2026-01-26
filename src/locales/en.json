@@ -69,7 +69,12 @@
         "starter": "Starter plan with enhanced limits",
         "professional": "Professional plan with advanced features",
         "enterprise": "Enterprise plan with unlimited access"
-      }
+      },
+      "upgrade": {
+        "title": "Upgrade Your Plan",
+        "limitReached": "You've reached your plan limit"
+      },
+      "limitReached": "Plan limit reached"
     },
     "activity": {
       "subtitle": "View your account activity and audit trail"

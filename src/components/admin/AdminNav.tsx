@@ -57,7 +57,7 @@ export const AdminNav: FC = () => {
 
         <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-700">
           <NavLink
-            to="/app/dashboard"
+            to="/app"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

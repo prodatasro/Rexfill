@@ -1,6 +1,7 @@
 import { FC, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
@@ -8,7 +9,8 @@ import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import FolderSelector from '../folders/FolderSelector';
 import { useTranslation } from 'react-i18next';
-import { listDocsWithTimeout, uploadFileWithTimeout, setDocWithTimeout } from '../../utils/junoWithTimeout';
+import { templateKeys } from '../../hooks/useTemplatesQuery';
+import { uploadFileWithTimeout, setDocWithTimeout } from '../../utils/junoWithTimeout';
 import { TimeoutError } from '../../utils/fetchWithTimeout';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth, useSubscription } from '../../contexts';
@@ -39,6 +41,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
   const { t } = useTranslation();
   const { user } = useAuth();
   const { canUploadTemplate, incrementTemplateCount, showUpgradePrompt, plan, usage } = useSubscription();
+  const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<UploadMode>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -48,11 +51,10 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
 
   const checkFileExists = async (filename: string, folderId: string | null): Promise<boolean> => {
     try {
-      const docs = await listDocsWithTimeout({
-        collection: 'templates_meta'
-      });
-
-      return docs.items.some(doc => {
+      // Use cached data from TanStack Query
+      const cachedTemplates = queryClient.getQueryData<any[]>(templateKeys.lists()) || [];
+      
+      return cachedTemplates.some(doc => {
         const data = doc.data as WordTemplateData;
         return data.name === filename && (data.folderId ?? null) === folderId;
       });
@@ -259,6 +261,9 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
               }
             }
           });
+
+          // Invalidate cache to refetch templates
+          queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
 
           // Track the template key for saveAndProcess mode
           savedTemplateKey = result.name;

@@ -226,7 +226,7 @@
       "documentsThisMonth": "Dokumenty tento mesiac",
       "templateCount": "Šablóny",
       "upgradePlans": "Dostupné upgrady",
-      "upgrade": "Upgradovať",
+      "upgradeButton": "Upgradovať",
       "upgradeError": "Nepodarilo sa upgradovať. Skúste to znova.",
       "checkoutSuccess": "Predplatné bolo úspešne aktivované!",
       "managePayment": "Spravujte svoju platobnú metódu a fakturačné údaje",
@@ -239,7 +239,13 @@
       "individualCancelling": {
         "title": "Individuálne predplatné sa zruší",
         "message": "Vaše individuálne predplatné bude zrušené {{date}}, pretože ste sa pripojili k organizácii."
-      }
+      },
+      "upgrade": {
+        "title": "Upgradovať váš plán",
+        "limitReached": "Dosiahli ste limit vášho plánu",
+        "upgradeNow": "Upgradovať teraz"
+      },
+      "limitReached": "Dosiahnutý limit plánu"
     },
     "activity": {
       "subtitle": "Zobrazenie aktivít účtu a auditného záznamu"

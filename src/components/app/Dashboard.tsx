@@ -2,6 +2,7 @@ import { FC, useState, useCallback, useRef, useMemo, useEffect, DragEvent, Chang
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Menu, Folder as FolderIcon } from 'lucide-react';
 import { Doc } from '@junobuild/core';
+import { useQueryClient } from '@tanstack/react-query';
 import { WordTemplateData } from '../../types/word-template';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { setDocWithTimeout, uploadFileWithTimeout, listDocsWithTimeout } from '../../utils/junoWithTimeout';
@@ -21,7 +22,8 @@ import {
   type UploadProgress,
 } from '../overlays';
 import { useFolders } from '../../hooks/useFolders';
-import { useTemplatesByFolder } from '../../hooks/useTemplatesByFolder';
+import { useTemplatesByFolderQuery } from '../../hooks/useTemplatesQuery';
+import { templateKeys } from '../../hooks/useTemplatesQuery';
 import { useRecentTemplates } from '../../hooks/useRecentTemplates';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useFileProcessing } from '../../contexts/FileProcessingContext';
@@ -45,6 +47,7 @@ const Dashboard: FC = () => {
   const { setAllTemplates, setFolderTree, setOnSelectTemplate, setOnSelectFolder } = useSearch();
   const { user } = useAuth();
   const { refreshUsage } = useSubscription();
+  const queryClient = useQueryClient();
 
   // Initialize selectedFolderId from URL params BEFORE any hook calls
   const folderIdFromParams = searchParams.get('folder');
@@ -110,7 +113,7 @@ const Dashboard: FC = () => {
   }, [selectedFolderId]);
 
   // Load templates by folder
-  const { templates: folderTemplates, allTemplates, loading: templatesLoading, refresh: refreshTemplates } = useTemplatesByFolder(actualFolderId);
+  const { templates: folderTemplates, allTemplates, isLoading: templatesLoading, refetch: refreshTemplates } = useTemplatesByFolderQuery(actualFolderId);
 
   // Load folders
   const { folders, folderTree, loading: foldersLoading, loadFolders, createFolder, renameFolder, deleteFolder, getFolderById } = useFolders(allTemplates);
@@ -608,10 +611,9 @@ const Dashboard: FC = () => {
     let savedTemplateKey: string | null = null;
 
     try {
-      // Get existing files to check for duplicates
-      const docs = await listDocsWithTimeout({ collection: 'templates_meta' });
+      // Get existing files to check for duplicates using cached data
       const existingFiles = new Set(
-        docs.items
+        allTemplates
           .filter(doc => {
             const data = doc.data as WordTemplateData;
             return (data.folderId ?? null) === selectedFolderId;
@@ -689,6 +691,9 @@ const Dashboard: FC = () => {
               }
             }
           });
+
+          // Invalidate cache to refetch templates
+          queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
 
           savedTemplateKey = result.name;
           successCount++;
@@ -788,10 +793,9 @@ const Dashboard: FC = () => {
     const failedFiles: string[] = [];
 
     try {
-      // Get existing files to check for duplicates
-      const docs = await listDocsWithTimeout({ collection: 'templates_meta' });
+      // Get existing files to check for duplicates using cached data
       const existingFiles = new Set(
-        docs.items
+        allTemplates
           .filter(doc => {
             const data = doc.data as WordTemplateData;
             return (data.folderId ?? null) === uploadToFolderId;
@@ -871,6 +875,9 @@ const Dashboard: FC = () => {
               }
             }
           });
+
+          // Invalidate cache to refetch templates
+          queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
 
           successCount++;
 

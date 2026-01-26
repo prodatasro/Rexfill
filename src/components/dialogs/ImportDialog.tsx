@@ -2,8 +2,10 @@ import { FC, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload, Loader2, X, Folder, FileText, AlertTriangle, Check } from 'lucide-react';
 import type { Doc } from '@junobuild/core';
+import { useQueryClient } from '@tanstack/react-query';
 import { setDocWithTimeout, uploadFileWithTimeout } from '../../utils/junoWithTimeout';
 import PizZip from 'pizzip';
+import { templateKeys } from '../../hooks/useTemplatesQuery';
 import type { WordTemplateData } from '../../types/word-template';
 import type { Folder as FolderType, FolderData } from '../../types/folder';
 import {
@@ -51,6 +53,7 @@ const ImportDialog: FC<ImportDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<ImportStep>('select');
   const [metadata, setMetadata] = useState<ExportMetadata | null>(null);
   const [zip, setZip] = useState<PizZip | null>(null);
@@ -453,6 +456,9 @@ const ImportDialog: FC<ImportDialogProps> = ({
 
       setImportStats(stats);
       setStep('complete');
+
+      // Invalidate cache to refetch all templates
+      queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
 
       // Show appropriate toast
       if (stats.errors.length === 0) {

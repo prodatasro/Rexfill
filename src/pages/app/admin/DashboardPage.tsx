@@ -2,10 +2,12 @@ import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { listDocs } from '@junobuild/core';
-import { Users, CreditCard, FileText, Activity } from 'lucide-react';
+import { Users, CreditCard, FileText, Activity, ShieldCheck } from 'lucide-react';
+import { useAdmin } from '../../../contexts';
 
 const DashboardPage: FC = () => {
   const { t } = useTranslation();
+  const { adminPrincipalId } = useAdmin();
 
   const { data: users } = useQuery({
     queryKey: ['admin_dashboard_users'],
@@ -47,7 +49,7 @@ const DashboardPage: FC = () => {
     queryKey: ['admin_dashboard_usage'],
     queryFn: async () => {
       const { items } = await listDocs({
-        collection: 'usage_tracking',
+        collection: 'usage',
       });
       return items;
     },
@@ -70,6 +72,14 @@ const DashboardPage: FC = () => {
         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
           {t('admin.dashboard.subtitle', 'Platform overview and statistics')}
         </p>
+        {adminPrincipalId && (
+          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+              {t('admin.dashboard.adminLabel', 'Platform Admin')}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Metrics */}

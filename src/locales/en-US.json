@@ -675,49 +675,6 @@
     "questions": "Have questions?",
     "contactUs": "Contact us"
   },
-  "guides": {
-    "title": "Template Preparation Guide",
-    "subtitle": "Learn how to create Word templates that work perfectly with Rexfill",
-    "sections": {
-      "customProperties": {
-        "title": "Using Custom Document Properties",
-        "intro": "Custom document properties in Word allow you to store dynamic data that can be inserted throughout your document using DOCPROPERTY fields.",
-        "howTo": "How to add custom properties in Word:",
-        "step1": "Go to File > Info > Properties > Advanced Properties",
-        "step2": "Click the Custom tab",
-        "step3": "Add a name and value for your property (e.g., CustomerName, OrderNumber)",
-        "step4": "Click Add, then OK",
-        "insertField": "How to insert custom property fields in your document:",
-        "insertStep1": "Press Ctrl+F9 to create a field",
-        "insertStep2": "Type: DOCPROPERTY CustomerName",
-        "insertStep3": "Press F9 to update the field",
-        "benefit": "Rexfill will detect these properties and allow you to update their values. All DOCPROPERTY fields in the document will automatically reflect the new values."
-      },
-      "bestPractices": {
-        "title": "Best Practices",
-        "tip1": "Use descriptive property names like CustomerName instead of single letters",
-        "tip2": "Keep property names consistent across your templates",
-        "tip3": "Test your template with a small document first before batch processing",
-        "tip4": "Use DOCPROPERTY fields for text that appears multiple times in your document",
-        "tip5": "Save your template as .docx format (not .doc or other formats)"
-      },
-      "troubleshooting": {
-        "title": "Troubleshooting",
-        "issue1": {
-          "title": "Properties not detected",
-          "solution": "Make sure you've added custom properties via File > Info > Properties > Advanced Properties > Custom tab. Properties must be saved to the document."
-        },
-        "issue2": {
-          "title": "Fields not updating in Word",
-          "solution": "After processing, open the document in Word and press Ctrl+A then F9 to update all fields. Or enable 'Update fields before printing' in Word options."
-        },
-        "issue3": {
-          "title": "File won't upload",
-          "solution": "Ensure your file is in .docx format and under the size limit for your plan. Try saving the document again in Word."
-        }
-      }
-    }
-  },
   "contact": {
     "title": "Contact Us",
     "subtitle": "Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.",
@@ -876,7 +833,7 @@
     "documentsThisMonth": "Documents This Month",
     "templateCount": "Templates",
     "upgradePlans": "Available Upgrades",
-    "upgrade": "Upgrade",
+    "upgradeButton": "Upgrade",
     "upgradeError": "Failed to upgrade. Please try again.",
     "checkoutSuccess": "Subscription activated successfully!",
     "managePayment": "Manage your payment method and billing information",
@@ -889,7 +846,13 @@
     "individualCancelling": {
       "title": "Individual Subscription Will Cancel",
       "message": "Your individual subscription will be cancelled on {{date}} because you joined an organization."
-    }
+    },
+    "upgrade": {
+      "title": "Upgrade Your Plan",
+      "limitReached": "You've reached your plan limit",
+      "upgradeNow": "Upgrade Now"
+    },
+    "limitReached": "Plan limit reached"
   },
   "logs": {
     "downloadLogs": "Download Logs",

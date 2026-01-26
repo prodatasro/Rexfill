@@ -1,21 +1,15 @@
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
-import { toast } from 'sonner';
-import { ShieldCheck, Plus, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { listDocs } from '@junobuild/core';
+import { ShieldCheck } from 'lucide-react';
 import type { PlatformAdmin } from '../../../types';
 import { useAuth } from '../../../contexts';
-import { logAdminAction } from '../../../utils/adminLogger';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
-import { Dialog, Button } from '../../../components/ui';
 
 const SettingsPage: FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newAdminId, setNewAdminId] = useState('');
 
   const { data: admins, isLoading } = useQuery({
     queryKey: ['admin_platform_admins'],
@@ -42,76 +36,6 @@ const SettingsPage: FC = () => {
     enabled: !!user,
   });
 
-  const addAdminMutation = useMutation({
-    mutationFn: async (principalId: string) => {
-      if (!user) return;
-
-      const adminData: PlatformAdmin = {
-        principalId,
-        addedAt: Date.now(),
-        addedBy: user.key,
-      };
-
-      await setDoc({
-        collection: 'platform_admins',
-        doc: {
-          key: principalId,
-          data: adminData,
-        },
-      });
-
-      await logAdminAction(user.key, 'add_admin', 'admin', principalId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin_platform_admins'] });
-      setShowAddDialog(false);
-      setNewAdminId('');
-      toast.success(t('admin.settings.addSuccess', 'Admin added successfully'));
-    },
-    onError: () => {
-      toast.error(t('admin.settings.addError', 'Failed to add admin'));
-    },
-  });
-
-  const removeAdminMutation = useMutation({
-    mutationFn: async (principalId: string) => {
-      if (!user) return;
-
-      // Prevent removing last admin
-      if (admins && admins.length === 1) {
-        throw new Error('Cannot remove last admin');
-      }
-
-      const adminDoc = admins?.find(a => a.key === principalId);
-      if (!adminDoc) {
-        throw new Error('Admin not found');
-      }
-
-      await deleteDoc({
-        collection: 'platform_admins',
-        doc: adminDoc,
-      });
-
-      await logAdminAction(user.key, 'remove_admin', 'admin', principalId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin_platform_admins'] });
-      toast.success(t('admin.settings.removeSuccess', 'Admin removed successfully'));
-    },
-    onError: (error: any) => {
-      if (error.message === 'Cannot remove last admin') {
-        toast.error(t('admin.settings.cannotRemoveLastAdmin', 'Cannot remove the last admin'));
-      } else {
-        toast.error(t('admin.settings.removeError', 'Failed to remove admin'));
-      }
-    },
-  });
-
-  const handleAddAdmin = () => {
-    if (!newAdminId.trim()) return;
-    addAdminMutation.mutate(newAdminId);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -122,7 +46,7 @@ const SettingsPage: FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {t('admin.settings.title', 'Admin Settings')}
@@ -132,10 +56,20 @@ const SettingsPage: FC = () => {
           </p>
         </div>
         
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          {t('admin.settings.addAdmin', 'Add Admin')}
-        </Button>
+        {/* Single admin policy notice */}
+        <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                {t('admin.settings.singleAdminPolicy.title', 'Single Admin Policy')}
+              </h3>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                {t('admin.settings.singleAdminPolicy.description', 'This platform operates with a single administrator. The first user who logged in automatically became the platform admin. This cannot be changed.')}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Admins list */}
@@ -150,23 +84,22 @@ const SettingsPage: FC = () => {
           {admins?.map(admin => {
             const data = admin.data as PlatformAdmin;
             return (
-              <div key={admin.key} className="px-6 py-4 flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium text-slate-900 dark:text-white">
-                    {admin.key}
+              <div key={admin.key} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">
+                      {admin.key}
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                      Added {new Date(data.addedAt).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                    Added {new Date(data.addedAt).toLocaleDateString()}
-                  </div>
+                  {user?.key === admin.key && (
+                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                      {t('admin.settings.youLabel', 'You')}
+                    </span>
+                  )}
                 </div>
-                <button
-                  onClick={() => removeAdminMutation.mutate(admin.key)}
-                  disabled={removeAdminMutation.isPending || (admins.length === 1)}
-                  className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {t('admin.settings.remove', 'Remove')}
-                </button>
               </div>
             );
           })}
@@ -217,51 +150,6 @@ const SettingsPage: FC = () => {
         </div>
       </div>
 
-      {/* Add admin dialog */}
-      {showAddDialog && (
-        <Dialog
-          isOpen={true}
-          onClose={() => {
-            setShowAddDialog(false);
-            setNewAdminId('');
-          }}
-          title={t('admin.settings.addAdminDialog.title', 'Add Admin User')}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                {t('admin.settings.addAdminDialog.principalId', 'Principal ID')} *
-              </label>
-              <input
-                type="text"
-                value={newAdminId}
-                onChange={(e) => setNewAdminId(e.target.value)}
-                className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                placeholder={t('admin.settings.addAdminDialog.placeholder', 'Enter Principal ID...')}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddDialog(false);
-                  setNewAdminId('');
-                }}
-              >
-                {t('admin.settings.addAdminDialog.cancel', 'Cancel')}
-              </Button>
-              <Button
-                onClick={handleAddAdmin}
-                disabled={!newAdminId.trim() || addAdminMutation.isPending}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {t('admin.settings.addAdminDialog.add', 'Add Admin')}
-              </Button>
-            </div>
-          </div>
-        </Dialog>
-      )}
     </div>
   );
 };

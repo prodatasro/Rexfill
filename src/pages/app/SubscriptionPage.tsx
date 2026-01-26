@@ -387,7 +387,7 @@ const SubscriptionPage: FC = () => {
                         </>
                       ) : (
                         <>
-                          {t('subscription.upgrade')}
+                          {t('subscription.upgradeButton')}
                           <ArrowUpRight className="w-4 h-4" />
                         </>
                       )}

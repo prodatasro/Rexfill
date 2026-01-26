@@ -8,7 +8,7 @@ import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { fetchWithTimeout, TimeoutError } from "../utils/fetchWithTimeout";
 import { useTranslation } from "react-i18next";
 import { ProcessingProgress } from "./useDocumentWorker";
-import { uploadFileWithTimeout, setDocWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
+import { uploadFileWithRetry, setDocWithTimeout, getDocWithTimeout } from "../utils/junoWithTimeout";
 import { useSubscription } from "../contexts/SubscriptionContext";
 
 const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
@@ -481,7 +481,7 @@ export const useMultiFileProcessor = ({
             type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           });
 
-          const result = await uploadFileWithTimeout({
+          const result = await uploadFileWithRetry({
             data: fileToUpload,
             collection: 'templates',
             filename: storagePath
@@ -596,7 +596,7 @@ export const useMultiFileProcessor = ({
             type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           });
 
-          const result = await uploadFileWithTimeout({
+          const result = await uploadFileWithRetry({
             data: fileToUpload,
             collection: 'templates',
             filename: storagePath

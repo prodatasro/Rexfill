@@ -1,12 +1,15 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { listDocs } from '@junobuild/core';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import { Button } from '../../../components/ui';
 import { Building2, Users } from 'lucide-react';
 
 const OrganizationsPage: FC = () => {
   const { t } = useTranslation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
 
   const { data: organizations, isLoading } = useQuery({
     queryKey: ['admin_organizations'],
@@ -35,6 +38,13 @@ const OrganizationsPage: FC = () => {
       </div>
     );
   }
+
+  // Pagination
+  const totalPages = Math.ceil((organizations?.length || 0) / pageSize);
+  const paginatedOrganizations = organizations?.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="space-y-6">
@@ -86,7 +96,7 @@ const OrganizationsPage: FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {organizations?.map(org => {
+              {paginatedOrganizations?.map(org => {
                 const data = org.data as any;
                 const orgMembers = members?.filter(m => (m.data as any).organizationId === org.key) || [];
                 return (
@@ -117,6 +127,35 @@ const OrganizationsPage: FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              {t('admin.pagination.showing', 'Showing')} {((currentPage - 1) * pageSize) + 1} -{' '}
+              {Math.min(currentPage * pageSize, organizations?.length || 0)} {t('admin.pagination.of', 'of')}{' '}
+              {organizations?.length || 0}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                {t('admin.pagination.previous', 'Previous')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                {t('admin.pagination.next', 'Next')}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

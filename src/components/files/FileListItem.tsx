@@ -42,6 +42,7 @@ export interface FileListItemProps {
   isDeleting: boolean;
   isDuplicating: boolean;
   isTogglingFavorite: boolean;
+  isDownloading: boolean;
   isDownloadingLogs: boolean;
   isMenuOpen: boolean;
   onSelect: (template: Doc<WordTemplateData>, selected: boolean) => void;
@@ -70,6 +71,7 @@ const FileListItem: FC<FileListItemProps> = memo(
     isDeleting,
     isDuplicating,
     isTogglingFavorite,
+    isDownloading,
     isDownloadingLogs,
     isMenuOpen,
     onSelect,
@@ -191,12 +193,16 @@ const FileListItem: FC<FileListItemProps> = memo(
 
           <button
             onClick={() => onDownload(template)}
-            disabled={isDeleting}
+            disabled={isDeleting || isDownloading}
             className="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:bg-slate-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={t('fileList.downloadTemplate')}
             aria-label={t('fileList.downloadTemplate')}
           >
-            <Download className="w-4 h-4" />
+            {isDownloading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-green-500" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
           </button>
 
           <button
@@ -325,9 +331,14 @@ const FileListItem: FC<FileListItemProps> = memo(
                     onDownload(template);
                     onMenuToggle(null);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  disabled={isDownloading}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
-                  <Download className="w-4 h-4 text-green-500" />
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 text-green-500 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 text-green-500" />
+                  )}
                   {t('fileList.downloadTemplate')}
                 </button>
 
@@ -409,6 +420,7 @@ const FileListItem: FC<FileListItemProps> = memo(
       prevProps.isDeleting === nextProps.isDeleting &&
       prevProps.isDuplicating === nextProps.isDuplicating &&
       prevProps.isTogglingFavorite === nextProps.isTogglingFavorite &&
+      prevProps.isDownloading === nextProps.isDownloading &&
       prevProps.isDownloadingLogs === nextProps.isDownloadingLogs &&
       prevProps.isMenuOpen === nextProps.isMenuOpen
     );

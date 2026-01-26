@@ -186,11 +186,9 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
           });
 
           // Get total templates count (from templates_meta collection)
+          // Note: listDocs automatically filters by authenticated user when no owner specified
           const templateDocs = await listDocs({
             collection: 'templates_meta',
-            filter: {
-              owner: user.key,
-            },
           });
 
           setUsage({
@@ -215,11 +213,9 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
           });
 
           // Get total templates count
+          // Note: listDocs automatically filters by authenticated user when no owner specified
           const templateDocs = await listDocs({
             collection: 'templates_meta',
-            filter: {
-              owner: user.key,
-            },
           });
 
           setUsage({
@@ -301,6 +297,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
   }, [user]);
 
   const canProcessDocument = useCallback(() => {
+    debugger;
     if (isUnlimited(plan.limits.documentsPerDay)) return true;
     if (usage.documentsToday >= plan.limits.documentsPerDay) return false;
     if (!isUnlimited(plan.limits.documentsPerMonth) && usage.documentsThisMonth >= plan.limits.documentsPerMonth) return false;
@@ -315,16 +312,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
   const incrementDocumentUsage = useCallback(async () => {
     if (!user) return;
 
-    const newUsage = {
-      ...usage,
-      documentsToday: usage.documentsToday + 1,
-      documentsThisMonth: usage.documentsThisMonth + 1,
-      lastUpdated: Date.now(),
-    };
-
-    setUsage(newUsage);
-
-    // Persist to Juno datastore
+    // Persist to Juno datastore first to get the latest count
     try {
       const today = new Date().toISOString().split('T')[0];
       const usageDoc = await getDoc({
@@ -342,29 +330,116 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
             ...currentData,
             documentsProcessed: currentData.documentsProcessed + 1,
           },
+          ...(usageDoc?.version && { version: usageDoc.version }), // Include version for existing docs
           updated_at: BigInt(Date.now()),
         },
       });
+
+      // Update local state with functional setState to avoid stale closure issues
+      setUsage((prevUsage) => ({
+        ...prevUsage,
+        documentsToday: currentData.documentsProcessed + 1,
+        documentsThisMonth: prevUsage.documentsThisMonth + 1,
+        lastUpdated: Date.now(),
+      }));
     } catch (error) {
       console.error('Failed to persist usage:', error);
+      
+      // Fallback: still increment local state even if DB update fails
+      setUsage((prevUsage) => ({
+        ...prevUsage,
+        documentsToday: prevUsage.documentsToday + 1,
+        documentsThisMonth: prevUsage.documentsThisMonth + 1,
+        lastUpdated: Date.now(),
+      }));
     }
-  }, [user, usage]);
+  }, [user]);
 
   const incrementTemplateCount = useCallback(async () => {
-    setUsage((prev) => ({
-      ...prev,
-      totalTemplates: prev.totalTemplates + 1,
-      lastUpdated: Date.now(),
-    }));
-  }, []);
+    if (!user) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const usageDoc = await getDoc({
+        collection: 'usage',
+        key: `${user.key}_${today}`,
+      });
+
+      const currentData = usageDoc?.data as any || { documentsProcessed: 0, templatesUploaded: 0 };
+
+      await setDoc({
+        collection: 'usage',
+        doc: {
+          key: `${user.key}_${today}`,
+          data: {
+            ...currentData,
+            templatesUploaded: currentData.templatesUploaded + 1,
+          },
+          ...(usageDoc?.version && { version: usageDoc.version }),
+          updated_at: BigInt(Date.now()),
+        },
+      });
+
+      // Update local state
+      setUsage((prev) => ({
+        ...prev,
+        totalTemplates: prev.totalTemplates + 1,
+        lastUpdated: Date.now(),
+      }));
+    } catch (error) {
+      console.error('Failed to persist template count:', error);
+      
+      // Fallback: still increment local state even if DB update fails
+      setUsage((prev) => ({
+        ...prev,
+        totalTemplates: prev.totalTemplates + 1,
+        lastUpdated: Date.now(),
+      }));
+    }
+  }, [user]);
 
   const decrementTemplateCount = useCallback(async () => {
-    setUsage((prev) => ({
-      ...prev,
-      totalTemplates: Math.max(0, prev.totalTemplates - 1),
-      lastUpdated: Date.now(),
-    }));
-  }, []);
+    if (!user) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const usageDoc = await getDoc({
+        collection: 'usage',
+        key: `${user.key}_${today}`,
+      });
+
+      const currentData = usageDoc?.data as any || { documentsProcessed: 0, templatesUploaded: 0 };
+
+      await setDoc({
+        collection: 'usage',
+        doc: {
+          key: `${user.key}_${today}`,
+          data: {
+            ...currentData,
+            templatesUploaded: Math.max(0, currentData.templatesUploaded - 1),
+          },
+          ...(usageDoc?.version && { version: usageDoc.version }),
+          updated_at: BigInt(Date.now()),
+        },
+      });
+
+      // Update local state
+      setUsage((prev) => ({
+        ...prev,
+        totalTemplates: Math.max(0, prev.totalTemplates - 1),
+        lastUpdated: Date.now(),
+      }));
+    } catch (error) {
+      console.error('Failed to persist template count:', error);
+      
+      // Fallback: still decrement local state even if DB update fails
+      setUsage((prev) => ({
+        ...prev,
+        totalTemplates: Math.max(0, prev.totalTemplates - 1),
+        lastUpdated: Date.now(),
+      }));
+    }
+  }, [user]);
 
   const checkLimits = useCallback(() => {
     // Check daily limit
@@ -427,11 +502,9 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         });
 
         // Get total templates count
+        // Note: listDocs automatically filters by authenticated user when no owner specified
         const templateDocs = await listDocs({
           collection: 'templates_meta',
-          filter: {
-            owner: user.key,
-          },
         });
 
         setUsage({
