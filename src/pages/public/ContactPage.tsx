@@ -2,6 +2,8 @@ import { FC, useState } from 'react';
 import { Send, Mail, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { setDoc } from '@junobuild/core';
+import type { ContactSubmission } from '../../types';
 
 interface FormData {
   name: string;
@@ -30,13 +32,30 @@ const ContactPage: FC = () => {
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement actual form submission to Juno or email service
-      // For now, simulate a delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Save contact submission to Juno datastore
+      const submission: ContactSubmission = {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        submittedAt: Date.now(),
+        status: 'new',
+      };
+
+      const key = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      await setDoc({
+        collection: 'contact_submissions',
+        doc: {
+          key,
+          data: submission,
+        },
+      });
 
       toast.success(t('contact.success'));
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch {
+    } catch (error) {
+      console.error('Failed to submit contact form:', error);
       toast.error(t('contact.error'));
     } finally {
       setIsSubmitting(false);

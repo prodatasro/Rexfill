@@ -1,10 +1,11 @@
 import { FC, useState, useRef, useEffect } from 'react';
-import { Sun, Moon, User, Building2 } from 'lucide-react';
+import { Sun, Moon, User, Building2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSearch } from '../../contexts/SearchContext';
 import { useOrganization } from '../../contexts/OrganizationContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
+import { useAdmin } from '../../contexts/AdminContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../ui/LanguageSelector';
@@ -25,6 +26,7 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
   const { allTemplates, folderTree, onSelectTemplate, onSelectFolder } = useSearch();
   const { currentOrganization } = useOrganization();
   const { subscription, gracePeriodEndsAt } = useSubscription();
+  const { isAdmin } = useAdmin();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +59,11 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
   const handleOrganizationClick = () => {
     setShowUserMenu(false);
     navigate('/app/organization');
+  };
+
+  const handleAdminClick = () => {
+    setShowUserMenu(false);
+    navigate('/admin/dashboard');
   };
 
   const handleLogoutClick = () => {
@@ -151,6 +158,20 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
                       </button>
                     </>
                   )}
+                  
+                  {isAdmin && (
+                    <>
+                      <hr className="my-1 border-slate-200 dark:border-slate-700" />
+                      <button
+                        onClick={handleAdminClick}
+                        className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      >
+                        <ShieldCheck size={16} />
+                        {t('header.adminPanel', 'Admin Panel')}
+                      </button>
+                    </>
+                  )}
+                  
                   <hr className="my-1 border-slate-200 dark:border-slate-700" />
                   <button
                     onClick={handleLogoutClick}

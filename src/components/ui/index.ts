@@ -3,3 +3,5 @@ export { GlobalSearch } from './GlobalSearch';
 export { default as LanguageSelector } from './LanguageSelector';
 export { ErrorBoundary } from './ErrorBoundary';
 export { default as ErrorBoundaryDefault } from './ErrorBoundary';
+export { Dialog } from './Dialog';
+export { Button } from './Button';

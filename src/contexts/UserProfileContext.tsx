@@ -153,10 +153,20 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
       }
 
       try {
+        // Fetch the latest version to avoid version conflicts
+        const currentDoc = await getDocWithTimeout<UserProfileData>({
+          collection: 'user_profiles',
+          key: user.key,
+        });
+
+        if (!currentDoc) {
+          throw new Error('Profile not found');
+        }
+
         const updatedProfile: UserProfile = {
-          ...profile,
+          ...currentDoc,
           data: {
-            ...profile.data,
+            ...currentDoc.data,
             ...data,
             updatedAt: Date.now(),
           },

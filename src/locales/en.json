@@ -249,5 +249,206 @@
         }
       }
     }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "organizations": "Organizations",
+      "subscriptions": "Subscriptions",
+      "contactInbox": "Contact Inbox",
+      "activityLogs": "Activity Logs",
+      "templates": "Templates",
+      "webhooks": "Webhooks",
+      "settings": "Settings",
+      "backToApp": "Back to App"
+    },
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "subtitle": "Platform overview and statistics",
+      "metrics": {
+        "totalUsers": "Total Users",
+        "activeSubscriptions": "Active Subscriptions",
+        "totalTemplates": "Total Templates",
+        "todayProcessed": "Today Processed"
+      },
+      "planDistribution": "Plan Distribution"
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Manage user accounts and permissions",
+      "search": "Search by email, name, or Principal ID...",
+      "unnamed": "Unnamed User",
+      "suspend": "Suspend",
+      "unsuspend": "Unsuspend",
+      "override": "Override",
+      "stats": {
+        "total": "Total Users",
+        "suspended": "Suspended",
+        "templates": "Total Templates"
+      },
+      "table": {
+        "user": "User",
+        "plan": "Plan",
+        "organization": "Organization",
+        "templates": "Templates",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "suspendSuccess": "User suspended successfully",
+      "suspendError": "Failed to suspend user",
+      "unsuspendSuccess": "User unsuspended successfully",
+      "unsuspendError": "Failed to unsuspend user",
+      "overrideSuccess": "Subscription override applied",
+      "overrideError": "Failed to apply override",
+      "suspendDialog": {
+        "title": "Suspend User",
+        "description": "You are about to suspend",
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter reason for suspension...",
+        "cancel": "Cancel",
+        "confirm": "Suspend User"
+      },
+      "overrideDialog": {
+        "title": "Subscription Override",
+        "description": "Set custom quota limits for",
+        "documentsPerDay": "Documents/Day",
+        "documentsPerMonth": "Documents/Month",
+        "maxTemplates": "Max Templates",
+        "maxFileSize": "Max File Size (MB)",
+        "expiresAt": "Expires At (optional)",
+        "reason": "Reason",
+        "reasonPlaceholder": "Enter reason for override...",
+        "cancel": "Cancel",
+        "save": "Save Override"
+      }
+    },
+    "organizations": {
+      "title": "Organizations",
+      "subtitle": "Manage organization accounts",
+      "stats": {
+        "total": "Total Organizations",
+        "members": "Total Members"
+      },
+      "table": {
+        "name": "Name",
+        "members": "Members",
+        "seats": "Seats",
+        "created": "Created"
+      }
+    },
+    "subscriptions": {
+      "title": "Subscriptions",
+      "subtitle": "Manage user subscriptions",
+      "stats": {
+        "total": "Total Subscriptions",
+        "active": "Active",
+        "mrr": "MRR"
+      },
+      "table": {
+        "user": "User",
+        "plan": "Plan",
+        "status": "Status",
+        "type": "Type"
+      }
+    },
+    "contactInbox": {
+      "title": "Contact Inbox",
+      "subtitle": "Manage contact form submissions",
+      "search": "Search by email, subject, or name...",
+      "reply": "Reply",
+      "status": {
+        "all": "All",
+        "new": "New",
+        "read": "Read",
+        "replied": "Replied"
+      },
+      "table": {
+        "status": "Status",
+        "name": "Name",
+        "email": "Email",
+        "subject": "Subject",
+        "submitted": "Submitted",
+        "actions": "Actions"
+      },
+      "replySuccess": "Reply saved successfully",
+      "replyError": "Failed to save reply",
+      "replyDialog": {
+        "title": "Reply to Contact Submission",
+        "from": "From",
+        "subject": "Subject",
+        "message": "Message",
+        "yourReply": "Your Reply",
+        "placeholder": "Type your reply here...",
+        "cancel": "Cancel",
+        "save": "Save Reply"
+      }
+    },
+    "activityLogs": {
+      "title": "Activity Logs",
+      "subtitle": "Monitor all system activity",
+      "table": {
+        "timestamp": "Timestamp",
+        "action": "Action",
+        "resource": "Resource",
+        "user": "User"
+      }
+    },
+    "webhooks": {
+      "title": "Webhooks",
+      "subtitle": "Monitor Paddle webhook events",
+      "stats": {
+        "total": "Total Events",
+        "failures": "Failures",
+        "successRate": "Success Rate"
+      },
+      "table": {
+        "timestamp": "Timestamp",
+        "eventType": "Event Type",
+        "status": "Status",
+        "error": "Error"
+      }
+    },
+    "templates": {
+      "title": "Templates",
+      "subtitle": "Storage analytics and usage",
+      "stats": {
+        "total": "Total Templates",
+        "totalStorage": "Total Storage"
+      },
+      "topUsers": "Top Users by Storage"
+    },
+    "settings": {
+      "title": "Admin Settings",
+      "subtitle": "Manage admin users and permissions",
+      "addAdmin": "Add Admin",
+      "adminUsers": "Admin Users",
+      "yourActions": "Your Recent Actions",
+      "remove": "Remove",
+      "addSuccess": "Admin added successfully",
+      "addError": "Failed to add admin",
+      "removeSuccess": "Admin removed successfully",
+      "removeError": "Failed to remove admin",
+      "cannotRemoveLastAdmin": "Cannot remove the last admin",
+      "table": {
+        "timestamp": "Timestamp",
+        "action": "Action",
+        "target": "Target"
+      },
+      "addAdminDialog": {
+        "title": "Add Admin User",
+        "principalId": "Principal ID",
+        "placeholder": "Enter Principal ID...",
+        "cancel": "Cancel",
+        "add": "Add Admin"
+      }
+    },
+    "pagination": {
+      "showing": "Showing",
+      "of": "of",
+      "previous": "Previous",
+      "next": "Next"
+    }
   }
 }

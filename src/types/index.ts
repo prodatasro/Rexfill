@@ -6,3 +6,4 @@ export type { UserProfile, UserProfileData } from './user-profile';
 export type { ActivityLogData } from './activity-log';
 export type { OrganizationData, OrganizationMemberData, InvitationData, OrganizationWithMembers, OrganizationRole, InvitationStatus } from './organization';
 export type { NotificationData, NotificationType, NotificationContextType } from './notification';
+export type { PlatformAdmin, AdminAction, SuspendedUser, SubscriptionOverride, WebhookHistory, ContactSubmissionWithReply } from './admin';

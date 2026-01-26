@@ -10,6 +10,7 @@ import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { UserProfileProvider } from "./contexts/UserProfileContext";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { AdminProvider } from "./contexts/AdminContext";
 import { Toaster } from "sonner";
 import { ConfirmProvider } from "./contexts/ConfirmContext";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
@@ -18,6 +19,7 @@ import LoadingSpinner from "./components/ui/LoadingSpinner";
 // Lazy load layouts
 const PublicLayout = lazy(() => import("./components/layouts/PublicLayout"));
 const AppLayout = lazy(() => import("./components/layouts/AppLayout"));
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 
 // Lazy load public pages
 const LandingPage = lazy(() => import("./pages/public/LandingPage"));
@@ -56,6 +58,7 @@ const App: FC = () => {
                 <SubscriptionProvider>
                   <NotificationProvider>
                     <OrganizationProvider>
+                      <AdminProvider>
                       <FileProcessingProvider>
                         <ProcessorProvider>
                           <ConfirmProvider>
@@ -81,6 +84,9 @@ const App: FC = () => {
                                   {/* Authenticated app routes */}
                                   <Route path="/app/*" element={<AppLayout />} />
 
+                                  {/* Admin routes */}
+                                  <Route path="/admin/*" element={<AdminLayout />} />
+
                                   {/* 404 fallback */}
                                   <Route path="*" element={<NotFoundPage />} />
                                 </Routes>
@@ -95,6 +101,7 @@ const App: FC = () => {
                           </ConfirmProvider>
                         </ProcessorProvider>
                       </FileProcessingProvider>
+                      </AdminProvider>
                     </OrganizationProvider>
                   </NotificationProvider>
                 </SubscriptionProvider>

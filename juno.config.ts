@@ -43,6 +43,12 @@ export default defineConfig(({ mode }) => ({
         { collection: 'contact_submissions', read: 'managed', write: 'public', memory: 'stable' },
         { collection: 'activity_logs', read: 'managed', write: 'private', memory: 'stable' },
         { collection: 'user_profiles', read: 'private', write: 'private', memory: 'stable' },
+        // Admin collections
+        { collection: 'platform_admins', read: 'managed', write: 'managed', memory: 'stable' },
+        { collection: 'admin_actions', read: 'managed', write: 'managed', memory: 'stable' },
+        { collection: 'suspended_users', read: 'managed', write: 'managed', memory: 'stable' },
+        { collection: 'subscription_overrides', read: 'managed', write: 'managed', memory: 'stable' },
+        { collection: 'webhook_history', read: 'managed', write: 'managed', memory: 'stable' },
       ],
       storage: [
         { collection: 'templates', read: 'private', write: 'private', memory: 'stable'},

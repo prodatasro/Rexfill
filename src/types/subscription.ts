@@ -47,4 +47,7 @@ export interface ContactSubmission {
   message: string;
   submittedAt: number;
   status: 'new' | 'read' | 'replied';
+  repliedAt?: number;
+  repliedBy?: string; // Principal ID of admin who replied
+  reply?: string;
 }
