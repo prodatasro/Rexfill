@@ -1,8 +1,8 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SUBSCRIPTION_PLANS, INDIVIDUAL_PLANS, ORGANIZATION_PLANS, isUnlimited } from '../../config/plans';
+import { INDIVIDUAL_PLANS, isUnlimited } from '../../config/plans';
 import { openCheckout, initPaddle } from '../../lib/paddle';
 import { useAuth } from '../../contexts/AuthContext';
 import { showErrorToast } from '../../utils/toast';
@@ -15,9 +15,9 @@ const PricingPage: FC = () => {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   // Initialize Paddle on component mount
-  useState(() => {
+  useEffect(() => {
     initPaddle().catch(console.error);
-  });
+  }, []);
 
   const plans = [
     { ...INDIVIDUAL_PLANS.free, popular: false },
@@ -40,7 +40,6 @@ const PricingPage: FC = () => {
     }
 
     setCheckoutLoading(planId);
-debugger;
     try {
       await openCheckout(
         planId as 'starter' | 'professional' | 'enterprise',
@@ -52,7 +51,6 @@ debugger;
         }
       );
     } catch (error) {
-      debugger;
       console.error('Failed to open checkout:', error);
       showErrorToast(t('pricing.checkoutError') || 'Failed to open checkout. Please try again.');
     } finally {

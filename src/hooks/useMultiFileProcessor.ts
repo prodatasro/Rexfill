@@ -282,6 +282,7 @@ export const useMultiFileProcessor = ({
   };
 
   const processAllDocuments = async (retryFileIds?: string[]): Promise<boolean> => {
+    debugger;
     // Check if batch processing is allowed on this plan
     if (!plan.limits.batchProcessing) {
       showErrorToast(t('subscription.batchProcessingNotAvailable'));

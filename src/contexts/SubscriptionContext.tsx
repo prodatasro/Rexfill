@@ -191,32 +191,50 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
 
   // Listen for Paddle checkout completion events
   useEffect(() => {
-    const handleCheckoutCompleted = async (event: CustomEvent) => {
-      console.log('Paddle checkout completed, refreshing subscription...', event.detail);
+    const handleCheckoutCompleted = async (event: Event) => {
+      console.log('Paddle checkout completed, refreshing subscription...', (event as CustomEvent).detail);
       
-      // Wait a bit for Paddle webhook to update our backend
-      setTimeout(async () => {
-        if (user) {
-          try {
-            const subscriptionDoc = await getDoc({
-              collection: 'subscriptions',
-              key: user.key,
-            });
-            
-            if (subscriptionDoc) {
-              setSubscription(subscriptionDoc.data as SubscriptionData);
-            }
-          } catch (error) {
-            console.error('Failed to refresh subscription after checkout:', error);
+      if (!user) return;
+
+      // Poll for subscription update with exponential backoff
+      const maxAttempts = 10;
+      const pollInterval = 1000; // Start with 1 second
+      let attempts = 0;
+
+      const pollSubscription = async (): Promise<void> => {
+        attempts++;
+        
+        try {
+          const subscriptionDoc = await getDoc({
+            collection: 'subscriptions',
+            key: user.key,
+          });
+          
+          if (subscriptionDoc) {
+            setSubscription(subscriptionDoc.data as SubscriptionData);
+            console.log('Subscription updated successfully');
+            return;
           }
+        } catch (error) {
+          console.error('Failed to refresh subscription:', error);
         }
-      }, 2000); // 2 second delay to allow webhook processing
+
+        if (attempts < maxAttempts) {
+          const nextDelay = pollInterval * Math.pow(1.5, attempts - 1);
+          setTimeout(() => pollSubscription(), nextDelay);
+        } else {
+          console.warn('Max polling attempts reached for subscription update');
+        }
+      };
+
+      // Start polling after initial delay
+      setTimeout(() => pollSubscription(), 1000);
     };
 
-    window.addEventListener('paddle:checkout-completed', handleCheckoutCompleted as EventListener);
+    window.addEventListener('paddle:checkout-completed', handleCheckoutCompleted);
     
     return () => {
-      window.removeEventListener('paddle:checkout-completed', handleCheckoutCompleted as EventListener);
+      window.removeEventListener('paddle:checkout-completed', handleCheckoutCompleted);
     };
   }, [user]);
 
@@ -262,7 +280,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
             ...currentData,
             documentsProcessed: currentData.documentsProcessed + 1,
           },
-          updated_at: Date.now(),
+          updated_at: BigInt(Date.now()),
         },
       });
     } catch (error) {
@@ -398,7 +416,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         doc: {
           key: user.key,
           data: newSubscription,
-          updated_at: Date.now(),
+          updated_at: BigInt(Date.now()),
         },
       });
 

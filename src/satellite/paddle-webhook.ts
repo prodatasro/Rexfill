@@ -20,6 +20,32 @@ import {
   getDocStore,
 } from '@junobuild/functions/sdk';
 
+/**
+ * Retry a database operation with exponential backoff
+ */
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  maxAttempts = 3
+): Promise<T> {
+  let lastError: Error | undefined;
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Operation failed (attempt ${attempt}/${maxAttempts}):`, error);
+      
+      if (attempt < maxAttempts) {
+        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 // Paddle webhook event types
 interface PaddleWebhookEvent {
   event_id: string;
@@ -232,14 +258,16 @@ export async function paddleWebhook(request: Request): Promise<Response> {
         // Encode the data for storage
         const encodedData = encodeDocData(subscriptionData);
 
-        await setDocStore({
-          caller: id(),
-          collection: 'subscriptions',
-          key,
-          doc: {
-            data: encodedData,
-          },
-        });
+        await retryOperation(async () =>
+          await setDocStore({
+            caller: id(),
+            collection: 'subscriptions',
+            key,
+            doc: {
+              data: encodedData,
+            },
+          })
+        );
 
         console.log(`Subscription ${event.event_type} for ${key}`);
         break;
@@ -270,15 +298,17 @@ export async function paddleWebhook(request: Request): Promise<Response> {
           // Encode the updated data
           const encodedData = encodeDocData(updatedData);
 
-          await setDocStore({
-            caller: id(),
-            collection: 'subscriptions',
-            key,
-            doc: {
-              data: encodedData,
-              version: existingDoc.version,
-            },
-          });
+          await retryOperation(async () =>
+            await setDocStore({
+              caller: id(),
+              collection: 'subscriptions',
+              key,
+              doc: {
+                data: encodedData,
+                version: existingDoc.version,
+              },
+            })
+          );
 
           console.log(`Subscription ${event.event_type} for ${key}`);
         }

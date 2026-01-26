@@ -8,6 +8,12 @@ export default defineConfig(({ mode }) => ({
       production: "ufqml-byaaa-aaaas-amtia-cai"
     },
     source: "dist",
+    functions: [
+      {
+        name: "paddleWebhook",
+        path: "/paddle-webhook"
+      }
+    ],
     storage: {
       headers: [
         {

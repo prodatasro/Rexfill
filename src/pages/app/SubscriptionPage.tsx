@@ -1,10 +1,10 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { CreditCard, Calendar, AlertCircle, CheckCircle, XCircle, ArrowUpRight, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { SUBSCRIPTION_PLANS, isUnlimited } from '../../config/plans';
 import { openCheckout } from '../../lib/paddle';
-import { showErrorToast } from '../../utils/toast';
+import { showErrorToast, showSuccessToast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 
 const SubscriptionPage: FC = () => {
@@ -12,6 +12,16 @@ const SubscriptionPage: FC = () => {
   const { user } = useAuth();
   const { plan, subscription, usage, isLoading } = useSubscription();
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+
+  // Handle success parameter from Paddle redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      showSuccessToast(t('subscription.checkoutSuccess') || 'Subscription activated successfully!');
+      // Clean up URL
+      window.history.replaceState({}, '', '/app/subscription');
+    }
+  }, [t]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString(undefined, {

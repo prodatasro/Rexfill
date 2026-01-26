@@ -34,7 +34,6 @@
   "profile": {
     "title": "User Profile",
     "subtitle": "Manage your account settings and view activity logs",
-    "profileInfo": "Profile Information",
     "editProfile": "Edit Profile",
     "displayName": "Display Name",
     "displayNamePlaceholder": "Enter your name",
@@ -629,12 +628,12 @@
       "starter": {
         "name": "Starter",
         "description": "For individuals and small teams",
-        "cta": "Start Trial"
+        "cta": "Subscribe"
       },
       "professional": {
         "name": "Professional",
         "description": "For growing businesses",
-        "cta": "Start Trial"
+        "cta": "Subscribe"
       },
       "enterprise": {
         "name": "Enterprise",

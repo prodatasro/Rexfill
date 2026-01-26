@@ -42,6 +42,7 @@ interface PaddleEvent {
 
 // Environment variables for Paddle configuration
 const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN || '';
+const PADDLE_ENVIRONMENT = import.meta.env.VITE_PADDLE_ENVIRONMENT || 'production';
 
 // Price IDs for each plan (configure in .env)
 export const PADDLE_PRICES = {
@@ -104,7 +105,14 @@ export const initPaddle = (): Promise<void> => {
           token: PADDLE_CLIENT_TOKEN,
           eventCallback: handlePaddleEvent,
         });
+        
+        // Set environment (sandbox or production)
+        if (PADDLE_ENVIRONMENT === 'sandbox') {
+          window.Paddle.Environment.set('sandbox');
+        }
+        
         isInitialized = true;
+        console.log('Paddle initialized successfully');
         resolve();
       } catch (error) {
         reject(error);
@@ -124,7 +132,14 @@ export const initPaddle = (): Promise<void> => {
             token: PADDLE_CLIENT_TOKEN,
             eventCallback: handlePaddleEvent,
           });
+          
+          // Set environment (sandbox or production)
+          if (PADDLE_ENVIRONMENT === 'sandbox') {
+            window.Paddle.Environment.set('sandbox');
+          }
+          
           isInitialized = true;
+          console.log('Paddle initialized successfully');
           resolve();
         } catch (error) {
           reject(error);

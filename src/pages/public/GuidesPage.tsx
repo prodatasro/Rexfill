@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { FileText, Code, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileText, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const GuidesPage: FC = () => {
@@ -20,62 +20,7 @@ const GuidesPage: FC = () => {
 
         {/* Content */}
         <div className="max-w-4xl mx-auto space-y-12">
-          {/* Section 1: Placeholders */}
-          <section className="card p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400">
-                <Code className="w-5 h-5" />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {t('guides.sections.placeholders.title')}
-              </h2>
-            </div>
-
-            <div className="prose prose-slate dark:prose-invert max-w-none">
-              <p className="text-slate-600 dark:text-slate-400 mb-4">
-                {t('guides.sections.placeholders.intro')}
-              </p>
-
-              {/* Example */}
-              <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 mb-4 font-mono text-sm">
-                <p className="text-slate-800 dark:text-slate-200">
-                  {t('guides.sections.placeholders.example1')}
-                </p>
-              </div>
-
-              <p className="text-slate-600 dark:text-slate-400 mb-4">
-                {t('guides.sections.placeholders.description')}
-              </p>
-
-              {/* Do's and Don'ts */}
-              <div className="grid sm:grid-cols-2 gap-4 mt-6">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                    <span className="font-semibold text-green-800 dark:text-green-200">{t('guides.sections.placeholders.correct')}</span>
-                  </div>
-                  <ul className="space-y-2 text-sm text-green-700 dark:text-green-300">
-                    <li><code className="bg-green-100 dark:bg-green-800 px-1 rounded">{'{{name}}'}</code></li>
-                    <li><code className="bg-green-100 dark:bg-green-800 px-1 rounded">{'{{company_name}}'}</code></li>
-                    <li><code className="bg-green-100 dark:bg-green-800 px-1 rounded">{'{{date_of_birth}}'}</code></li>
-                  </ul>
-                </div>
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                    <span className="font-semibold text-red-800 dark:text-red-200">{t('guides.sections.placeholders.incorrect')}</span>
-                  </div>
-                  <ul className="space-y-2 text-sm text-red-700 dark:text-red-300">
-                    <li><code className="bg-red-100 dark:bg-red-800 px-1 rounded">{'{name}'}</code> - {t('guides.sections.placeholders.singleBrace')}</li>
-                    <li><code className="bg-red-100 dark:bg-red-800 px-1 rounded">{'{{ name }}'}</code> - {t('guides.sections.placeholders.spaces')}</li>
-                    <li><code className="bg-red-100 dark:bg-red-800 px-1 rounded">{'{{Name}}'}</code> - {t('guides.sections.placeholders.caseSensitive')}</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 2: Custom Properties */}
+          {/* Section 1: Custom Properties */}
           <section className="card p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400">
@@ -107,7 +52,7 @@ const GuidesPage: FC = () => {
             </div>
           </section>
 
-          {/* Section 3: Best Practices */}
+          {/* Section 2: Best Practices */}
           <section className="card p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center text-primary-600 dark:text-primary-400">

@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../ui/LanguageSelector';
 import { GlobalSearch } from '../ui/GlobalSearch';
 
+const PADDLE_ENVIRONMENT = import.meta.env.VITE_PADDLE_ENVIRONMENT || 'production';
+
 interface HeaderProps {
   onLogoClick?: () => void | Promise<void>;
 }
@@ -68,6 +70,14 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
           />
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {PADDLE_ENVIRONMENT === 'sandbox' && (
+              <div className="hidden sm:flex items-center px-3 py-1 bg-yellow-500/20 dark:bg-yellow-500/10 border border-yellow-500/30 rounded-full">
+                <span className="text-xs font-semibold text-yellow-700 dark:text-yellow-400">
+                  SANDBOX MODE
+                </span>
+              </div>
+            )}
+
             <GlobalSearch
               allTemplates={allTemplates}
               folderTree={folderTree}
