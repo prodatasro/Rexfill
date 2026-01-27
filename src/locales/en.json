@@ -274,13 +274,54 @@
     "dashboard": {
       "title": "Admin Dashboard",
       "subtitle": "Platform overview and statistics",
+      "adminLabel": "Platform Admin",
       "metrics": {
         "totalUsers": "Total Users",
         "activeSubscriptions": "Active Subscriptions",
         "totalTemplates": "Total Templates",
         "todayProcessed": "Today Processed"
       },
-      "planDistribution": "Plan Distribution"
+      "planDistribution": "Plan Distribution",
+      "processingTrends": "Documents Processed Over Time",
+      "uploadTrends": "Templates Uploaded Over Time",
+      "comparisonMode": "Comparison Mode",
+      "timeRange": {
+        "days7": "7 days",
+        "days14": "14 days",
+        "days30": "30 days"
+      },
+      "chart": {
+        "documents": "Documents",
+        "templates": "Templates",
+        "noData": "No data available",
+        "loading": "Loading chart data...",
+        "export": "Export",
+        "exportCSV": "Export CSV",
+        "exportJSON": "Export JSON",
+        "clickForDetails": "Click on a data point for details",
+        "updated": "Updated",
+        "keyboardHint": "Use arrow keys to navigate, Enter to view details",
+        "error": "Chart Error",
+        "errorRetry": "Retry",
+        "anomaly": "Anomaly",
+        "anomalySpike": "Spike",
+        "anomalyDrop": "Drop",
+        "anomalyCount_one": "{{count}} anomaly",
+        "anomalyCount_other": "{{count}} anomalies"
+      },
+      "dailyDetails": {
+        "title": "Daily Usage Details",
+        "date": "Date",
+        "anomalyWarning": "Anomaly Detected",
+        "user": "User",
+        "email": "Email",
+        "processed": "Processed",
+        "uploaded": "Uploaded",
+        "noData": "No usage data for this date",
+        "loading": "Loading...",
+        "export": "Export",
+        "page": "Page {{current}} of {{total}}"
+      }
     },
     "users": {
       "title": "Users",

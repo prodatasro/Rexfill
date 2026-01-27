@@ -6,6 +6,7 @@ import {
   setDocWithTimeout,
   deleteDocWithTimeout,
   deleteAssetWithTimeout,
+  getDocWithTimeout,
 } from '../utils/junoWithTimeout';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
@@ -189,13 +190,24 @@ export function useToggleFavoriteMutation() {
 
   return useMutation({
     mutationFn: async (template: Doc<WordTemplateData>) => {
+      // Fetch the latest version from Juno to avoid version conflicts
+      const latestDoc = await getDocWithTimeout<WordTemplateData>({
+        collection: 'templates_meta',
+        key: template.key,
+      });
+
+      if (!latestDoc) {
+        throw new Error('Document not found');
+      }
+
       const updatedTemplate = {
-        ...template,
+        ...latestDoc,
         data: {
-          ...template.data,
-          isFavorite: !template.data.isFavorite,
+          ...latestDoc.data,
+          isFavorite: !latestDoc.data.isFavorite,
         },
       };
+
       await setDocWithTimeout({
         collection: 'templates_meta',
         doc: updatedTemplate,

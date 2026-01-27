@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => ({
     },
     orbiter: {
       ids: {
-        development: "a2cb4-hh777-77775-aaaba-cai",
+        development: "atbka-rp777-77775-aaaaq-cai",
         production: ""
       }
     },

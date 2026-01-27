@@ -54,7 +54,7 @@ The app uses Juno (Internet Computer) for decentralized storage and authenticati
     - `activity_logs`: Audit logs for all template/folder operations
     - `user_profiles`: User display name, email, bio, preferences
 - **Satellite IDs**: Development (`auamu-4x777-77775-aaaaa-cai`) and production (`ufqml-byaaa-aaaas-amtia-cai`) satellites
-- **Orbiter IDs**: Development (`a2cb4-hh777-77775-aaaba-cai`) for analytics integration
+- **Orbiter IDs**: Development (`atbka-rp777-77775-aaaaq-cai`) for analytics integration
 
 ### State Management
 

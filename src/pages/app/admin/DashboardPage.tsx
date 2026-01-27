@@ -1,13 +1,31 @@
-import { FC } from 'react';
+import { FC, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { listDocs } from '@junobuild/core';
-import { Users, CreditCard, FileText, Activity, ShieldCheck } from 'lucide-react';
+import { Users, CreditCard, FileText, Activity, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useAdmin } from '../../../contexts';
+import { 
+  getCurrentUTCDate, 
+  getDateRangeInUTC, 
+  getCachedChartData, 
+  cacheChartData,
+  detectAnomalies,
+  fillMissingDates,
+  formatDateLocal
+} from '../../../utils/dateUtils';
+import ChartErrorBoundary from '../../../components/admin/ChartErrorBoundary';
+import UsageChart from '../../../components/admin/UsageChart';
+import DailyUsageDetailModal from '../../../components/admin/DailyUsageDetailModal';
 
 const DashboardPage: FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { adminPrincipalId } = useAdmin();
+
+  // State for chart interactions
+  const [timeRange, setTimeRange] = useState<7 | 14 | 30>(7);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const { data: users } = useQuery({
     queryKey: ['admin_dashboard_users'],
@@ -45,11 +63,18 @@ const DashboardPage: FC = () => {
     refetchIntervalInBackground: false,
   });
 
+  // Today's usage metric (FIXED - using correct key-based filtering)
   const { data: usage } = useQuery({
-    queryKey: ['admin_dashboard_usage'],
+    queryKey: ['admin_dashboard_usage_today'],
     queryFn: async () => {
+      const today = getCurrentUTCDate();
       const { items } = await listDocs({
         collection: 'usage',
+        filter: {
+          matcher: {
+            key: `_${today}$`
+          }
+        }
       });
       return items;
     },
@@ -57,12 +82,108 @@ const DashboardPage: FC = () => {
     refetchIntervalInBackground: false,
   });
 
+  // Historical usage data for charts
+  const { data: historicalUsage, dataUpdatedAt, isLoading: isLoadingCharts, isFetching } = useQuery({
+    queryKey: ['admin_dashboard_usage_historical', timeRange],
+    queryFn: async () => {
+      const dateRange = getDateRangeInUTC(timeRange);
+      const { items } = await listDocs({
+        collection: 'usage',
+        filter: {
+          matcher: {
+            createdAt: {
+              matcher: 'greaterThan',
+              timestamp: dateRange.start
+            }
+          }
+        }
+      });
+      return items;
+    },
+    refetchInterval: 60000, // 1 minute
+    refetchIntervalInBackground: false,
+    initialData: () => getCachedChartData(`historical_${timeRange}`),
+    staleTime: 60000, // Consider data fresh for 1 minute
+    placeholderData: (previousData) => previousData, // Keep showing old data while fetching new
+  });
+
+  // Cache historical data when it updates
+  if (historicalUsage) {
+    cacheChartData(`historical_${timeRange}`, historicalUsage);
+  }
+
   const activeSubscriptions = subscriptions?.filter(s => (s.data as any).status === 'active').length || 0;
   
-  const today = new Date().toISOString().split('T')[0];
-  const todayUsage = usage?.find(u => (u.data as any).date === today);
-  const todayProcessed = (todayUsage?.data as any)?.documentsProcessed || 0;
+  // Fix: Aggregate today's processed documents across all users
+  const todayProcessed = usage?.reduce((sum, doc) => {
+    return sum + ((doc.data as any)?.documentsProcessed || 0);
+  }, 0) || 0;
 
+  // Process historical data for charts
+  const chartData = historicalUsage ? (() => {
+    // Aggregate usage by date
+    const dailyData = new Map<string, { documentsProcessed: number; templatesUploaded: number }>();
+    
+    historicalUsage.forEach((doc: any) => {
+      // Extract date from key: {userId}_{YYYY-MM-DD}
+      const match = doc.key.match(/_(\d{4}-\d{2}-\d{2})$/);
+      if (!match) return;
+      
+      const date = match[1];
+      const existing = dailyData.get(date) || { documentsProcessed: 0, templatesUploaded: 0 };
+      
+      existing.documentsProcessed += (doc.data as any)?.documentsProcessed || 0;
+      existing.templatesUploaded += (doc.data as any)?.templatesUploaded || 0;
+      
+      dailyData.set(date, existing);
+    });
+
+    // Calculate date range based on timeRange setting
+    const endDate = getCurrentUTCDate();
+    const startDate = new Date(endDate + 'T00:00:00Z');
+    startDate.setDate(startDate.getDate() - timeRange + 1);
+    const startDateStr = startDate.toISOString().split('T')[0];
+
+    // Fill missing dates for the entire range
+    const filled = fillMissingDates(
+      startDateStr,
+      endDate,
+      dailyData
+    );
+
+    return filled.map(item => ({
+      date: item.date,
+      value: item.documentsProcessed,
+      count: item.documentsProcessed, // For compatibility with chart component
+      templatesValue: item.templatesUploaded,
+      label: formatDateLocal(item.date, i18n.language)
+    }));
+  })() : [];
+
+  // Detect anomalies and merge back into chartData
+  const chartDataWithAnomalies = useMemo(() => {
+    if (chartData.length === 0) return [];
+    const anomalies = detectAnomalies(chartData.map(d => ({ date: d.date, count: d.count })));
+    const anomalyMap = new Map(anomalies.map(a => [a.date, a]));
+    
+    return chartData.map(item => ({
+      ...item,
+      isAnomaly: anomalyMap.get(item.date)?.isAnomaly,
+      anomalyReason: anomalyMap.get(item.date)?.anomalyReason
+    }));
+  }, [chartData]);
+
+  const anomalyDates = new Set(chartDataWithAnomalies.filter(d => d.isAnomaly).map(d => d.date));
+
+  // Handlers
+  const handleTimeRangeChange = useCallback((range: 7 | 14 | 30) => {
+    setTimeRange(range);
+  }, []);
+
+  const handleDateClick = useCallback((date: string) => {
+    setSelectedDate(date);
+    setModalVisible(true);
+  }, []);
   return (
     <div className="space-y-6">
       <div>
@@ -176,6 +297,111 @@ const DashboardPage: FC = () => {
           })}
         </div>
       </div>
+
+      {/* Usage Trends Section */}
+      <div className="space-y-6">
+        {/* Comparison Mode Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+              {t('admin.dashboard.usageTrends', 'Usage Trends')}
+            </h2>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={comparisonMode}
+              onChange={(e) => setComparisonMode(e.target.checked)}
+              className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-slate-700 dark:text-slate-300">
+              {t('admin.dashboard.comparisonMode', 'Comparison Mode')}
+            </span>
+          </label>
+        </div>
+
+        {/* Charts Grid */}
+        <div className={`grid gap-6 ${comparisonMode ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
+          {isLoadingCharts && !historicalUsage ? (
+            <div className="col-span-full bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-12 flex flex-col items-center justify-center">
+              <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-800 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin mb-4"></div>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                {t('admin.dashboard.chart.loading', 'Loading chart data...')}
+              </p>
+            </div>
+          ) : chartDataWithAnomalies.length === 0 ? (
+            <div className="col-span-full bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-12 flex flex-col items-center justify-center">
+              <TrendingUp className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-4" />
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                {t('admin.dashboard.chart.noData', 'No data available')}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Documents Processed Chart */}
+              <ChartErrorBoundary>
+                <UsageChart
+                  data={chartDataWithAnomalies}
+                  timeRange={timeRange}
+                  onTimeRangeChange={handleTimeRangeChange}
+                  onExport={(format) => {
+                    // Export is handled internally by the chart component
+                    console.log(`Exporting ${format} for documents processed`);
+                  }}
+                  onDateClick={handleDateClick}
+                  showUpdateIndicator={Date.now() - dataUpdatedAt < 10000}
+                  color="rgb(59, 130, 246)" // blue-500
+                  metricKey="documentsProcessed"
+                  title={t('admin.dashboard.processingTrends', 'Documents Processed Over Time')}
+                  comparisonMode={comparisonMode}
+                  comparisonData={comparisonMode ? chartDataWithAnomalies.map(d => ({
+                    ...d,
+                    count: d.templatesValue || 0
+                  })) : undefined}
+                  comparisonColor={comparisonMode ? "rgb(168, 85, 247)" : undefined} // purple-500
+                  comparisonMetricKey={comparisonMode ? "templatesUploaded" : undefined}
+                />
+              </ChartErrorBoundary>
+
+              {/* Templates Uploaded Chart (only show when NOT in comparison mode) */}
+              {!comparisonMode && (
+                <ChartErrorBoundary>
+                  <UsageChart
+                    data={chartDataWithAnomalies.map(d => ({
+                      ...d,
+                      count: d.templatesValue || 0
+                    }))}
+                    timeRange={timeRange}
+                    onTimeRangeChange={handleTimeRangeChange}
+                    onExport={(format) => {
+                      console.log(`Exporting ${format} for templates uploaded`);
+                    }}
+                    onDateClick={handleDateClick}
+                    showUpdateIndicator={Date.now() - dataUpdatedAt < 10000}
+                    color="rgb(168, 85, 247)" // purple-500
+                    metricKey="templatesUploaded"
+                    title={t('admin.dashboard.uploadTrends', 'Templates Uploaded Over Time')}
+                  />
+                </ChartErrorBoundary>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Daily Usage Detail Modal */}
+      {selectedDate && (
+        <DailyUsageDetailModal
+          isOpen={modalVisible}
+          selectedDate={selectedDate}
+          isAnomaly={anomalyDates.has(selectedDate)}
+          onClose={() => {
+            setModalVisible(false);
+            setSelectedDate(null);
+          }}
+        />
+      )}
     </div>
   );
 };

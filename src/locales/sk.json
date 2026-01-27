@@ -536,5 +536,67 @@
         }
       }
     }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Používatelia",
+      "organizations": "Organizácie",
+      "subscriptions": "Predplatné",
+      "contactInbox": "Kontaktná schránka",
+      "activityLogs": "Záznamy aktivít",
+      "templates": "Šablóny",
+      "webhooks": "Webhooky"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "totalUsers": "Celkom používateľov",
+      "activeUsers": "Aktívni používatelia",
+      "totalTemplates": "Celkom šablón",
+      "totalOrganizations": "Celkom organizácií",
+      "todayProcessed": "Dnes spracované",
+      "documentsProcessed": "Dokumenty spracované",
+      "templatesUploaded": "Šablóny nahraté",
+      "processingTrends": "Spracované dokumenty v čase",
+      "uploadTrends": "Nahrané šablóny v čase",
+      "comparisonMode": "Porovnávací režim",
+      "timeRange": {
+        "days7": "Posledných 7 dní",
+        "days14": "Posledných 14 dní",
+        "days30": "Posledných 30 dní"
+      },
+      "chart": {
+        "documents": "Dokumenty",
+        "templates": "Šablóny",
+        "noData": "Žiadne dáta k dispozícii",
+        "loading": "Načítavanie grafických dát...",
+        "export": "Exportovať",
+        "exportCSV": "Exportovať ako CSV",
+        "exportJSON": "Exportovať ako JSON",
+        "clickForDetails": "Kliknite pre podrobnosti",
+        "updated": "Aktualizované",
+        "keyboardHint": "Šípky na navigáciu, Enter pre výber",
+        "error": "Graf sa nepodarilo načítať",
+        "errorRetry": "Skúsiť znova",
+        "anomaly": "Anomália",
+        "anomalySpike": "Neobvyklý nárast",
+        "anomalyDrop": "Neobvyklý pokles",
+        "anomalyCount": "{{count}} anomálií detekovaných"
+      },
+      "dailyDetails": {
+        "title": "Denné podrobnosti",
+        "date": "Dátum",
+        "anomalyWarning": "Tento deň bol označený ako anomália (neobvyklá aktivita)",
+        "user": "Používateľ",
+        "email": "E-mail",
+        "processed": "Spracované",
+        "uploaded": "Nahrané",
+        "noData": "Pre tento deň neboli nájdené žiadne dáta",
+        "loading": "Načítavanie...",
+        "export": "Exportovať",
+        "page": "Strana {{current}} z {{total}}"
+      }
+    }
   }
 }
