@@ -2,6 +2,7 @@ import { FC, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { nanoid } from 'nanoid';
 import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
@@ -236,10 +237,14 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             status: 'uploading'
           });
 
+          // Generate secure access token for URL obscurity
+          const accessToken = nanoid(32);
+
           const result = await uploadFileWithTimeout({
             data: file,
             collection: 'templates',
-            filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
+            filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath,
+            token: accessToken
           });
 
           // Save fullPath for potential rollback
@@ -261,7 +266,9 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
                 key: result.name, // Use the uploaded file name as key
                 data: {
                   ...templateData,
-                  url: result.downloadUrl
+                  fullPath: result.fullPath,
+                  accessToken: accessToken,
+                  url: undefined // Deprecated field
                 }
               }
             });

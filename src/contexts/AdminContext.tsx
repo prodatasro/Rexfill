@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { listDocs, setDoc } from '@junobuild/core';
-import type { PlatformAdmin, Doc } from '../types';
+import type { Doc } from '@junobuild/core';
+import type { PlatformAdmin } from '../types';
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -40,12 +41,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       // List all platform admins - ensure we get fresh data
-      const { items } = await listDocs({
+      const { items } = await listDocs<PlatformAdmin>({
         collection: 'platform_admins',
       });
-
-      console.log('[AdminContext] Found admin records:', items.length);
-      console.log('[AdminContext] Current user key:', user.key);
 
       // If no admins exist, first user becomes admin
       if (items.length === 0) {
@@ -63,7 +61,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           },
         });
 
-        console.log('[AdminContext] Created FIRST admin:', user.key);
         setIsAdmin(true);
         setIsFirstAdmin(true);
         setAdminsList([{
@@ -90,10 +87,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       // Check if current user is the first admin (earliest by addedAt)
       const firstAdmin = sortedAdmins[0];
       const isCurrentUserFirstAdmin = firstAdmin.key === user.key;
-      
-      console.log('[AdminContext] First admin is:', firstAdmin.key);
-      console.log('[AdminContext] Current user is admin?', isCurrentUserAdmin);
-      console.log('[AdminContext] Current user is FIRST admin?', isCurrentUserFirstAdmin);
       
       setIsAdmin(isCurrentUserAdmin);
       setIsFirstAdmin(isCurrentUserFirstAdmin);

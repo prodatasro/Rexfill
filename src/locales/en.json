@@ -16,6 +16,7 @@
   "header": {
     "userMenu": "User menu",
     "profile": "Profile",
+    "home": "Home",
     "logout": "Logout",
     "toggleTheme": "Toggle theme"
   },

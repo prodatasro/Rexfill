@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Doc } from "@junobuild/core";
+import { nanoid } from 'nanoid';
 import PizZip from "pizzip";
 import { WordTemplateData } from "../types/word-template";
 import { FolderTreeNode, FolderData } from "../types/folder";
@@ -395,10 +396,14 @@ export const useWordTemplateProcessor = ({
         storagePath
       });
 
+      // Generate secure access token for URL obscurity
+      const accessToken = nanoid(32);
+
       const result = await uploadFileWithRetry({
         data: fileToUpload,
         collection: 'templates',
-        filename: storagePath
+        filename: storagePath,
+        token: accessToken
       });
 
       console.log('Upload successful, updating metadata...');
@@ -412,7 +417,9 @@ export const useWordTemplateProcessor = ({
           ...template,
           data: {
             ...template.data,
-            url: result.downloadUrl,
+            fullPath: result.fullPath,
+            accessToken: accessToken,
+            url: undefined, // Deprecated field
             size: blob.size,
             uploadedAt: Date.now(),
             customPropertyCount
@@ -611,10 +618,14 @@ export const useWordTemplateProcessor = ({
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
 
+      // Generate secure access token for URL obscurity
+      const accessToken = nanoid(32);
+
       const result = await uploadFileWithRetry({
         data: fileToUpload,
         collection: 'templates',
-        filename: storagePath
+        filename: storagePath,
+        token: accessToken
       });
 
       // Extract metadata from the blob to store custom property count
@@ -625,13 +636,14 @@ export const useWordTemplateProcessor = ({
         key,
         data: {
           name: finalFilename,
-          url: result.downloadUrl,
+          fullPath: result.fullPath,
+          accessToken: accessToken,
+          url: undefined, // Deprecated field
           size: blob.size,
           uploadedAt: Date.now(),
           mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           folderId: targetFolderId,
           folderPath,
-          fullPath,
           customPropertyCount
         }
       };

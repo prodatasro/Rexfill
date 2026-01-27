@@ -29,7 +29,8 @@
     "logout": "Odhlásiť sa",
     "toggleTheme": "Prepnúť tému",
     "userMenu": "Používateľské menu",
-    "profile": "Profil"
+    "profile": "Profil",
+    "home": "Domov"
   },
   "globalSearch": {
     "title": "Vyhľadávanie",

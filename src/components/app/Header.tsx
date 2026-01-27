@@ -1,5 +1,5 @@
 import { FC, useState, useRef, useEffect } from 'react';
-import { Sun, Moon, User, Building2, ShieldCheck, LogOut } from 'lucide-react';
+import { Sun, Moon, User, Building2, ShieldCheck, LogOut, Home } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSearch } from '../../contexts/SearchContext';
@@ -54,6 +54,11 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
   const handleProfileClick = () => {
     setShowUserMenu(false);
     navigate('/app/profile');
+  };
+
+  const handleHomeClick = () => {
+    setShowUserMenu(false);
+    navigate('/');
   };
 
   const handleOrganizationClick = () => {
@@ -132,6 +137,14 @@ const Header: FC<HeaderProps> = ({ onLogoClick }) => {
                   >
                     <User size={16} />
                     {t('header.profile')}
+                  </button>
+                  
+                  <button
+                    onClick={handleHomeClick}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <Home size={16} />
+                    {t('header.home')}
                   </button>
                   
                   {currentOrganization && (

@@ -159,13 +159,13 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
           setSubscription(userIndividualSub);
         }
 
-        // Load usage from Juno datastore
+        // Load usage from Juno datastore (read-only)
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         const usageDoc = await getDoc({
           collection: 'usage',
           key: `${user.key}_${today}`,
         });
-
+debugger;
         if (usageDoc) {
           const usageData = usageDoc.data as any;
           
@@ -200,21 +200,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
             lastUpdated: Date.now(),
           });
         } else {
-          // Create initial usage document
-          const initialUsage = {
-            documentsProcessed: 0,
-            templatesUploaded: 0,
-          };
-
-          await setDoc({
-            collection: 'usage',
-            doc: {
-              key: `${user.key}_${today}`,
-              data: initialUsage,
-            },
-          });
-
-          // Get total templates count
+          // No usage document exists yet - set to zero (satellite will create it on first use)
           const templateDocs = await listDocs({
             collection: 'templates_meta',
             filter: {
@@ -300,149 +286,66 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
     };
   }, [user]);
 
+  /**
+   * UI hint only - optimistic check for user experience
+   * Server enforces actual limits via assertion hooks and validation endpoints
+   * @see src/satellite/index.ts for server-side enforcement
+   */
   const canProcessDocument = useCallback(() => {
-    debugger;
     if (isUnlimited(plan.limits.documentsPerDay)) return true;
     if (usage.documentsToday >= plan.limits.documentsPerDay) return false;
     if (!isUnlimited(plan.limits.documentsPerMonth) && usage.documentsThisMonth >= plan.limits.documentsPerMonth) return false;
     return true;
   }, [plan, usage]);
 
+  /**
+   * UI hint only - optimistic check for user experience
+   * Server enforces actual limits via assertion hooks and validation endpoints
+   * @see src/satellite/index.ts for server-side enforcement
+   */
   const canUploadTemplate = useCallback(() => {
     if (isUnlimited(plan.limits.maxTemplates)) return true;
     return usage.totalTemplates < plan.limits.maxTemplates;
   }, [plan, usage]);
 
+  /**
+   * REMOVED: Usage increments now happen server-side only
+   * Server tracks usage atomically during validation to prevent client-side manipulation
+   * @deprecated This function is a no-op - server increments usage in download-validator.ts
+   */
   const incrementDocumentUsage = useCallback(async () => {
-    if (!user) return;
+    // NO-OP: Server handles usage increments
+    console.warn('incrementDocumentUsage is deprecated - server handles usage tracking');
+  }, []);
 
-    // Persist to Juno datastore first to get the latest count
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const usageDoc = await getDoc({
-        collection: 'usage',
-        key: `${user.key}_${today}`,
-      });
-
-      const currentData = usageDoc?.data as any || { documentsProcessed: 0, templatesUploaded: 0 };
-
-      await setDoc({
-        collection: 'usage',
-        doc: {
-          key: `${user.key}_${today}`,
-          data: {
-            ...currentData,
-            documentsProcessed: currentData.documentsProcessed + 1,
-          },
-          ...(usageDoc?.version && { version: usageDoc.version }), // Include version for existing docs
-          updated_at: BigInt(Date.now()),
-        },
-      });
-
-      // Update local state with functional setState to avoid stale closure issues
-      setUsage((prevUsage) => ({
-        ...prevUsage,
-        documentsToday: currentData.documentsProcessed + 1,
-        documentsThisMonth: prevUsage.documentsThisMonth + 1,
-        lastUpdated: Date.now(),
-      }));
-    } catch (error) {
-      console.error('Failed to persist usage:', error);
-      
-      // Fallback: still increment local state even if DB update fails
-      setUsage((prevUsage) => ({
-        ...prevUsage,
-        documentsToday: prevUsage.documentsToday + 1,
-        documentsThisMonth: prevUsage.documentsThisMonth + 1,
-        lastUpdated: Date.now(),
-      }));
-    }
-  }, [user]);
-
+  /**
+   * UI-only function for optimistic template count updates
+   * Server enforces actual limits via assertion hooks
+   */
   const incrementTemplateCount = useCallback(async () => {
     if (!user) return;
 
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const usageDoc = await getDoc({
-        collection: 'usage',
-        key: `${user.key}_${today}`,
-      });
-
-      const currentData = usageDoc?.data as any || { documentsProcessed: 0, templatesUploaded: 0 };
-
-      await setDoc({
-        collection: 'usage',
-        doc: {
-          key: `${user.key}_${today}`,
-          data: {
-            ...currentData,
-            templatesUploaded: currentData.templatesUploaded + 1,
-          },
-          ...(usageDoc?.version && { version: usageDoc.version }),
-          updated_at: BigInt(Date.now()),
-        },
-      });
-
-      // Update local state
-      setUsage((prev) => ({
-        ...prev,
-        totalTemplates: prev.totalTemplates + 1,
-        lastUpdated: Date.now(),
-      }));
-    } catch (error) {
-      console.error('Failed to persist template count:', error);
-      
-      // Fallback: still increment local state even if DB update fails
-      setUsage((prev) => ({
-        ...prev,
-        totalTemplates: prev.totalTemplates + 1,
-        lastUpdated: Date.now(),
-      }));
-    }
+    // Update local state only (server validates via assertUploadAsset)
+    setUsage((prev) => ({
+      ...prev,
+      totalTemplates: prev.totalTemplates + 1,
+      lastUpdated: Date.now(),
+    }));
   }, [user]);
 
+  /**
+   * UI-only function for optimistic template count updates
+   * Server enforces actual limits via assertion hooks
+   */
   const decrementTemplateCount = useCallback(async () => {
     if (!user) return;
 
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const usageDoc = await getDoc({
-        collection: 'usage',
-        key: `${user.key}_${today}`,
-      });
-
-      const currentData = usageDoc?.data as any || { documentsProcessed: 0, templatesUploaded: 0 };
-
-      await setDoc({
-        collection: 'usage',
-        doc: {
-          key: `${user.key}_${today}`,
-          data: {
-            ...currentData,
-            templatesUploaded: Math.max(0, currentData.templatesUploaded - 1),
-          },
-          ...(usageDoc?.version && { version: usageDoc.version }),
-          updated_at: BigInt(Date.now()),
-        },
-      });
-
-      // Update local state
-      setUsage((prev) => ({
-        ...prev,
-        totalTemplates: Math.max(0, prev.totalTemplates - 1),
-        lastUpdated: Date.now(),
-      }));
-    } catch (error) {
-      console.error('Failed to persist template count:', error);
-      
-      // Fallback: still decrement local state even if DB update fails
-      setUsage((prev) => ({
-        ...prev,
-        totalTemplates: Math.max(0, prev.totalTemplates - 1),
-        lastUpdated: Date.now(),
-      }));
-    }
+    // Update local state only (server validates via assertDeleteAsset)
+    setUsage((prev) => ({
+      ...prev,
+      totalTemplates: Math.max(0, prev.totalTemplates - 1),
+      lastUpdated: Date.now(),
+    }));
   }, [user]);
 
   const checkLimits = useCallback(() => {
@@ -478,7 +381,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
 
   const refreshUsage = useCallback(async () => {
     if (!user) return;
-
+debugger;
     try {
       const today = new Date().toISOString().split('T')[0];
       const usageDoc = await getDoc({

@@ -11,7 +11,7 @@ interface OrganizationCheckoutModalProps {
 }
 
 const OrganizationCheckoutModal: FC<OrganizationCheckoutModalProps> = ({
-  planId,
+  planId: _planId,
   planName,
   price,
   onConfirm,

@@ -2,6 +2,7 @@
 export interface PlanLimits {
   documentsPerDay: number; // -1 for unlimited
   documentsPerMonth: number; // -1 for unlimited
+  bulkExportsPerDay: number; // -1 for unlimited, number of bulk export operations allowed per day
   maxTemplates: number; // -1 for unlimited
   maxFileSize: number; // in MB
   batchProcessing: boolean;
@@ -31,6 +32,7 @@ export const INDIVIDUAL_PLANS: Record<string, SubscriptionPlan> = {
     limits: {
       documentsPerDay: 5,
       documentsPerMonth: 50,
+      bulkExportsPerDay: 1,
       maxTemplates: 10,
       maxFileSize: 10,
       batchProcessing: false,
@@ -46,6 +48,7 @@ export const INDIVIDUAL_PLANS: Record<string, SubscriptionPlan> = {
     limits: {
       documentsPerDay: 50,
       documentsPerMonth: 500,
+      bulkExportsPerDay: 3,
       maxTemplates: 100,
       maxFileSize: 25,
       batchProcessing: true,
@@ -61,6 +64,7 @@ export const INDIVIDUAL_PLANS: Record<string, SubscriptionPlan> = {
     limits: {
       documentsPerDay: 200,
       documentsPerMonth: 2000,
+      bulkExportsPerDay: 10,
       maxTemplates: 500,
       maxFileSize: 50,
       batchProcessing: true,
@@ -76,6 +80,7 @@ export const INDIVIDUAL_PLANS: Record<string, SubscriptionPlan> = {
     limits: {
       documentsPerDay: -1,
       documentsPerMonth: -1,
+      bulkExportsPerDay: -1,
       maxTemplates: -1,
       maxFileSize: 100,
       batchProcessing: true,
@@ -95,6 +100,7 @@ export const ORGANIZATION_PLANS: Record<string, SubscriptionPlan> = {
     limits: {
       documentsPerDay: 250, // Shared across all team members
       documentsPerMonth: 2500,
+      bulkExportsPerDay: 5,
       maxTemplates: 500, // Shared template library
       maxFileSize: 50,
       batchProcessing: true,
@@ -111,6 +117,7 @@ export const ORGANIZATION_PLANS: Record<string, SubscriptionPlan> = {
     limits: {
       documentsPerDay: 1000,
       documentsPerMonth: 10000,
+      bulkExportsPerDay: 15,
       maxTemplates: 2000,
       maxFileSize: 75,
       batchProcessing: true,
@@ -127,6 +134,7 @@ export const ORGANIZATION_PLANS: Record<string, SubscriptionPlan> = {
     limits: {
       documentsPerDay: -1,
       documentsPerMonth: -1,
+      bulkExportsPerDay: -1,
       maxTemplates: -1,
       maxFileSize: 100,
       batchProcessing: true,
@@ -148,3 +156,77 @@ export const getPlan = (planId: string): SubscriptionPlan => {
 };
 
 export const isUnlimited = (value: number): boolean => value === -1;
+
+// ==============================================================================
+// RATE LIMITS CONFIGURATION (Server-Side Enforcement)
+// ==============================================================================
+// TODO: Uncomment and configure these when implementing server-side rate limiting
+// 
+// /**
+//  * Rate limit configuration per endpoint and plan tier
+//  * These limits are enforced server-side in Juno satellite functions
+//  * Platform admins are exempt from all rate limiting
+//  */
+// export interface RateLimits {
+//   downloads: number;    // Downloads per minute
+//   uploads: number;      // Template uploads per minute
+//   exports: number;      // Bulk exports per minute
+//   processing: number;   // Document processing per minute
+// }
+//
+// /**
+//  * Suggested rate limits per plan tier
+//  * Adjust these values based on infrastructure capacity and business requirements
+//  */
+// export const PLAN_RATE_LIMITS: Record<string, RateLimits> = {
+//   free: {
+//     downloads: 10,      // 10 downloads per minute
+//     uploads: 5,         // 5 uploads per minute
+//     exports: 2,         // 2 exports per minute
+//     processing: 10,     // 10 document processing operations per minute
+//   },
+//   starter: {
+//     downloads: 20,      // 20 downloads per minute
+//     uploads: 15,        // 15 uploads per minute
+//     exports: 5,         // 5 exports per minute
+//     processing: 30,     // 30 document processing operations per minute
+//   },
+//   professional: {
+//     downloads: 50,      // 50 downloads per minute
+//     uploads: 30,        // 30 uploads per minute
+//     exports: 10,        // 10 exports per minute
+//     processing: 100,    // 100 document processing operations per minute
+//   },
+//   enterprise: {
+//     downloads: -1,      // Unlimited (rate limiting disabled)
+//     uploads: -1,        // Unlimited
+//     exports: -1,        // Unlimited
+//     processing: -1,     // Unlimited
+//   },
+//   team: {
+//     downloads: 40,      // Shared across team members
+//     uploads: 20,        // Shared across team members
+//     exports: 8,         // Shared across team members
+//     processing: 60,     // Shared across team members
+//   },
+//   business: {
+//     downloads: 100,     // Shared across team members
+//     uploads: 50,        // Shared across team members
+//     exports: 20,        // Shared across team members
+//     processing: 200,    // Shared across team members
+//   },
+//   enterprise_org: {
+//     downloads: -1,      // Unlimited
+//     uploads: -1,        // Unlimited
+//     exports: -1,        // Unlimited
+//     processing: -1,     // Unlimited
+//   },
+// };
+//
+// /**
+//  * Get rate limits for a specific plan
+//  * Returns free tier limits if plan not found
+//  */
+// export const getRateLimits = (planId: string): RateLimits => {
+//   return PLAN_RATE_LIMITS[planId] || PLAN_RATE_LIMITS.free;
+// };

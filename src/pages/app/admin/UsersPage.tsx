@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
 import { toast } from 'sonner';
-import { Search, Download, Ban, CheckCircle, Settings } from 'lucide-react';
+import { Search, Download, Ban, CheckCircle, Settings, Zap, TrendingUp, Award, Trash2 } from 'lucide-react';
 import type { UserProfile, SubscriptionData, SubscriptionOverride, SuspendedUser } from '../../../types';
+import { SUBSCRIPTION_PLANS } from '../../../config/plans';
 import { useAuth } from '../../../contexts';
 import { logAdminAction } from '../../../utils/adminLogger';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
@@ -80,6 +81,28 @@ const UsersPage: FC = () => {
     queryFn: async () => {
       const { items } = await listDocs({
         collection: 'suspended_users',
+      });
+      return items;
+    },
+  });
+
+  // Fetch subscription overrides
+  const { data: subscriptionOverrides } = useQuery({
+    queryKey: ['admin_subscription_overrides'],
+    queryFn: async () => {
+      const { items } = await listDocs({
+        collection: 'subscription_overrides',
+      });
+      return items;
+    },
+  });
+
+  // Fetch security events for override history
+  const { data: securityEvents } = useQuery({
+    queryKey: ['admin_security_events'],
+    queryFn: async () => {
+      const { items } = await listDocs({
+        collection: 'security_events',
       });
       return items;
     },
@@ -232,6 +255,95 @@ const UsersPage: FC = () => {
   const isUserSuspended = (userId: string) => {
     return suspendedUsers?.some(s => s.key === userId) || false;
   };
+
+  // Get user's override
+  const getUserOverride = (userId: string): SubscriptionOverride | null => {
+    const override = subscriptionOverrides?.find(s => s.key === userId);
+    return override ? (override.data as SubscriptionOverride) : null;
+  };
+
+  // Get override history for user
+  const getOverrideHistory = (userId: string) => {
+    if (!securityEvents) return [];
+    
+    return securityEvents
+      .filter(event => {
+        const key = event.key;
+        const parts = key.split('_');
+        const eventUserId = parts[1];
+        const eventType = parts[2];
+        const description = (event.data as any).description || '';
+        
+        return eventUserId === userId && 
+               (eventType === 'admin_action' || description.includes('override'));
+      })
+      .sort((a, b) => {
+        const aTimestamp = parseInt(a.key.split('_')[0]);
+        const bTimestamp = parseInt(b.key.split('_')[0]);
+        return bTimestamp - aTimestamp;
+      })
+      .slice(0, 5); // Last 5 events
+  };
+
+  // Preset override functions
+  const applyPreset = (preset: 'enterprise' | 'double' | 'triple') => {
+    const currentSub = selectedUser ? getUserSubscription(selectedUser.key) : null;
+    const currentPlan = currentSub?.planId ? SUBSCRIPTION_PLANS[currentSub.planId] : SUBSCRIPTION_PLANS.free;
+    
+    if (preset === 'enterprise') {
+      const enterpriseLimits = SUBSCRIPTION_PLANS.enterprise.limits;
+      setOverrideData(d => ({
+        ...d,
+        documentsPerDay: String(enterpriseLimits.documentsPerDay === -1 ? 1000 : enterpriseLimits.documentsPerDay),
+        documentsPerMonth: String(enterpriseLimits.documentsPerMonth === -1 ? 5000 : enterpriseLimits.documentsPerMonth),
+        maxTemplates: String(enterpriseLimits.maxTemplates === -1 ? 1000 : enterpriseLimits.maxTemplates),
+        maxFileSize: String(enterpriseLimits.maxFileSize / (1024 * 1024)), // Convert to MB
+        reason: 'Enterprise-level access granted',
+      }));
+    } else if (preset === 'double') {
+      setOverrideData(d => ({
+        ...d,
+        documentsPerDay: String(currentPlan.limits.documentsPerDay === -1 ? 1000 : currentPlan.limits.documentsPerDay * 2),
+        documentsPerMonth: String(currentPlan.limits.documentsPerMonth === -1 ? 5000 : currentPlan.limits.documentsPerMonth * 2),
+        maxTemplates: String(currentPlan.limits.maxTemplates === -1 ? 1000 : currentPlan.limits.maxTemplates * 2),
+        maxFileSize: String((currentPlan.limits.maxFileSize / (1024 * 1024)) * 2),
+        reason: 'Double current plan limits',
+      }));
+    } else if (preset === 'triple') {
+      setOverrideData(d => ({
+        ...d,
+        documentsPerDay: String(currentPlan.limits.documentsPerDay === -1 ? 1000 : currentPlan.limits.documentsPerDay * 3),
+        documentsPerMonth: String(currentPlan.limits.documentsPerMonth === -1 ? 5000 : currentPlan.limits.documentsPerMonth * 3),
+        maxTemplates: String(currentPlan.limits.maxTemplates === -1 ? 1000 : currentPlan.limits.maxTemplates * 3),
+        maxFileSize: String((currentPlan.limits.maxFileSize / (1024 * 1024)) * 3),
+        reason: 'Triple current plan limits',
+      }));
+    }
+  };
+
+  // Remove override mutation
+  const removeOverrideMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      if (!user) return;
+
+      const overrideDoc = subscriptionOverrides?.find(s => s.key === userId);
+      if (!overrideDoc) throw new Error('Override not found');
+
+      await deleteDoc({
+        collection: 'subscription_overrides',
+        doc: overrideDoc,
+      });
+
+      await logAdminAction(user.key, 'remove_override', 'subscription', userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_subscription_overrides'] });
+      toast.success('Override removed successfully');
+    },
+    onError: () => {
+      toast.error('Failed to remove override');
+    },
+  });
 
   // Filter users
   const filteredUsers = users?.filter(item => {
@@ -609,130 +721,267 @@ const UsersPage: FC = () => {
       )}
 
       {/* Override dialog */}
-      {showOverrideDialog && selectedUser && (
-        <Dialog
-          isOpen={true}
-          onClose={() => {
-            setShowOverrideDialog(false);
-            setSelectedUser(null);
-            setOverrideData({
-              documentsPerDay: '',
-              documentsPerMonth: '',
-              maxTemplates: '',
-              maxFileSize: '',
-              reason: '',
-              expiresAt: '',
-            });
-          }}
-          title={t('admin.users.overrideDialog.title', 'Subscription Override')}
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {t('admin.users.overrideDialog.description', 'Set custom quota limits for')}:{' '}
-              <strong>{(selectedUser.data as any).displayName || (selectedUser.data as any).email}</strong>
-            </p>
+      {showOverrideDialog && selectedUser && (() => {
+        const currentSub = getUserSubscription(selectedUser.key);
+        const currentPlan = currentSub?.planId ? SUBSCRIPTION_PLANS[currentSub.planId] : SUBSCRIPTION_PLANS.free;
+        const existingOverride = getUserOverride(selectedUser.key);
+        const overrideHistory = getOverrideHistory(selectedUser.key);
+        
+        return (
+          <Dialog
+            isOpen={true}
+            onClose={() => {
+              setShowOverrideDialog(false);
+              setSelectedUser(null);
+              setOverrideData({
+                documentsPerDay: '',
+                documentsPerMonth: '',
+                maxTemplates: '',
+                maxFileSize: '',
+                reason: '',
+                expiresAt: '',
+              });
+            }}
+            title={t('admin.users.overrideDialog.title', 'Subscription Override')}
+          >
+            <div className="space-y-6 max-h-[600px] overflow-y-auto">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {t('admin.users.overrideDialog.description', 'Set custom quota limits for')}:{' '}
+                <strong>{(selectedUser.data as any).displayName || (selectedUser.data as any).email}</strong>
+              </p>
 
-            <div className="grid grid-cols-2 gap-4">
+              {/* Preset Buttons */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  {t('admin.users.overrideDialog.documentsPerDay', 'Documents/Day')}
+                  Quick Presets
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => applyPreset('enterprise')}
+                    className="flex-1 px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <Award className="w-4 h-4" />
+                    Grant Enterprise
+                  </button>
+                  <button
+                    onClick={() => applyPreset('double')}
+                    className="flex-1 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    Double Limits
+                  </button>
+                  <button
+                    onClick={() => applyPreset('triple')}
+                    className="flex-1 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <Zap className="w-4 h-4" />
+                    Triple Limits
+                  </button>
+                </div>
+              </div>
+
+              {/* Side-by-side comparison */}
+              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Current vs New Limits</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Documents/Day:</span>
+                    <span>
+                      <span className="text-slate-900 dark:text-white">{currentPlan.limits.documentsPerDay === -1 ? '∞' : currentPlan.limits.documentsPerDay}</span>
+                      {overrideData.documentsPerDay && (
+                        <span className="text-green-600 dark:text-green-400 ml-2">
+                          → {overrideData.documentsPerDay}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Documents/Month:</span>
+                    <span>
+                      <span className="text-slate-900 dark:text-white">{currentPlan.limits.documentsPerMonth === -1 ? '∞' : currentPlan.limits.documentsPerMonth}</span>
+                      {overrideData.documentsPerMonth && (
+                        <span className="text-green-600 dark:text-green-400 ml-2">
+                          → {overrideData.documentsPerMonth}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Max Templates:</span>
+                    <span>
+                      <span className="text-slate-900 dark:text-white">{currentPlan.limits.maxTemplates === -1 ? '∞' : currentPlan.limits.maxTemplates}</span>
+                      {overrideData.maxTemplates && (
+                        <span className="text-green-600 dark:text-green-400 ml-2">
+                          → {overrideData.maxTemplates}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Max File Size:</span>
+                    <span>
+                      <span className="text-slate-900 dark:text-white">{(currentPlan.limits.maxFileSize / (1024 * 1024)).toFixed(0)} MB</span>
+                      {overrideData.maxFileSize && (
+                        <span className="text-green-600 dark:text-green-400 ml-2">
+                          → {overrideData.maxFileSize} MB
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Override Badge */}
+              {existingOverride && (
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div>
+                    <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Active Override
+                    </div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                      {existingOverride.expiresAt 
+                        ? `Expires: ${new Date(existingOverride.expiresAt).toLocaleDateString()}`
+                        : 'No expiration'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removeOverrideMutation.mutate(selectedUser.key)}
+                    className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center gap-1"
+                    disabled={removeOverrideMutation.isPending}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Remove
+                  </button>
+                </div>
+              )}
+
+              {/* Override History Panel */}
+              {overrideHistory.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Recent History</h4>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {overrideHistory.map((event, idx) => {
+                      const timestamp = parseInt(event.key.split('_')[0]);
+                      const description = (event.data as any).description || '';
+                      const messageMatch = description.match(/message:([^;]+)/);
+                      const message = messageMatch ? messageMatch[1] : 'Override event';
+                      
+                      return (
+                        <div key={idx} className="text-xs p-2 bg-slate-100 dark:bg-slate-800 rounded">
+                          <div className="text-slate-600 dark:text-slate-400">{message}</div>
+                          <div className="text-slate-500 dark:text-slate-500 mt-0.5">
+                            {new Date(timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Override Form */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t('admin.users.overrideDialog.documentsPerDay', 'Documents/Day')}
+                  </label>
+                  <input
+                    type="number"
+                    value={overrideData.documentsPerDay}
+                    onChange={(e) => setOverrideData(d => ({ ...d, documentsPerDay: e.target.value }))}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t('admin.users.overrideDialog.documentsPerMonth', 'Documents/Month')}
+                  </label>
+                  <input
+                    type="number"
+                    value={overrideData.documentsPerMonth}
+                    onChange={(e) => setOverrideData(d => ({ ...d, documentsPerMonth: e.target.value }))}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t('admin.users.overrideDialog.maxTemplates', 'Max Templates')}
+                  </label>
+                  <input
+                    type="number"
+                    value={overrideData.maxTemplates}
+                    onChange={(e) => setOverrideData(d => ({ ...d, maxTemplates: e.target.value }))}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t('admin.users.overrideDialog.maxFileSize', 'Max File Size (MB)')}
+                  </label>
+                  <input
+                    type="number"
+                    value={overrideData.maxFileSize}
+                    onChange={(e) => setOverrideData(d => ({ ...d, maxFileSize: e.target.value }))}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  {t('admin.users.overrideDialog.expiresAt', 'Expires At (optional)')}
                 </label>
                 <input
-                  type="number"
-                  value={overrideData.documentsPerDay}
-                  onChange={(e) => setOverrideData(d => ({ ...d, documentsPerDay: e.target.value }))}
+                  type="date"
+                  value={overrideData.expiresAt}
+                  onChange={(e) => setOverrideData(d => ({ ...d, expiresAt: e.target.value }))}
                   className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  {t('admin.users.overrideDialog.documentsPerMonth', 'Documents/Month')}
+                  {t('admin.users.overrideDialog.reason', 'Reason')} *
                 </label>
-                <input
-                  type="number"
-                  value={overrideData.documentsPerMonth}
-                  onChange={(e) => setOverrideData(d => ({ ...d, documentsPerMonth: e.target.value }))}
+                <textarea
+                  value={overrideData.reason}
+                  onChange={(e) => setOverrideData(d => ({ ...d, reason: e.target.value }))}
+                  rows={2}
                   className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                  placeholder={t('admin.users.overrideDialog.reasonPlaceholder', 'Enter reason for override...')}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  {t('admin.users.overrideDialog.maxTemplates', 'Max Templates')}
-                </label>
-                <input
-                  type="number"
-                  value={overrideData.maxTemplates}
-                  onChange={(e) => setOverrideData(d => ({ ...d, maxTemplates: e.target.value }))}
-                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                />
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowOverrideDialog(false);
+                    setSelectedUser(null);
+                    setOverrideData({
+                      documentsPerDay: '',
+                      documentsPerMonth: '',
+                      maxTemplates: '',
+                      maxFileSize: '',
+                      reason: '',
+                      expiresAt: '',
+                    });
+                  }}
+                >
+                  {t('admin.users.overrideDialog.cancel', 'Cancel')}
+                </Button>
+                <Button
+                  onClick={handleSaveOverride}
+                  disabled={!overrideData.reason.trim() || overrideMutation.isPending}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  {t('admin.users.overrideDialog.save', 'Save Override')}
+                </Button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  {t('admin.users.overrideDialog.maxFileSize', 'Max File Size (MB)')}
-                </label>
-                <input
-                  type="number"
-                  value={overrideData.maxFileSize}
-                  onChange={(e) => setOverrideData(d => ({ ...d, maxFileSize: e.target.value }))}
-                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                />
-              </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                {t('admin.users.overrideDialog.expiresAt', 'Expires At (optional)')}
-              </label>
-              <input
-                type="date"
-                value={overrideData.expiresAt}
-                onChange={(e) => setOverrideData(d => ({ ...d, expiresAt: e.target.value }))}
-                className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                {t('admin.users.overrideDialog.reason', 'Reason')} *
-              </label>
-              <textarea
-                value={overrideData.reason}
-                onChange={(e) => setOverrideData(d => ({ ...d, reason: e.target.value }))}
-                rows={2}
-                className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                placeholder={t('admin.users.overrideDialog.reasonPlaceholder', 'Enter reason for override...')}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowOverrideDialog(false);
-                  setSelectedUser(null);
-                  setOverrideData({
-                    documentsPerDay: '',
-                    documentsPerMonth: '',
-                    maxTemplates: '',
-                    maxFileSize: '',
-                    reason: '',
-                    expiresAt: '',
-                  });
-                }}
-              >
-                {t('admin.users.overrideDialog.cancel', 'Cancel')}
-              </Button>
-              <Button
-                onClick={handleSaveOverride}
-                disabled={!overrideData.reason.trim() || overrideMutation.isPending}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                {t('admin.users.overrideDialog.save', 'Save Override')}
-              </Button>
-            </div>
-          </div>
-        </Dialog>
-      )}
+          </Dialog>
+        );
+      })()}
     </div>
   );
 };

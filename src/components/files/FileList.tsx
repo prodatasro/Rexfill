@@ -1,7 +1,7 @@
 import { FC, useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ClipboardList, Search, ChevronLeft, ChevronRight, X, Loader2, Star, Trash2, CheckSquare, Square } from 'lucide-react';
-import { Doc } from '@junobuild/core';
+import { Doc, setDoc, getDoc, deleteDoc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -21,6 +21,23 @@ import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { fetchLogsForResource, generateLogCSV, downloadLogCSV, logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
+import { nanoid } from 'nanoid';
+
+// Type for download request document data
+interface DownloadRequestData {
+  requestType: 'download' | 'export';
+  status: 'pending' | 'approved' | 'rejected';
+  templateIds: string[];
+  approvedTemplateIds?: string[];
+  createdAt: number;
+  error?: {
+    code: string;
+    message: string;
+    limit?: number;
+    used?: number;
+    retryAfterSeconds?: number;
+  };
+}
 
 // Threshold for enabling virtualization - only virtualize when we have many items
 const VIRTUALIZATION_THRESHOLD = 20;
@@ -57,7 +74,7 @@ const FileList: FC<FileListProps> = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { incrementDocumentUsage, canProcessDocument, showUpgradePrompt, decrementTemplateCount } = useSubscription();
+  const { incrementDocumentUsage, showUpgradePrompt, decrementTemplateCount } = useSubscription();
   const moveTemplateMutation = useMoveTemplateMutation();
   const updateTemplateMutation = useUpdateTemplateMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
@@ -90,27 +107,100 @@ const FileList: FC<FileListProps> = ({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const handleDownload = async (template: Doc<WordTemplateData>) => {
-    // Check if user can process documents before allowing download
-    if (!canProcessDocument()) {
-      showErrorToast(t('subscription.limitReached'));
-      showUpgradePrompt();
-      return;
-    }
-
+    // Polling-based validation with request document
     setDownloadingIds(prev => new Set([...prev, template.key]));
+    let requestKey: string | null = null;
+    let requestDoc: Doc<DownloadRequestData> | null = null;
+    
     try {
-      if (!template.data.url) {
+      if (!user) {
+        showErrorToast(t('auth.pleaseSignIn'));
+        return;
+      }
+
+      // 1. Create download request document
+      requestKey = `${user.key}_${Date.now()}_${nanoid()}`;
+      await setDoc<DownloadRequestData>({
+        collection: 'download_requests',
+        doc: {
+          key: requestKey,
+          data: {
+            requestType: 'download',
+            status: 'pending',
+            templateIds: [template.key],
+            createdAt: Date.now(),
+          },
+        },
+      });
+
+      // 2. Poll for request status (500ms intervals, 10s timeout)
+      const pollStartTime = Date.now();
+      const pollTimeout = 10000; // 10 seconds
+      const pollInterval = 500; // 500ms
+      
+      while (Date.now() - pollStartTime < pollTimeout) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+        const doc = await getDoc<DownloadRequestData>({
+          collection: 'download_requests',
+          key: requestKey,
+        });
+debugger;
+        if (doc && doc.data.status !== 'pending') {
+          requestDoc = doc;
+          break;
+        }
+      }
+
+      // 3. Handle timeout
+      if (!requestDoc || requestDoc.data.status === 'pending') {
+        showErrorToast(t('fileList.serverBusy'));
+        return;
+      }
+debugger;
+      // 4. Handle rejection
+      if (requestDoc.data.status === 'rejected') {
+        const error = requestDoc.data.error;
+        
+        if (error?.code === 'subscription_expired') {
+          showErrorToast(error.message);
+          showUpgradePrompt();
+          return;
+        }
+        
+        if (error?.code === 'quota_exceeded') {
+          showErrorToast(`${error.message} (${error.used}/${error.limit})`);
+          showUpgradePrompt();
+          return;
+        }
+        
+        if (error?.code === 'rate_limit') {
+          showWarningToast(`${error.message} (retry in ${error.retryAfterSeconds}s)`);
+          return;
+        }
+        
+        showErrorToast(error?.message || t('fileList.downloadFailed'));
+        return;
+      }
+
+      // 5. Download approved - fetch template metadata to get download URL
+      const templateMeta = await getDoc<WordTemplateData>({
+        collection: 'templates_meta',
+        key: template.key,
+      });
+
+      if (!templateMeta || !templateMeta.data.url) {
         showErrorToast(t('fileList.downloadFailed'));
         return;
       }
 
-      // Fetch the file from the URL
-      const response = await fetchWithTimeout(template.data.url);
+      // 6. Fetch the file using Juno's generated URL
+      const response = await fetchWithTimeout(templateMeta.data.url);
       if (!response.ok) {
         throw new Error('Failed to fetch file');
       }
 
-      // Get the blob and create download link
+      // 8. Download the file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -122,9 +212,6 @@ const FileList: FC<FileListProps> = ({
       // Cleanup
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-
-      // Increment usage count
-      await incrementDocumentUsage();
 
       // Log successful download
       await logActivity({
@@ -161,6 +248,25 @@ const FileList: FC<FileListProps> = ({
       
       showErrorToast(t('fileList.downloadFailed'));
     } finally {
+      // 9. Delete request document with retries (3 attempts with exponential backoff)
+      if (requestDoc) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            await deleteDoc({
+              collection: 'download_requests',
+              doc: requestDoc,
+            });
+            break; // Success, exit retry loop
+          } catch (deleteError) {
+            console.warn(`Failed to delete request document (attempt ${attempt + 1}/3):`, deleteError);
+            if (attempt < 2) {
+              // Exponential backoff: 1s, 2s, 4s
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            }
+          }
+        }
+      }
+      
       setDownloadingIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(template.key);

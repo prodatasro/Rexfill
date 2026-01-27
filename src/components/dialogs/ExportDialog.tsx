@@ -2,6 +2,7 @@ import { FC, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2, X, Folder, FileText, Check } from 'lucide-react';
 import type { Doc } from '@junobuild/core';
+import { setDoc, getDoc, deleteDoc } from '@junobuild/core';
 import type { WordTemplateData } from '../../types/word-template';
 import type { Folder as FolderType, FolderTreeNode } from '../../types/folder';
 import {
@@ -13,6 +14,24 @@ import {
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { nanoid } from 'nanoid';
+
+// Type for download request document data
+interface DownloadRequestData {
+  requestType: 'download' | 'export';
+  status: 'pending' | 'approved' | 'rejected';
+  templateIds: string[];
+  approvedTemplateIds?: string[];
+  createdAt: number;
+  error?: {
+    code: string;
+    message: string;
+    limit?: number;
+    used?: number;
+    requested?: number;
+    retryAfterSeconds?: number;
+  };
+}
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -97,11 +116,103 @@ const ExportDialog: FC<ExportDialogProps> = ({
 
     setIsExporting(true);
     setExportProgress(0);
+    let requestKey: string | null = null;
 
     try {
+      if (!user) {
+        showErrorToast(t('auth.pleaseSignIn'));
+        return;
+      }
+
+      // 1. Create export request document
+      const templateIds = selectedTemplates.map((t) => t.key);
+      requestKey = `${user.key}_${Date.now()}_${nanoid()}`;
+      await setDoc<DownloadRequestData>({
+        collection: 'download_requests',
+        doc: {
+          key: requestKey,
+          data: {
+            requestType: 'export',
+            status: 'pending',
+            templateIds,
+            createdAt: Date.now(),
+          },
+        },
+      });
+
+      // 2. Poll for request status (500ms intervals, 30s timeout)
+      const pollStartTime = Date.now();
+      const pollTimeout = 30000; // 30 seconds
+      const pollInterval = 500; // 500ms
+      
+      let requestDoc: Doc<DownloadRequestData> | null = null;
+      while (Date.now() - pollStartTime < pollTimeout) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+        const doc = await getDoc<DownloadRequestData>({
+          collection: 'download_requests',
+          key: requestKey,
+        });
+
+        if (doc && doc.data.status !== 'pending') {
+          requestDoc = doc;
+          break;
+        }
+      }
+
+      // 3. Handle timeout
+      if (!requestDoc || requestDoc.data.status === 'pending') {
+        showErrorToast(t('exportImport.serverBusy'));
+        return;
+      }
+
+      // 4. Handle rejection
+      if (requestDoc.data.status === 'rejected') {
+        const { error } = requestDoc.data;
+
+        if (error?.code === 'subscription_expired') {
+          showErrorToast(t('subscription.expired'));
+          return;
+        }
+
+        if (error?.code === 'quota_exceeded' || error?.code === 'tier_limit') {
+          showErrorToast(
+            error.message || 
+            t('exportImport.tierLimitExceeded', {
+              limit: error.limit,
+              requested: error.requested,
+            })
+          );
+          return;
+        }
+
+        if (error?.code === 'rate_limit') {
+          showErrorToast(
+            t('exportImport.rateLimitExceeded', {
+              seconds: error.retryAfterSeconds,
+            })
+          );
+          return;
+        }
+
+        showErrorToast(t('exportImport.exportFailed'));
+        return;
+      }
+
+      // 5. Export approved - get approved template IDs
+      const approvedTemplateIds = requestDoc.data.approvedTemplateIds || templateIds;
+      const approvedTemplates = selectedTemplates.filter(t => 
+        approvedTemplateIds.includes(t.key)
+      );
+
+      if (approvedTemplates.length === 0) {
+        showErrorToast(t('exportImport.noTemplatesApproved'));
+        return;
+      }
+
       // Create wrapper that tracks progress
       let processedCount = 0;
-      const totalCount = selectedTemplates.length;
+      const totalCount = approvedTemplates.length;
 
       const progressFetcher = async (template: Doc<WordTemplateData>) => {
         const blob = await fetchTemplateBlob(template);
@@ -111,7 +222,7 @@ const ExportDialog: FC<ExportDialogProps> = ({
       };
 
       const zipBlob = await createExportZip(
-        selectedTemplates,
+        approvedTemplates,
         selectedFolders,
         progressFetcher
       );
@@ -121,13 +232,13 @@ const ExportDialog: FC<ExportDialogProps> = ({
 
       showSuccessToast(
         t('exportImport.exportSuccess', {
-          templates: selectedTemplates.length,
+          templates: approvedTemplates.length,
           folders: selectedFolders.length,
         })
       );
 
       // Log successful export for each template
-      for (const template of selectedTemplates) {
+      for (const template of approvedTemplates) {
         try {
           await logActivity({
             action: 'downloaded',
@@ -164,13 +275,38 @@ const ExportDialog: FC<ExportDialogProps> = ({
             created_by: template.owner || 'unknown',
             modified_by: user?.key || template.owner || 'unknown',
             success: false,
-            error_message: error instanceof Error ? error.message : 'Export failed'
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            file_size: template.data.size,
+            folder_path: template.data.folderPath,
+            mime_type: template.data.mimeType,
+            old_value: 'export',
           });
         } catch (logError) {
-          console.error('Failed to log export failure:', logError);
+          console.error('Failed to log export activity:', logError);
         }
       }
     } finally {
+      // 6. Delete request document with retries (3 attempts with exponential backoff)
+      if (requestKey) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            await deleteDoc({
+              collection: 'download_requests',
+              doc: {
+                key: requestKey,
+              } as Doc<DownloadRequestData>,
+            });
+            break; // Success, exit retry loop
+          } catch (deleteError) {
+            console.warn(`Failed to delete request document (attempt ${attempt + 1}/3):`, deleteError);
+            if (attempt < 2) {
+              // Exponential backoff: 1s, 2s, 4s
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            }
+          }
+        }
+      }
+      
       setIsExporting(false);
       setExportProgress(0);
     }

@@ -76,7 +76,7 @@ export const SubscriptionSection: FC = () => {
       setProgress('');
     }
   };
-
+debugger;
   return (
     <div className="space-y-6">
       <div>

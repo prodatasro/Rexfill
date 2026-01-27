@@ -7,10 +7,11 @@
  * Webhook events handled:
  * - subscription.created - New subscription created
  * - subscription.updated - Subscription modified (plan change, etc.)
- * - subscription.canceled - Subscription canceled
- * - subscription.past_due - Payment failed
- * - subscription.paused - Subscription paused
+ * - subscription.canceled - Subscription canceled (IMMEDIATE cutoff)
+ * - subscription.past_due - Payment failed (24h grace)
+ * - subscription.paused - Subscription paused (IMMEDIATE cutoff)
  * - subscription.resumed - Subscription resumed
+ * - payment.failed - Payment failure (48h grace)
  */
 
 import { id } from '@junobuild/functions/ic-cdk';
@@ -20,6 +21,12 @@ import {
   setDocStore,
   getDocStore,
 } from '@junobuild/functions/sdk';
+import { recordSecurityEvent } from './utils/monitoring';
+import {
+  notifySubscriptionCanceled,
+  notifyWebhookFailure,
+  createAdminNotification,
+} from './utils/admin-notifier';
 
 /**
  * Retry a database operation with exponential backoff
@@ -331,6 +338,59 @@ export async function paddleWebhook(request: Request): Promise<Response> {
           console.log(`Created organization ${newOrgId} for subscription`);
         }
 
+        // Detect suspicious downgrades (enterprise -> free)
+        const key = finalOrganizationId || userId!;
+        let oldPlanId: string | undefined;
+        
+        if (event.event_type === 'subscription.updated') {
+          try {
+            const existingDoc = await getDocStore({
+              caller: id(),
+              collection: 'subscriptions',
+              key,
+            });
+
+            if (existingDoc) {
+              const decodedData = decodeDocData<{ planId?: string; [key: string]: unknown }>(existingDoc.data);
+              oldPlanId = String(decodedData.planId);
+
+              // Detect suspicious downgrades
+              const premiumPlans = ['enterprise', 'professional', 'business', 'enterprise_org'];
+              if (premiumPlans.includes(oldPlanId) && (planId === 'free' || planId === 'starter')) {
+                await recordSecurityEvent({
+                  eventType: 'admin_action',
+                  severity: 'warning',
+                  userId: userId || key,
+                  endpoint: 'webhook',
+                  message: 'Suspicious subscription downgrade detected',
+                  metadata: {
+                    oldPlanId,
+                    newPlanId: planId,
+                    paddleSubscriptionId: event.data.id,
+                    eventType: event.event_type,
+                  },
+                  timestamp: Date.now(),
+                });
+
+                await createAdminNotification({
+                  title: 'Suspicious Subscription Downgrade',
+                  message: `Suspicious downgrade: ${oldPlanId} → ${planId}`,
+                  severity: 'warning',
+                  userId: userId || key,
+                  metadata: {
+                    action: 'suspicious_downgrade',
+                    oldPlanId,
+                    newPlanId: planId,
+                    paddleSubscriptionId: event.data.id,
+                  },
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Error checking existing subscription:', error);
+          }
+        }
+
         // Create or update subscription
         const subscriptionData = {
           planId,
@@ -349,9 +409,6 @@ export async function paddleWebhook(request: Request): Promise<Response> {
             seatsUsed: event.data.items[0]?.quantity || 1,
           }),
         };
-
-        // Determine which key to use (organization or user)
-        const key = finalOrganizationId || userId!;
         
         // Encode the data for storage
         const encodedData = encodeDocData(subscriptionData);
@@ -368,13 +425,31 @@ export async function paddleWebhook(request: Request): Promise<Response> {
         );
 
         console.log(`Subscription ${event.event_type} for ${key}`);
+
+        // Log security event for audit trail
+        await recordSecurityEvent({
+          eventType: 'admin_action',
+          severity: 'info',
+          userId: userId || key,
+          endpoint: 'webhook',
+          message: `Subscription ${event.event_type}`,
+          metadata: {
+            key,
+            eventType: event.event_type,
+            planId,
+            oldPlanId,
+            paddleSubscriptionId: event.data.id,
+          },
+          timestamp: Date.now(),
+        });
+
         break;
       }
 
       case 'subscription.canceled':
       case 'subscription.past_due':
       case 'subscription.paused': {
-        // Update subscription status
+        // IMMEDIATE cutoff for canceled/paused, short grace for past_due
         const key = organizationId || userId!;
         
         const existingDoc = await getDocStore({
@@ -384,17 +459,23 @@ export async function paddleWebhook(request: Request): Promise<Response> {
         });
 
         if (existingDoc) {
-          const decodedData = decodeDocData<{ type?: string; [key: string]: unknown }>(existingDoc.data);
+          const decodedData = decodeDocData<{ type?: string; planId?: string; [key: string]: unknown }>(existingDoc.data);
           const isOrgSubscription = decodedData.type === 'organization';
           
-          // For organization subscriptions that are canceled, set grace period (7 days)
-          const gracePeriodEndsAt = isOrgSubscription && event.event_type === 'subscription.canceled'
-            ? Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days from now
-            : undefined;
+          // Grace period logic:
+          // - subscription.canceled: IMMEDIATE cutoff (no grace)
+          // - subscription.paused: IMMEDIATE cutoff (no grace)
+          // - subscription.past_due: 24h grace period
+          let gracePeriodEndsAt: number | undefined;
+          if (event.event_type === 'subscription.past_due') {
+            gracePeriodEndsAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+          }
 
           const updatedData = {
             ...decodedData,
-            status: event.data.status,
+            status: event.event_type === 'subscription.canceled' || event.event_type === 'subscription.paused' 
+              ? 'canceled' 
+              : event.data.status,
             updatedAt: Date.now(),
             ...(event.data.cancel_at && {
               cancelAtPeriodEnd: true,
@@ -417,9 +498,57 @@ export async function paddleWebhook(request: Request): Promise<Response> {
             })
           );
 
-          console.log(`Subscription ${event.event_type} for ${key}${gracePeriodEndsAt ? ' with grace period' : ''}`);
+          console.log(`Subscription ${event.event_type} for ${key}${gracePeriodEndsAt ? ' with grace period' : ' (immediate cutoff)'}`);
 
-          // If grace period started, create notifications for all organization members
+          // Log security event
+          await recordSecurityEvent({
+            eventType: event.event_type === 'subscription.canceled' ? 'subscription_canceled' : 'admin_action',
+            severity: event.event_type === 'subscription.canceled' ? 'critical' : 'warning',
+            userId: userId || key,
+            endpoint: 'webhook',
+            message: `Subscription ${event.event_type}`,
+            metadata: {
+              key,
+              eventType: event.event_type,
+              paddleSubscriptionId: event.data.id,
+              planId: decodedData.planId,
+              gracePeriodEndsAt: gracePeriodEndsAt?.toString(),
+            },
+            timestamp: Date.now(),
+          });
+
+          // Notify admin for canceled subscriptions
+          if (event.event_type === 'subscription.canceled') {
+            await notifySubscriptionCanceled(
+              userId || key,
+              {
+                planId: String(decodedData.planId),
+                organizationId,
+                paddleSubscriptionId: event.data.id,
+              }
+            );
+          }
+
+          // Clear user sessions for immediate cutoff
+          if (event.event_type === 'subscription.canceled' || event.event_type === 'subscription.paused') {
+            // Note: Sessions are managed externally - log this for reference
+            console.log(`Session clearance needed for ${key} due to immediate cutoff`);
+            
+            await createAdminNotification({
+              title: 'Subscription Cutoff',
+              message: `Subscription ${event.event_type} - immediate cutoff enforced`,
+              severity: 'warning',
+              userId: userId || key,
+              metadata: {
+                action: 'subscription_cutoff',
+                eventType: event.event_type,
+                paddleSubscriptionId: event.data.id,
+                requiresSessionClear: true,
+              },
+            });
+          }
+
+          // If grace period started, create notifications
           if (gracePeriodEndsAt && isOrgSubscription && organizationId) {
             try {
               // Get organization to find owner
@@ -472,8 +601,120 @@ export async function paddleWebhook(request: Request): Promise<Response> {
         break;
       }
 
+      case 'payment.failed': {
+        // 48h grace period for payment failures
+        const key = organizationId || userId!;
+        
+        const existingDoc = await getDocStore({
+          caller: id(),
+          collection: 'subscriptions',
+          key,
+        });
+
+        if (existingDoc) {
+          const decodedData = decodeDocData<{ planId?: string; [key: string]: unknown }>(existingDoc.data);
+          const gracePeriodEndsAt = Date.now() + (48 * 60 * 60 * 1000); // 48 hours
+
+          const updatedData = {
+            ...decodedData,
+            paymentFailed: true,
+            gracePeriodEndsAt,
+            updatedAt: Date.now(),
+          };
+          
+          const encodedData = encodeDocData(updatedData);
+
+          await retryOperation(async () =>
+            await setDocStore({
+              caller: id(),
+              collection: 'subscriptions',
+              key,
+              doc: {
+                data: encodedData,
+                version: existingDoc.version,
+              },
+            })
+          );
+
+          console.log(`Payment failed for ${key} - 48h grace period set`);
+
+          // Log security event
+          await recordSecurityEvent({
+            eventType: 'payment_failed',
+            severity: 'warning',
+            userId: userId || key,
+            endpoint: 'webhook',
+            message: 'Payment failed - 48h grace period',
+            metadata: {
+              key,
+              eventType: event.event_type,
+              planId: decodedData.planId,
+              gracePeriodEndsAt: gracePeriodEndsAt.toString(),
+            },
+            timestamp: Date.now(),
+          });
+
+          // Notify admin
+          await createAdminNotification({
+            title: 'Payment Failed',
+            message: `Payment failed for subscription - 48h grace period`,
+            severity: 'warning',
+            userId: userId || key,
+            metadata: {
+              action: 'payment_failed',
+              eventType: event.event_type,
+              gracePeriodEndsAt: gracePeriodEndsAt.toString(),
+            },
+          });
+        }
+        break;
+      }
+
       default:
         console.log('Unhandled webhook event type:', event.event_type);
+        
+        // Log unhandled webhook for admin review
+        await recordSecurityEvent({
+          eventType: 'admin_action',
+          severity: 'info',
+          userId: userId || organizationId || 'system',
+          endpoint: 'webhook',
+          message: `Unhandled webhook event: ${event.event_type}`,
+          metadata: {
+            eventType: event.event_type,
+            eventId: event.event_id,
+            paddleSubscriptionId: event.data.id,
+          },
+          timestamp: Date.now(),
+        });
+    }
+
+    // Store webhook history for debugging
+    try {
+      const webhookHistoryData = {
+        eventId: event.event_id,
+        eventType: event.event_type,
+        userId: userId || organizationId || 'unknown',
+        status: 'processed',
+        processedAt: Date.now(),
+      };
+
+      const webhookKey = `${Date.now()}_${event.event_id}`;
+      const encodedWebhookData = encodeDocData(webhookHistoryData);
+
+      await retryOperation(async () =>
+        await setDocStore({
+          caller: id(),
+          collection: 'webhook_history',
+          key: webhookKey,
+          doc: {
+            data: encodedWebhookData,
+          },
+        })
+      );
+    } catch (error) {
+      console.error('Error storing webhook history:', error);
+      // Don't fail webhook if history storage fails
     }
 
     // Return success response
@@ -484,6 +725,28 @@ export async function paddleWebhook(request: Request): Promise<Response> {
 
   } catch (error) {
     console.error('Webhook processing error:', error);
+    
+    // Notify admin of webhook failure
+    try {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await notifyWebhookFailure('paddle', errorMessage);
+      
+      await recordSecurityEvent({
+        eventType: 'admin_action',
+        severity: 'critical',
+        userId: 'system',
+        endpoint: 'webhook',
+        message: `Webhook processing failed: ${errorMessage}`,
+        metadata: {
+          error: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+        timestamp: Date.now(),
+      });
+    } catch (notifyError) {
+      console.error('Failed to notify webhook failure:', notifyError);
+    }
+    
     return new Response('Internal Server Error', { status: 500 });
   }
 }

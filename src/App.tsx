@@ -16,6 +16,7 @@ import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import LoadingSpinner from "./components/ui/LoadingSpinner";
 import UpgradePrompt from "./components/billing/UpgradePrompt";
 import { CenteredToast } from "./components/ui/CenteredToast";
+import ApiErrorInterceptor from "./components/app/ApiErrorInterceptor";
 
 // Lazy load layouts
 const PublicLayout = lazy(() => import("./components/layouts/PublicLayout"));
@@ -93,6 +94,7 @@ const App: FC = () => {
                                 </Routes>
                               </Suspense>
                             </SearchProvider>
+                            <ApiErrorInterceptor />
                             <UpgradePrompt />
                             <CenteredToast />
                           </ConfirmProvider>

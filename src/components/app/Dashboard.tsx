@@ -5,7 +5,7 @@ import { Doc } from '@junobuild/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { WordTemplateData } from '../../types/word-template';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
-import { setDocWithTimeout, uploadFileWithTimeout, listDocsWithTimeout, deleteAssetWithTimeout } from '../../utils/junoWithTimeout';
+import { setDocWithTimeout, uploadFileWithTimeout, deleteAssetWithTimeout } from '../../utils/junoWithTimeout';
 import type { Folder } from '../../types/folder';
 import FileList from '../files/FileList';
 import { VIRTUAL_FOLDER_FAVORITES, VIRTUAL_FOLDER_RECENT } from '../folders/FolderTree';
@@ -176,9 +176,19 @@ const Dashboard: FC = () => {
 
   // Fetch template blob for export
   const fetchTemplateBlob = useCallback(async (template: Doc<WordTemplateData>): Promise<Blob | null> => {
-    if (!template.data.url) return null;
+    // Use secure URL construction with fullPath + accessToken
+    if (!template.data.fullPath || !template.data.accessToken) {
+      console.error(`Template ${template.data.name} missing fullPath or accessToken`);
+      return null;
+    }
+    
     try {
-      const response = await fetchWithTimeout(template.data.url);
+      const satelliteId = import.meta.env.MODE === 'production' 
+        ? 'ufqml-byaaa-aaaas-amtia-cai' 
+        : 'auamu-4x777-77775-aaaaa-cai';
+      const downloadUrl = `https://${satelliteId}.icp0.io${template.data.fullPath}?token=${template.data.accessToken}`;
+      
+      const response = await fetchWithTimeout(downloadUrl);
       return await response.blob();
     } catch (error) {
       console.error(`Failed to fetch template ${template.data.name}:`, error);
