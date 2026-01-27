@@ -1,8 +1,8 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAdmin } from '../../contexts';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useRef } from 'react';
+import { showWarningToast } from '../../utils/toast';
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -10,19 +10,27 @@ interface AdminGuardProps {
 
 /**
  * AdminGuard protects admin routes from non-admin users
- * Only the first user who logged in has admin access
- * Redirects to dashboard if user is not the admin
+ * Users in the platform_admins collection have admin access
+ * Redirects to dashboard if user is not an admin
+ * Detects admin revocation and notifies user
  */
 export function AdminGuard({ children }: AdminGuardProps) {
   const { isAdmin, isLoading } = useAdmin();
+  const navigate = useNavigate();
+  const previousIsAdminRef = useRef<boolean | null>(null);
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) {
-      toast.error('Access Denied', {
-        description: 'Only the platform administrator can access this area.',
-      });
+    // Detect when admin status changes from true to false (revocation)
+    if (previousIsAdminRef.current === true && isAdmin === false && !isLoading) {
+      showWarningToast('Your admin access has been revoked');
+      navigate('/app', { replace: true });
     }
-  }, [isLoading, isAdmin]);
+    
+    // Update the ref after checking
+    if (!isLoading) {
+      previousIsAdminRef.current = isAdmin;
+    }
+  }, [isAdmin, isLoading, navigate]);
 
   if (isLoading) {
     return (

@@ -1,13 +1,15 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { listDocs, setDoc } from '@junobuild/core';
-import type { PlatformAdmin } from '../types';
+import type { PlatformAdmin, Doc } from '../types';
 
 interface AdminContextType {
   isAdmin: boolean;
+  isFirstAdmin: boolean; // True if current user is the original (first) admin
   isLoading: boolean;
   checkAdminStatus: () => Promise<void>;
-  adminPrincipalId: string | null; // ID of the single platform admin
+  adminsList: Doc<PlatformAdmin>[]; // All platform admins
+  refetchAdmins: () => Promise<void>; // Manual refetch function
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -15,8 +17,10 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isFirstAdmin, setIsFirstAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [adminPrincipalId, setAdminPrincipalId] = useState<string | null>(null);
+  const [adminsList, setAdminsList] = useState<Doc<PlatformAdmin>[]>([]);
+  const previousIsAdminRef = useRef<boolean>(false);
 
   const checkAdminStatus = async () => {
     // Wait for auth to finish loading before checking admin status
@@ -26,29 +30,25 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     
     if (!user) {
       setIsAdmin(false);
-      setAdminPrincipalId(null);
+      setIsFirstAdmin(false);
+      setAdminsList([]);
       setIsLoading(false);
       return;
     }
 
     try {
       setIsLoading(true);
-      // Reset state immediately to prevent stale data
-      setIsAdmin(false);
-      setAdminPrincipalId(null);
 
       // List all platform admins - ensure we get fresh data
       const { items } = await listDocs({
         collection: 'platform_admins',
-        // Force fresh fetch - don't use any cached data
       });
 
       console.log('[AdminContext] Found admin records:', items.length);
       console.log('[AdminContext] Current user key:', user.key);
-debugger;
-      // SINGLE ADMIN POLICY: Only the first user who logs in becomes the admin
+
+      // If no admins exist, first user becomes admin
       if (items.length === 0) {
-        // First user to log in becomes the platform admin
         const adminData: PlatformAdmin = {
           principalId: user.key,
           addedAt: Date.now(),
@@ -65,47 +65,77 @@ debugger;
 
         console.log('[AdminContext] Created FIRST admin:', user.key);
         setIsAdmin(true);
-        setAdminPrincipalId(user.key);
+        setIsFirstAdmin(true);
+        setAdminsList([{
+          key: user.key,
+          data: adminData,
+          owner: user.key,
+        } as Doc<PlatformAdmin>]);
+        previousIsAdminRef.current = true;
         return;
       }
 
-      // Admin already exists - check if current user is THE admin
-      // Sort by addedAt to get the earliest admin (in case of multiple records)
+      // Sort by addedAt to identify the first admin
       const sortedAdmins = [...items].sort((a, b) => {
         const aData = a.data as PlatformAdmin;
         const bData = b.data as PlatformAdmin;
         return aData.addedAt - bData.addedAt;
       });
       
-      const theOnlyAdmin = sortedAdmins[0];
-      const theOnlyAdminData = theOnlyAdmin.data as PlatformAdmin;
-      const isCurrentUserTheAdmin = theOnlyAdmin.key === user.key;
+      setAdminsList(sortedAdmins);
       
-      console.log('[AdminContext] THE ONLY admin is:', theOnlyAdmin.key, 'added at:', new Date(theOnlyAdminData.addedAt).toISOString());
-      console.log('[AdminContext] Is current user THE admin?', isCurrentUserTheAdmin);
+      // Check if current user is in the admins list
+      const isCurrentUserAdmin = sortedAdmins.some(admin => admin.key === user.key);
       
-      // STRICT: Only set isAdmin to true if current user is THE admin
-      setIsAdmin(isCurrentUserTheAdmin);
-      setAdminPrincipalId(theOnlyAdmin.key);
+      // Check if current user is the first admin (earliest by addedAt)
+      const firstAdmin = sortedAdmins[0];
+      const isCurrentUserFirstAdmin = firstAdmin.key === user.key;
       
-      if (!isCurrentUserTheAdmin) {
-        console.log('[AdminContext] Current user is NOT admin - blocking access');
-      }
+      console.log('[AdminContext] First admin is:', firstAdmin.key);
+      console.log('[AdminContext] Current user is admin?', isCurrentUserAdmin);
+      console.log('[AdminContext] Current user is FIRST admin?', isCurrentUserFirstAdmin);
+      
+      setIsAdmin(isCurrentUserAdmin);
+      setIsFirstAdmin(isCurrentUserFirstAdmin);
+      previousIsAdminRef.current = isCurrentUserAdmin;
     } catch (error) {
       console.error('[AdminContext] Failed to check admin status:', error);
       setIsAdmin(false);
-      setAdminPrincipalId(null);
+      setIsFirstAdmin(false);
+      setAdminsList([]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const refetchAdmins = async () => {
+    await checkAdminStatus();
   };
 
   useEffect(() => {
     checkAdminStatus();
   }, [user?.key, authLoading]); // Re-check when user changes OR when auth loading completes
 
+  // Polling interval to detect admin status changes (revocations)
+  useEffect(() => {
+    if (!user || authLoading) return;
+
+    const intervalId = setInterval(() => {
+      checkAdminStatus();
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [user?.key, authLoading]);
+
   return (
-    <AdminContext.Provider value={{ isAdmin, isLoading, checkAdminStatus, adminPrincipalId }}>
+    <AdminContext.Provider value={{ 
+      isAdmin, 
+      isFirstAdmin, 
+      isLoading, 
+      checkAdminStatus, 
+      adminsList,
+      refetchAdmins 
+    }}>
       {children}
     </AdminContext.Provider>
   );

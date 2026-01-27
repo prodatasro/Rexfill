@@ -2,8 +2,7 @@ import { FC, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { listDocs } from '@junobuild/core';
-import { Users, CreditCard, FileText, Activity, ShieldCheck, TrendingUp } from 'lucide-react';
-import { useAdmin } from '../../../contexts';
+import { Users, CreditCard, FileText, Activity, TrendingUp } from 'lucide-react';
 import { 
   getCurrentUTCDate, 
   getDateRangeInUTC, 
@@ -19,7 +18,6 @@ import DailyUsageDetailModal from '../../../components/admin/DailyUsageDetailMod
 
 const DashboardPage: FC = () => {
   const { t, i18n } = useTranslation();
-  const { adminPrincipalId } = useAdmin();
 
   // State for chart interactions
   const [timeRange, setTimeRange] = useState<7 | 14 | 30>(7);
@@ -83,7 +81,7 @@ const DashboardPage: FC = () => {
   });
 
   // Historical usage data for charts
-  const { data: historicalUsage, dataUpdatedAt, isLoading: isLoadingCharts, isFetching } = useQuery({
+  const { data: historicalUsage, dataUpdatedAt, isLoading: isLoadingCharts } = useQuery({
     queryKey: ['admin_dashboard_usage_historical', timeRange],
     queryFn: async () => {
       const dateRange = getDateRangeInUTC(timeRange);
@@ -193,14 +191,6 @@ const DashboardPage: FC = () => {
         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
           {t('admin.dashboard.subtitle', 'Platform overview and statistics')}
         </p>
-        {adminPrincipalId && (
-          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-              {t('admin.dashboard.adminLabel', 'Platform Admin')}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Metrics */}
