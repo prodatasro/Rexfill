@@ -2,9 +2,8 @@ import type { Doc } from "@junobuild/core";
 
 export interface WordTemplateData {
   name: string;
-  url?: string; // Deprecated: Use fullPath + accessToken instead
+  url?: string; // Direct download URL from storage
   fullPath?: string; // Storage path: "/folder/template.docx"
-  accessToken?: string; // Secure token for URL construction
   size: number;
   uploadedAt: number;
   mimeType: string;

@@ -61,6 +61,19 @@ const DashboardPage: FC = () => {
     refetchIntervalInBackground: false,
   });
 
+  // Fetch platform admins to exclude from metrics
+  const { data: platformAdmins } = useQuery({
+    queryKey: ['platform_admins'],
+    queryFn: async () => {
+      const { items } = await listDocs({
+        collection: 'platform_admins',
+      });
+      return items;
+    },
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+  });
+
   // Today's usage metric (FIXED - using correct key-based filtering)
   const { data: usage } = useQuery({
     queryKey: ['admin_dashboard_usage_today'],
@@ -112,22 +125,35 @@ const DashboardPage: FC = () => {
 
   const activeSubscriptions = subscriptions?.filter(s => (s.data as any).status === 'active').length || 0;
   
-  // Fix: Aggregate today's processed documents across all users
+  // Create set of admin IDs for filtering
+  const adminIds = new Set(platformAdmins?.map(admin => admin.key) || []);
+  
+  // Fix: Aggregate today's processed documents across all non-admin users
   const todayProcessed = usage?.reduce((sum, doc) => {
+    // Extract userId from key (format: userId_YYYY-MM-DD)
+    const userId = doc.key.split('_').slice(0, -1).join('_');
+    // Exclude admin usage from metrics
+    if (adminIds.has(userId)) return sum;
     return sum + ((doc.data as any)?.documentsProcessed || 0);
   }, 0) || 0;
 
   // Process historical data for charts
   const chartData = historicalUsage ? (() => {
-    // Aggregate usage by date
+    // Aggregate usage by date (excluding admin usage)
     const dailyData = new Map<string, { documentsProcessed: number; templatesUploaded: number }>();
     
     historicalUsage.forEach((doc: any) => {
-      // Extract date from key: {userId}_{YYYY-MM-DD}
-      const match = doc.key.match(/_(\d{4}-\d{2}-\d{2})$/);
-      if (!match) return;
+      // Extract userId and date from key: {userId}_{YYYY-MM-DD}
+      const parts = doc.key.split('_');
+      const date = parts[parts.length - 1]; // Last part is the date
+      const userId = parts.slice(0, -1).join('_'); // Everything before last underscore is userId
       
-      const date = match[1];
+      // Skip admin usage
+      if (adminIds.has(userId)) return;
+      
+      // Validate date format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+      
       const existing = dailyData.get(date) || { documentsProcessed: 0, templatesUploaded: 0 };
       
       existing.documentsProcessed += (doc.data as any)?.documentsProcessed || 0;

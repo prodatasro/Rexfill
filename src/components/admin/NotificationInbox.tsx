@@ -172,7 +172,7 @@ const NotificationInbox: FC<NotificationInboxProps> = ({
           />
 
           {/* Dropdown Content */}
-          <div className="absolute right-0 top-12 z-50 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[600px] flex flex-col">
+          <div className="absolute right-0 top-12 z-50 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 max-h-150 flex flex-col">
             {/* Header */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
               <div>

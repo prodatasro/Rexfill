@@ -28,6 +28,9 @@ export interface UserProfileData {
     theme?: 'light' | 'dark' | 'system';
   };
   
+  /** Whether user is a platform admin (excluded from usage limits) */
+  isAdmin?: boolean;
+  
   /** Timestamp when profile was created */
   createdAt: number;
   

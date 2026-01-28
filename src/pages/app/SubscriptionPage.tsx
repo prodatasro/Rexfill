@@ -3,6 +3,7 @@ import { CreditCard, Calendar, AlertCircle, CheckCircle, XCircle, ArrowUpRight, 
 import { useTranslation } from 'react-i18next';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { useOrganization } from '../../contexts/OrganizationContext';
+import { useUserProfile } from '../../contexts/UserProfileContext';
 import { SUBSCRIPTION_PLANS, isUnlimited } from '../../config/plans';
 import { openCheckout } from '../../lib/paddle';
 import { showErrorToast, showSuccessToast } from '../../utils/toast';
@@ -11,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const SubscriptionPage: FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { isAdmin } = useUserProfile();
   const { plan, subscription, individualSubscription, organizationSubscription, gracePeriodEndsAt, usage, isLoading } = useSubscription();
   const { currentOrganization, exportOrganizationData } = useOrganization();
   const [upgradeLoading, setUpgradeLoading] = useState(false);
@@ -251,19 +253,19 @@ const SubscriptionPage: FC = () => {
               <div>
                 <span className="text-slate-600 dark:text-slate-400">{t('subscription.documentsPerDay')}:</span>
                 <span className="ml-2 font-medium text-slate-900 dark:text-white">
-                  {isUnlimited(plan.limits.documentsPerDay) ? t('pricing.features.unlimited') : plan.limits.documentsPerDay}
+                  {isAdmin ? '∞' : (isUnlimited(plan.limits.documentsPerDay) ? t('pricing.features.unlimited') : plan.limits.documentsPerDay)}
                 </span>
               </div>
               <div>
                 <span className="text-slate-600 dark:text-slate-400">{t('subscription.documentsPerMonth')}:</span>
                 <span className="ml-2 font-medium text-slate-900 dark:text-white">
-                  {isUnlimited(plan.limits.documentsPerMonth) ? t('pricing.features.unlimited') : plan.limits.documentsPerMonth}
+                  {isAdmin ? '∞' : (isUnlimited(plan.limits.documentsPerMonth) ? t('pricing.features.unlimited') : plan.limits.documentsPerMonth)}
                 </span>
               </div>
               <div>
                 <span className="text-slate-600 dark:text-slate-400">{t('subscription.maxTemplates')}:</span>
                 <span className="ml-2 font-medium text-slate-900 dark:text-white">
-                  {isUnlimited(plan.limits.maxTemplates) ? t('pricing.features.unlimited') : plan.limits.maxTemplates}
+                  {isAdmin ? '∞' : (isUnlimited(plan.limits.maxTemplates) ? t('pricing.features.unlimited') : plan.limits.maxTemplates)}
                 </span>
               </div>
               <div>
@@ -302,13 +304,13 @@ const SubscriptionPage: FC = () => {
                   {t('subscription.documentsToday')}
                 </span>
                 <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {usage.documentsToday} / {isUnlimited(plan.limits.documentsPerDay) ? '∞' : plan.limits.documentsPerDay}
+                  {usage.documentsToday} / {isAdmin ? '∞' : (isUnlimited(plan.limits.documentsPerDay) ? '∞' : plan.limits.documentsPerDay)}
                 </span>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                 <div
                   className="bg-primary-600 h-2 rounded-full transition-all"
-                  style={{ width: `${calculateUsagePercentage(usage.documentsToday, plan.limits.documentsPerDay)}%` }}
+                  style={{ width: `${isAdmin ? 0 : calculateUsagePercentage(usage.documentsToday, plan.limits.documentsPerDay)}%` }}
                 />
               </div>
             </div>
@@ -320,13 +322,13 @@ const SubscriptionPage: FC = () => {
                   {t('subscription.documentsThisMonth')}
                 </span>
                 <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {usage.documentsThisMonth} / {isUnlimited(plan.limits.documentsPerMonth) ? '∞' : plan.limits.documentsPerMonth}
+                  {usage.documentsThisMonth} / {isAdmin ? '∞' : (isUnlimited(plan.limits.documentsPerMonth) ? '∞' : plan.limits.documentsPerMonth)}
                 </span>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                 <div
                   className="bg-primary-600 h-2 rounded-full transition-all"
-                  style={{ width: `${calculateUsagePercentage(usage.documentsThisMonth, plan.limits.documentsPerMonth)}%` }}
+                  style={{ width: `${isAdmin ? 0 : calculateUsagePercentage(usage.documentsThisMonth, plan.limits.documentsPerMonth)}%` }}
                 />
               </div>
             </div>
@@ -338,13 +340,13 @@ const SubscriptionPage: FC = () => {
                   {t('subscription.templateCount')}
                 </span>
                 <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {usage.totalTemplates} / {isUnlimited(plan.limits.maxTemplates) ? '∞' : plan.limits.maxTemplates}
+                  {usage.totalTemplates} / {isAdmin ? '∞' : (isUnlimited(plan.limits.maxTemplates) ? '∞' : plan.limits.maxTemplates)}
                 </span>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                 <div
                   className="bg-primary-600 h-2 rounded-full transition-all"
-                  style={{ width: `${calculateUsagePercentage(usage.totalTemplates, plan.limits.maxTemplates)}%` }}
+                  style={{ width: `${isAdmin ? 0 : calculateUsagePercentage(usage.totalTemplates, plan.limits.maxTemplates)}%` }}
                 />
               </div>
             </div>

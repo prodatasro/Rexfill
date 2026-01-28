@@ -70,9 +70,24 @@ const DailyUsageDetailModal: FC<DailyUsageDetailModalProps> = ({
     enabled: isOpen,
   });
 
-  // Combine usage data with user profiles
+  // Fetch platform admins to exclude from list
+  const { data: platformAdmins } = useQuery({
+    queryKey: ['platform_admins_for_usage'],
+    queryFn: async () => {
+      const { items } = await listDocs({
+        collection: 'platform_admins',
+      });
+      return items;
+    },
+    enabled: isOpen,
+  });
+
+  // Combine usage data with user profiles (excluding admins)
   const userUsageData: UserUsage[] = useMemo(() => {
     if (!usageData || !userProfiles) return [];
+
+    // Create set of admin IDs
+    const adminIds = new Set(platformAdmins?.map(admin => admin.key) || []);
 
     const profileMap = new Map(
       userProfiles.map(profile => [
@@ -84,20 +99,22 @@ const DailyUsageDetailModal: FC<DailyUsageDetailModalProps> = ({
       ])
     );
 
-    return usageData.map(usage => {
-      // Extract principal ID from key (format: principalId_date)
-      const principalId = usage.key.split('_').slice(0, -1).join('_');
-      const userInfo = profileMap.get(principalId);
+    return usageData
+      .map(usage => {
+        // Extract principal ID from key (format: principalId_date)
+        const principalId = usage.key.split('_').slice(0, -1).join('_');
+        const userInfo = profileMap.get(principalId);
 
-      return {
-        principalId,
-        userName: userInfo?.name,
-        userEmail: userInfo?.email,
-        documentsProcessed: (usage.data as any).documentsProcessed || 0,
-        templatesUploaded: (usage.data as any).templatesUploaded || 0,
-      };
-    });
-  }, [usageData, userProfiles]);
+        return {
+          principalId,
+          userName: userInfo?.name,
+          userEmail: userInfo?.email,
+          documentsProcessed: (usage.data as any).documentsProcessed || 0,
+          templatesUploaded: (usage.data as any).templatesUploaded || 0,
+        };
+      })
+      .filter(user => !adminIds.has(user.principalId)); // Exclude admins from list
+  }, [usageData, userProfiles, platformAdmins]);
 
   // Sort data
   const sortedData = useMemo(() => {

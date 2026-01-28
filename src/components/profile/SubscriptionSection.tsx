@@ -2,6 +2,7 @@ import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Trash2 } from 'lucide-react';
 import { useSubscription } from '../../contexts/SubscriptionContext';
+import { useUserProfile } from '../../contexts/UserProfileContext';
 import { useAuth } from '../../contexts';
 import SubscriptionBadge from '../billing/SubscriptionBadge';
 import { GDPRExportDialog } from '../dialogs/GDPRExportDialog';
@@ -15,6 +16,7 @@ import type { Doc } from '@junobuild/core';
 export const SubscriptionSection: FC = () => {
   const { t } = useTranslation();
   const { plan, usage } = useSubscription();
+  const { isAdmin } = useUserProfile();
   const { user } = useAuth();
   const [showGDPRDialog, setShowGDPRDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -112,19 +114,19 @@ debugger;
               <div className="flex justify-between text-sm">
                 <span className="text-slate-700 dark:text-slate-300">{t('profile.subscription.documentsToday')}</span>
                 <span className="font-semibold text-slate-900 dark:text-slate-50">
-                  {usage.documentsToday} / {plan.limits.documentsPerDay === -1 ? '∞' : plan.limits.documentsPerDay}
+                  {usage.documentsToday} / {isAdmin ? '∞' : (plan.limits.documentsPerDay === -1 ? '∞' : plan.limits.documentsPerDay)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-700 dark:text-slate-300">{t('profile.subscription.documentsThisMonth')}</span>
                 <span className="font-semibold text-slate-900 dark:text-slate-50">
-                  {usage.documentsThisMonth} / {plan.limits.documentsPerMonth === -1 ? '∞' : plan.limits.documentsPerMonth}
+                  {usage.documentsThisMonth} / {isAdmin ? '∞' : (plan.limits.documentsPerMonth === -1 ? '∞' : plan.limits.documentsPerMonth)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-700 dark:text-slate-300">{t('profile.subscription.totalTemplates')}</span>
                 <span className="font-semibold text-slate-900 dark:text-slate-50">
-                  {usage.totalTemplates} / {plan.limits.maxTemplates === -1 ? '∞' : plan.limits.maxTemplates}
+                  {usage.totalTemplates} / {isAdmin ? '∞' : (plan.limits.maxTemplates === -1 ? '∞' : plan.limits.maxTemplates)}
                 </span>
               </div>
             </div>

@@ -176,19 +176,14 @@ const Dashboard: FC = () => {
 
   // Fetch template blob for export
   const fetchTemplateBlob = useCallback(async (template: Doc<WordTemplateData>): Promise<Blob | null> => {
-    // Use secure URL construction with fullPath + accessToken
-    if (!template.data.fullPath || !template.data.accessToken) {
-      console.error(`Template ${template.data.name} missing fullPath or accessToken`);
+    // Use direct download URL from template metadata
+    if (!template.data.url) {
+      console.error(`Template ${template.data.name} missing download URL`);
       return null;
     }
     
     try {
-      const satelliteId = import.meta.env.MODE === 'production' 
-        ? 'ufqml-byaaa-aaaas-amtia-cai' 
-        : 'auamu-4x777-77775-aaaaa-cai';
-      const downloadUrl = `https://${satelliteId}.icp0.io${template.data.fullPath}?token=${template.data.accessToken}`;
-      
-      const response = await fetchWithTimeout(downloadUrl);
+      const response = await fetchWithTimeout(template.data.url);
       return await response.blob();
     } catch (error) {
       console.error(`Failed to fetch template ${template.data.name}:`, error);

@@ -74,7 +74,7 @@ const FileList: FC<FileListProps> = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { incrementDocumentUsage, showUpgradePrompt, decrementTemplateCount } = useSubscription();
+  const { showUpgradePrompt, decrementTemplateCount } = useSubscription();
   const moveTemplateMutation = useMoveTemplateMutation();
   const updateTemplateMutation = useUpdateTemplateMutation();
   const toggleFavoriteMutation = useToggleFavoriteMutation();
@@ -145,7 +145,7 @@ const FileList: FC<FileListProps> = ({
           collection: 'download_requests',
           key: requestKey,
         });
-debugger;
+
         if (doc && doc.data.status !== 'pending') {
           requestDoc = doc;
           break;
@@ -157,7 +157,7 @@ debugger;
         showErrorToast(t('fileList.serverBusy'));
         return;
       }
-debugger;
+
       // 4. Handle rejection
       if (requestDoc.data.status === 'rejected') {
         const error = requestDoc.data.error;

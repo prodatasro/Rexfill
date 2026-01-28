@@ -2,7 +2,6 @@ import { FC, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Save, Settings, Zap, Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { nanoid } from 'nanoid';
 import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import { showErrorToast, showWarningToast, showSuccessToast } from '../../utils/toast';
@@ -15,6 +14,7 @@ import { uploadFileWithTimeout, setDocWithTimeout, deleteAssetWithTimeout } from
 import { TimeoutError } from '../../utils/fetchWithTimeout';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth, useSubscription } from '../../contexts';
+import { useUserProfile } from '../../contexts/UserProfileContext';
 
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;
@@ -41,6 +41,7 @@ interface UploadProgress {
 const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, onSaveAndProcess, selectedFolderId, folderTree, compact = false }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { isAdmin } = useUserProfile();
   const { canUploadTemplate, incrementTemplateCount, showUpgradePrompt, plan, usage } = useSubscription();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
@@ -134,35 +135,36 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
 
     // Save or Save and Process mode - upload with folder
     
-    // Check subscription limits before uploading
-    const isUnlimited = plan.limits.maxTemplates === -1;
-    const availableSlots = isUnlimited ? Infinity : plan.limits.maxTemplates - usage.totalTemplates;
-    
-    if (!isUnlimited && selectedFiles.length > availableSlots) {
-      showErrorToast(
-        t('subscription.templateLimitExceeded', { 
-          available: availableSlots,
-          requested: selectedFiles.length 
-        }) || `You can upload ${availableSlots} more template(s). You're trying to upload ${selectedFiles.length}.`
-      );
-      showUpgradePrompt();
-      setUploadMode(null);
-      setSelectedFiles([]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+    // Check subscription limits before uploading (skip for admins)
+    if (!isAdmin) {
+      const isUnlimited = plan.limits.maxTemplates === -1;
+      const availableSlots = isUnlimited ? Infinity : plan.limits.maxTemplates - usage.totalTemplates;
+      if (!isUnlimited && selectedFiles.length > availableSlots) {
+        showErrorToast(
+          t('subscription.templateLimitExceeded', { 
+            available: availableSlots,
+            requested: selectedFiles.length 
+          }) || `You can upload ${availableSlots} more template(s). You're trying to upload ${selectedFiles.length}.`
+        );
+        showUpgradePrompt();
+        setUploadMode(null);
+        setSelectedFiles([]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
       }
-      return;
-    }
 
-    if (!canUploadTemplate()) {
-      showErrorToast(t('subscription.templateLimitReached'));
-      showUpgradePrompt();
-      setUploadMode(null);
-      setSelectedFiles([]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      if (!canUploadTemplate()) {
+        showErrorToast(t('subscription.templateLimitReached'));
+        showUpgradePrompt();
+        setUploadMode(null);
+        setSelectedFiles([]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
       }
-      return;
     }
 
     setUploading(true);
@@ -237,14 +239,10 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             status: 'uploading'
           });
 
-          // Generate secure access token for URL obscurity
-          const accessToken = nanoid(32);
-
           const result = await uploadFileWithTimeout({
             data: file,
             collection: 'templates',
-            filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath,
-            token: accessToken
+            filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
           });
 
           // Save fullPath for potential rollback
@@ -267,8 +265,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
                 data: {
                   ...templateData,
                   fullPath: result.fullPath,
-                  accessToken: accessToken,
-                  url: undefined // Deprecated field
+                  url: result.downloadUrl
                 }
               }
             });

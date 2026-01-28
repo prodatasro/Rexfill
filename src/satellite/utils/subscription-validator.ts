@@ -92,7 +92,7 @@ export async function getAdminOverride(userId: string): Promise<AdminOverride | 
 }
 
 /**
- * Resolve effective plan limits with priority: admin override > subscription > free tier
+ * Resolve effective plan limits with priority: platform admin > admin override > subscription > free tier
  */
 export async function getEffectivePlanLimits(userId: string): Promise<EffectivePlanLimits> {
   // Default free tier limits
@@ -108,7 +108,23 @@ export async function getEffectivePlanLimits(userId: string): Promise<EffectiveP
     source: 'free_tier',
   };
 
-  // Check for admin override first (highest priority)
+  // Check if user is platform admin (highest priority - unlimited access)
+  const isAdmin = await isPlatformAdmin(userId);
+  if (isAdmin) {
+    return {
+      documentsPerDay: -1,
+      documentsPerMonth: -1,
+      bulkExportsPerDay: -1,
+      maxTemplates: -1,
+      maxFileSize: 1000, // Very high limit for admins
+      batchProcessing: true,
+      prioritySupport: true,
+      planId: 'admin',
+      source: 'admin_override',
+    };
+  }
+
+  // Check for admin override (second priority)
   const override = await getAdminOverride(userId);
   if (override?.overrideQuotas) {
     const subscription = await getUserSubscription(userId);
@@ -294,13 +310,39 @@ export async function validateTemplateCount(userId: string): Promise<{ valid: bo
 
   // Count user's current templates
   try {
+    // Get all templates
     const { items } = await listDocsStore({
       caller: id(),
       collection: 'templates_meta',
       params: {}
     });
 
-    const currentCount = items.length;
+    // Get all admins to check if this user is an admin
+    const { items: admins } = await listDocsStore({
+      caller: id(),
+      collection: 'platform_admins',
+      params: {}
+    });
+    const adminIds = new Set(admins.map(([key]) => key));
+
+    // Platform admins have unlimited templates
+    if (adminIds.has(userId)) {
+      return { valid: true, current: 0, limit: -1 };
+    }
+
+    // Count only templates owned by this user
+    // In satellite context, filter by key matching user's principal
+    const currentCount = items.filter(([key, doc]) => {
+      // Templates are stored with owner info in the key or we check the owner principal
+      // Since owner is a Principal type, we need to convert and compare
+      try {
+        const ownerPrincipal = Principal.from(doc.owner).toText();
+        return ownerPrincipal === userId;
+      } catch {
+        // If owner parsing fails, skip this template
+        return false;
+      }
+    }).length;
 
     if (currentCount >= limits.maxTemplates) {
       return {

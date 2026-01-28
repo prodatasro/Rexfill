@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from 'react';
 import { getDoc, setDoc, listDocs } from '@junobuild/core';
 import { useAuth } from './AuthContext';
+import { useUserProfile } from './UserProfileContext';
 import { SUBSCRIPTION_PLANS, SubscriptionPlan, isUnlimited } from '../config/plans';
 import { SubscriptionData, UsageSummary, PlanId, SubscriptionType } from '../types/subscription';
 import { logActivity } from '../utils/activityLogger';
@@ -36,6 +37,7 @@ interface SubscriptionProviderProps {
 
 export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const { isAdmin } = useUserProfile();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [individualSubscription, setIndividualSubscription] = useState<SubscriptionData | null>(null);
   const [organizationSubscription, setOrganizationSubscription] = useState<SubscriptionData | null>(null);
@@ -159,14 +161,23 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
           setSubscription(userIndividualSub);
         }
 
-        // Load usage from Juno datastore (read-only)
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        const usageDoc = await getDoc({
-          collection: 'usage',
-          key: `${user.key}_${today}`,
-        });
-debugger;
-        if (usageDoc) {
+        // Skip loading usage for admins (they have unlimited access)
+        if (isAdmin) {
+          setUsage({
+            documentsToday: 0,
+            documentsThisMonth: 0,
+            totalTemplates: 0,
+            lastUpdated: Date.now(),
+          });
+        } else {
+          // Load usage from Juno datastore (read-only)
+          const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+          const usageDoc = await getDoc({
+            collection: 'usage',
+            key: `${user.key}_${today}`,
+          });
+
+          if (usageDoc) {
           const usageData = usageDoc.data as any;
           
           // Calculate monthly usage by querying all docs for current month
@@ -214,6 +225,7 @@ debugger;
             totalTemplates: templateDocs.items.length,
             lastUpdated: Date.now(),
           });
+          }
         }
       } catch (error) {
         console.error('Failed to load subscription data:', error);
@@ -235,7 +247,7 @@ debugger;
     };
 
     loadSubscriptionData();
-  }, [user]);
+  }, [user, isAdmin]);
 
   // Listen for Paddle checkout completion events
   useEffect(() => {
@@ -292,11 +304,12 @@ debugger;
    * @see src/satellite/index.ts for server-side enforcement
    */
   const canProcessDocument = useCallback(() => {
+    if (isAdmin) return true; // Admins have unlimited access
     if (isUnlimited(plan.limits.documentsPerDay)) return true;
     if (usage.documentsToday >= plan.limits.documentsPerDay) return false;
     if (!isUnlimited(plan.limits.documentsPerMonth) && usage.documentsThisMonth >= plan.limits.documentsPerMonth) return false;
     return true;
-  }, [plan, usage]);
+  }, [plan, usage, isAdmin]);
 
   /**
    * UI hint only - optimistic check for user experience
@@ -304,9 +317,10 @@ debugger;
    * @see src/satellite/index.ts for server-side enforcement
    */
   const canUploadTemplate = useCallback(() => {
+    if (isAdmin) return true; // Admins have unlimited access
     if (isUnlimited(plan.limits.maxTemplates)) return true;
     return usage.totalTemplates < plan.limits.maxTemplates;
-  }, [plan, usage]);
+  }, [plan, usage, isAdmin]);
 
   /**
    * REMOVED: Usage increments now happen server-side only
@@ -349,6 +363,9 @@ debugger;
   }, [user]);
 
   const checkLimits = useCallback(() => {
+    // Admins have no limits
+    if (isAdmin) return { withinLimits: true };
+    
     // Check daily limit
     if (!isUnlimited(plan.limits.documentsPerDay)) {
       const remainingToday = plan.limits.documentsPerDay - usage.documentsToday;
@@ -369,7 +386,7 @@ debugger;
     }
 
     return { withinLimits: true };
-  }, [plan, usage]);
+  }, [plan, usage, isAdmin]);
 
   const showUpgradePrompt = useCallback(() => {
     setUpgradePromptVisible(true);
@@ -381,7 +398,18 @@ debugger;
 
   const refreshUsage = useCallback(async () => {
     if (!user) return;
-debugger;
+    
+    // Skip loading usage for admins
+    if (isAdmin) {
+      setUsage({
+        documentsToday: 0,
+        documentsThisMonth: 0,
+        totalTemplates: 0,
+        lastUpdated: Date.now(),
+      });
+      return;
+    }
+    
     try {
       const today = new Date().toISOString().split('T')[0];
       const usageDoc = await getDoc({
@@ -426,7 +454,7 @@ debugger;
     } catch (error) {
       console.error('Failed to refresh usage:', error);
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   const updateSubscription = useCallback(async (planId: PlanId, paddleData?: { subscriptionId: string; customerId: string }) => {
     if (!user) return;

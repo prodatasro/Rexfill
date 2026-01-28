@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSubscription } from '../../contexts/SubscriptionContext';
+import { useUserProfile } from '../../contexts/UserProfileContext';
 import { isUnlimited } from '../../config/plans';
 
 interface UsageMeterProps {
@@ -10,9 +11,10 @@ interface UsageMeterProps {
 const UsageMeter: FC<UsageMeterProps> = ({ compact = false }) => {
   const { t } = useTranslation();
   const { plan, usage } = useSubscription();
+  const { isAdmin } = useUserProfile();
 
   const dailyLimit = plan.limits.documentsPerDay;
-  const isUnlimitedDaily = isUnlimited(dailyLimit);
+  const isUnlimitedDaily = isAdmin || isUnlimited(dailyLimit);
 
   const usedToday = usage.documentsToday;
   const percentage = isUnlimitedDaily ? 0 : Math.min((usedToday / dailyLimit) * 100, 100);
@@ -36,7 +38,7 @@ const UsageMeter: FC<UsageMeterProps> = ({ compact = false }) => {
         </div>
         <span className="text-xs text-slate-500 dark:text-slate-400">
           {isUnlimitedDaily
-            ? t('subscription.usage.unlimited')
+            ? (isAdmin ? `${usedToday} / ∞` : t('subscription.usage.unlimited'))
             : `${usedToday}/${dailyLimit}`}
         </span>
       </div>
@@ -51,7 +53,7 @@ const UsageMeter: FC<UsageMeterProps> = ({ compact = false }) => {
         </span>
         <span className="font-medium text-slate-900 dark:text-white">
           {isUnlimitedDaily
-            ? t('subscription.usage.unlimited')
+            ? (isAdmin ? `${usedToday} / ∞` : t('subscription.usage.unlimited'))
             : t('subscription.usage.documentsProcessed', {
                 used: usedToday,
                 limit: dailyLimit,

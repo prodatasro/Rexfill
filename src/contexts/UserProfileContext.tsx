@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, FC, useCallback } from 'react';
-import { uploadFile } from '@junobuild/core';
+import { uploadFile, listDocs } from '@junobuild/core';
 import { useAuth } from './AuthContext';
 import { UserProfile, UserProfileData } from '../types';
 import { getDocWithTimeout, setDocWithTimeout } from '../utils/junoWithTimeout';
@@ -9,6 +9,7 @@ import { logActivity } from '../utils/activityLogger';
 interface UserProfileContextType {
   profile: UserProfile | null;
   loading: boolean;
+  isAdmin: boolean;
   updateProfile: (data: Partial<UserProfileData>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   removeAvatar: () => Promise<void>;
@@ -81,59 +82,158 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Load profile when user changes
   useEffect(() => {
     if (!user) {
       setProfile(null);
       setLoading(false);
+      setIsAdmin(false);
       return;
     }
 
     const loadProfile = async () => {
       try {
         setLoading(true);
+        
+        // Check if user is a platform admin
+        let adminStatus = false;
+        try {
+          const { items: admins } = await listDocs({
+            collection: 'platform_admins',
+          });
+          adminStatus = admins.some(admin => admin.key === user.key);
+        } catch (error) {
+          console.error('Failed to check admin status:', error);
+        }
+        
+        setIsAdmin(adminStatus);
+        
         const doc = await getDocWithTimeout<UserProfileData>({
           collection: 'user_profiles',
           key: user.key,
         });
         
         if (doc) {
-          setProfile(doc);
+          // Update profile with current admin status if it's changed
+          if (doc.data.isAdmin !== adminStatus) {
+            // Retry logic to handle version conflicts
+            let retryCount = 0;
+            const maxRetries = 3;
+            let success = false;
+            
+            while (!success && retryCount < maxRetries) {
+              try {
+                // Fetch the latest version before updating to avoid version conflicts
+                const latestDoc = await getDocWithTimeout<UserProfileData>({
+                  collection: 'user_profiles',
+                  key: user.key,
+                });
+                
+                if (!latestDoc) {
+                  throw new Error('Profile not found during update');
+                }
+                
+                const updatedProfile = {
+                  ...latestDoc,
+                  data: {
+                    ...latestDoc.data,
+                    isAdmin: adminStatus,
+                  },
+                };
+                
+                await setDocWithTimeout({
+                  collection: 'user_profiles',
+                  doc: updatedProfile,
+                });
+                
+                setProfile(updatedProfile);
+                success = true;
+              } catch (error: any) {
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                  console.error('Failed to update admin status after retries:', error);
+                  // Still set the profile with the original data to allow the user to continue
+                  setProfile(doc);
+                } else {
+                  // Wait before retrying (exponential backoff)
+                  await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+                }
+              }
+            }
+          } else {
+            setProfile(doc);
+          }
         } else {
           // Profile doesn't exist, create default one
           console.log('Creating default profile for user:', user.key);
-          const defaultProfile: UserProfile = {
-            key: user.key,
-            owner: user.key,
-            data: {
-              displayName: '',
-              preferences: {},
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            },
-            created_at: BigInt(Date.now() * 1000000),
-            updated_at: BigInt(Date.now() * 1000000),
-            version: BigInt(1),
-          };
+          
+          // Retry logic to handle potential race conditions during creation
+          let retryCount = 0;
+          const maxRetries = 3;
+          let created = false;
+          
+          while (!created && retryCount < maxRetries) {
+            try {
+              // Double-check profile doesn't exist (race condition protection)
+              const existingDoc = await getDocWithTimeout<UserProfileData>({
+                collection: 'user_profiles',
+                key: user.key,
+              });
+              
+              if (existingDoc) {
+                // Profile was created by another process, use it
+                console.log('Profile already exists (race condition), using existing profile');
+                setProfile(existingDoc);
+                created = true;
+                break;
+              }
+              
+              const defaultProfile: UserProfile = {
+                key: user.key,
+                owner: user.key,
+                data: {
+                  displayName: '',
+                  preferences: {},
+                  isAdmin: adminStatus,
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                },
+                created_at: BigInt(Date.now() * 1000000),
+                updated_at: BigInt(Date.now() * 1000000),
+                version: undefined, // Let Juno assign the version
+              };
 
-          await setDocWithTimeout({
-            collection: 'user_profiles',
-            doc: defaultProfile,
-          });
+              await setDocWithTimeout({
+                collection: 'user_profiles',
+                doc: defaultProfile,
+              });
 
-          setProfile(defaultProfile);
+              setProfile(defaultProfile);
+              created = true;
 
-          // Log profile creation
-          await logActivity({
-            action: 'created',
-            resource_type: 'user_profile',
-            resource_id: user.key,
-            resource_name: 'User Profile',
-            created_by: user.key,
-            modified_by: user.key,
-            success: true,
-          });
+              // Log profile creation
+              await logActivity({
+                action: 'created',
+                resource_type: 'user_profile',
+                resource_id: user.key,
+                resource_name: 'User Profile',
+                created_by: user.key,
+                modified_by: user.key,
+                success: true,
+              });
+            } catch (error: any) {
+              retryCount++;
+              if (retryCount >= maxRetries) {
+                console.error('Failed to create profile after retries:', error);
+                throw error;
+              } else {
+                // Wait before retrying (exponential backoff)
+                await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to load/create profile:', error);
@@ -269,6 +369,7 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
       value={{
         profile,
         loading,
+        isAdmin,
         updateProfile,
         uploadAvatar,
         removeAvatar,

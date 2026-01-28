@@ -22,7 +22,6 @@ import {
   setDocStore,
 } from '@junobuild/functions/sdk';
 
-import { id } from '@junobuild/functions/ic-cdk';
 import { Principal } from '@dfinity/principal';
 
 // Import webhook handlers
@@ -36,6 +35,7 @@ import {
   validateDailyQuota,
   validateAndIncrementBulkExport,
   validateAndIncrementDownload,
+  validateTemplateCount,
 } from './utils/subscription-validator';
 import { checkRateLimit } from './utils/rate-limiter';
 import {
@@ -88,7 +88,7 @@ export const onSetDoc = defineHook<OnSetDoc>({
     if (isAdmin) {
       console.log('✅ [DOWNLOAD_REQUEST] Admin approved request');
       await setDocStore({
-        caller: id(),
+        caller,
         collection: 'download_requests',
         key: data.key,
         doc: {
@@ -114,7 +114,7 @@ export const onSetDoc = defineHook<OnSetDoc>({
       if (!subscriptionStatus.isActive) {
         console.log('❌ [DOWNLOAD_REQUEST] Rejected - subscription expired');
         await setDocStore({
-          caller: id(),
+          caller,
           collection: 'download_requests',
           key: data.key,
           doc: {
@@ -151,7 +151,7 @@ export const onSetDoc = defineHook<OnSetDoc>({
       if (!rateLimitCheck.allowed) {
         console.log('❌ [DOWNLOAD_REQUEST] Rejected - rate limit exceeded');
         await setDocStore({
-          caller: id(),
+          caller,
           collection: 'download_requests',
           key: data.key,
           doc: {
@@ -193,7 +193,7 @@ export const onSetDoc = defineHook<OnSetDoc>({
       if (!validationResult.success) {
         console.log('❌ [DOWNLOAD_REQUEST] Rejected - quota exceeded');
         await setDocStore({
-          caller: id(),
+          caller,
           collection: 'download_requests',
           key: data.key,
           doc: {
@@ -222,7 +222,7 @@ export const onSetDoc = defineHook<OnSetDoc>({
       // 4. All validations passed - approve the request
       console.log('✅ [DOWNLOAD_REQUEST] All validations passed - approving request');
       await setDocStore({
-        caller: id(),
+        caller,
         collection: 'download_requests',
         key: data.key,
         doc: {
@@ -250,7 +250,7 @@ export const onSetDoc = defineHook<OnSetDoc>({
 
       console.log('❌ [DOWNLOAD_REQUEST] Rejected - server error');
       await setDocStore({
-        caller: id(),
+        caller,
         collection: 'download_requests',
         key: data.key,
         doc: {
@@ -424,7 +424,28 @@ export const assertDeleteDoc = defineAssert<AssertDeleteDoc>({
 
 export const assertUploadAsset = defineAssert<AssertUploadAsset>({
   collections: [],
-  assert: (_context) => {}
+  assert: async (context) => {
+    const { caller } = context;
+    const userId = Principal.from(caller).toText();
+
+    // Platform admins bypass all limits
+    const isAdmin = await isPlatformAdmin(userId);
+    if (isAdmin) {
+      return;
+    }
+
+    // Check subscription status
+    const subscriptionStatus = await getSubscriptionStatus(userId);
+    if (!subscriptionStatus.isActive) {
+      throw new Error('Subscription expired or inactive');
+    }
+
+    // Validate template count limit
+    const templateCheck = await validateTemplateCount(userId);
+    if (!templateCheck.valid) {
+      throw new Error(templateCheck.message || 'Template limit reached');
+    }
+  }
 });
 
 export const assertDeleteAsset = defineAssert<AssertDeleteAsset>({
