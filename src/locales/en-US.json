@@ -182,6 +182,7 @@
     "internetIdentity": "Internet Identity",
     "internetIdentityDesc": "Secure blockchain authentication",
     "google": "Google",
+    "googleDesc": "Sign in with your Google account",
     "comingSoon": "Coming soon"
   },
   "dashboard": {

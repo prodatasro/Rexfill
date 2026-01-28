@@ -11,7 +11,7 @@ interface LoginDialogProps {
 }
 
 const LoginDialog: FC<LoginDialogProps> = ({ isOpen, onClose }) => {
-  const { login, user } = useAuth();
+  const { login, loginWithGoogle, user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +33,19 @@ const LoginDialog: FC<LoginDialogProps> = ({ isOpen, onClose }) => {
     try {
       await login();
       // Navigation will happen via the useEffect when user state updates
+    } catch (error) {
+      // Error handling is done in AuthContext
+      loginAttemptedRef.current = false;
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    loginAttemptedRef.current = true;
+    try {
+      await loginWithGoogle();
+      // Google redirects to callback, so we don't need to handle navigation here
     } catch (error) {
       // Error handling is done in AuthContext
       loginAttemptedRef.current = false;
@@ -96,8 +109,9 @@ const LoginDialog: FC<LoginDialogProps> = ({ isOpen, onClose }) => {
 
           {/* Google - Coming Soon */}
           <button
-            disabled
-            className="w-full flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg opacity-50 cursor-not-allowed"
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="w-full flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -124,7 +138,7 @@ const LoginDialog: FC<LoginDialogProps> = ({ isOpen, onClose }) => {
                 {t('loginDialog.google')}
               </div>
               <div className="text-sm text-slate-500 dark:text-slate-400">
-                {t('loginDialog.comingSoon')}
+                {t('loginDialog.googleDesc')}
               </div>
             </div>
           </button>

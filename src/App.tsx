@@ -30,6 +30,7 @@ const GuidesPage = lazy(() => import("./pages/public/GuidesPage"));
 const ContactPage = lazy(() => import("./pages/public/ContactPage"));
 const PrivacyPage = lazy(() => import("./pages/public/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/public/TermsPage"));
+const GoogleCallbackPage = lazy(() => import("./pages/public/GoogleCallbackPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 // Configure QueryClient with sensible defaults for Juno
@@ -82,6 +83,9 @@ const App: FC = () => {
                                     <Route path="/privacy" element={<PrivacyPage />} />
                                     <Route path="/terms" element={<TermsPage />} />
                                   </Route>
+
+                                  {/* Google OAuth callback - outside layout to avoid navigation interference */}
+                                  <Route path="/auth/callback/google" element={<GoogleCallbackPage />} />
 
                                   {/* Authenticated app routes */}
                                   <Route path="/app/*" element={<AppLayout />} />

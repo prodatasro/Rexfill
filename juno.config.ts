@@ -67,7 +67,7 @@ export default defineConfig(({ mode }) => ({
     authentication: {
       google: {
         clientId: mode === "development"
-          ? "YOUR_DEVELOPMENT_CLIENT_ID.apps.googleusercontent.com"
+          ? "968488381684-58c8vsnsaae26g6gca08ahh1ghjd9npg.apps.googleusercontent.com"
           : "YOUR_PRODUCTION_CLIENT_ID.apps.googleusercontent.com"
       }
     }

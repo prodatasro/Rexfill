@@ -55,8 +55,7 @@
     "subtitle": "Vyberte spôsob prihlásenia",
     "internetIdentity": "Internet Identity",
     "internetIdentityDesc": "Bezpečné prihlásenie cez blockchain",
-    "google": "Google",
-    "comingSoon": "Čoskoro"
+    "google": "Google",    "googleDesc": "Prihláste sa cez Google účet",    "comingSoon": "Čoskoro"
   },
   "dashboard": {
     "title": "Vaše Word šablóny",
