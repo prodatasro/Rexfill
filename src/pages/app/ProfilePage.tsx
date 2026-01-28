@@ -1,5 +1,5 @@
-import { FC, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { FC, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts';
@@ -15,14 +15,28 @@ import {
 } from '../../components/profile';
 import type { ProfileSection } from '../../components/profile/ProfileNavigation';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { ConfirmDialog } from '../../components/dialogs';
 
 const ProfilePage: FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { user } = useAuth();
   const { profile, loading } = useUserProfile();
   
   const [activeSection, setActiveSection] = useState<ProfileSection>('profile');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+
+  // Handle success parameter from Paddle redirect
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('success') === 'true') {
+      setActiveSection('subscription');
+      setShowSuccessDialog(true);
+      // Clean up URL
+      window.history.replaceState({}, '', '/app/profile');
+    }
+  }, [location.search]);
 
   if (loading) {
     return (
@@ -104,6 +118,17 @@ const ProfilePage: FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Success Dialog */}
+      <ConfirmDialog
+        isOpen={showSuccessDialog}
+        title={t('subscription.success.title', 'Subscription Activated!')}
+        message={t('subscription.success.message', 'Your subscription has been successfully activated. You can now enjoy all the benefits of your new plan.')}
+        confirmLabel={t('common.ok', 'OK')}
+        onConfirm={() => setShowSuccessDialog(false)}
+        onCancel={() => setShowSuccessDialog(false)}
+        variant="info"
+      />
     </div>
   );
 };

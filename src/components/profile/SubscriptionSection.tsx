@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState } from 'react';
 import { CreditCard, Calendar, AlertCircle, CheckCircle, XCircle, ArrowUpRight, Loader2, Building2, AlertTriangle, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSubscription } from '../../contexts/SubscriptionContext';
@@ -17,16 +17,6 @@ export const SubscriptionSection: FC = () => {
   const { currentOrganization, exportOrganizationData } = useOrganization();
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-
-  // Handle success parameter from Paddle redirect
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('success') === 'true') {
-      showSuccessToast(t('subscription.checkoutSuccess') || 'Subscription activated successfully!');
-      // Clean up URL
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [t]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString(undefined, {

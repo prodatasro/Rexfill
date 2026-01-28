@@ -237,7 +237,7 @@ export const openCheckout = async (
         theme: options?.theme || 'light',
         locale: options?.locale || 'en',
         allowLogout: false,
-        successUrl: `${window.location.origin}/app/subscription?success=true`,
+        successUrl: `${window.location.origin}/app/profile?success=true`,
       },
     });
   } catch (error) {
