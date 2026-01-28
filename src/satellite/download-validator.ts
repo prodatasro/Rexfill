@@ -50,7 +50,7 @@ export interface ValidateDownloadResponse {
 /**
  * Validate download request and return storage URL if allowed
  */
-export async function validateDownload(request: Request): Promise<Response> {
+export async function validateDownload(request: Request, caller: Uint8Array): Promise<Response> {
   try {
     const body = await request.json() as ValidateDownloadRequest;
     const { templateId, userId } = body;
@@ -151,7 +151,7 @@ export async function validateDownload(request: Request): Promise<Response> {
     }
 
     // Apply rate limiting
-    const rateLimitCheck = await checkRateLimit(userId, 'download', limits.planId);
+    const rateLimitCheck = await checkRateLimit(userId, 'download', caller, limits.planId);
     if (!rateLimitCheck.allowed) {
       await logRateLimitHit(userId, 'download', {
         limit: 10, // From rate-limiter config

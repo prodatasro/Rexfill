@@ -98,7 +98,7 @@ export const SubscriptionSection: FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
+      <div className="flex items-center justify-center min-h-50">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
       </div>
     );

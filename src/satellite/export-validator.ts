@@ -64,7 +64,7 @@ const EXPORT_TIER_LIMITS: Record<string, number> = {
 /**
  * Validate bulk export request
  */
-export async function validateBulkExport(request: Request): Promise<Response> {
+export async function validateBulkExport(request: Request, caller: Uint8Array): Promise<Response> {
   try {
     const body = await request.json() as ValidateExportRequest;
     const { templateIds, userId } = body;
@@ -178,7 +178,7 @@ export async function validateBulkExport(request: Request): Promise<Response> {
     }
 
     // Apply strict rate limiting for exports
-    const rateLimitCheck = await checkRateLimit(userId, 'export', limits.planId);
+    const rateLimitCheck = await checkRateLimit(userId, 'export', caller, limits.planId);
     if (!rateLimitCheck.allowed) {
       await logRateLimitHit(userId, 'export', {
         limit: 2, // From rate-limiter config

@@ -332,7 +332,7 @@ export async function validateTemplateCount(userId: string): Promise<{ valid: bo
 
     // Count only templates owned by this user
     // In satellite context, filter by key matching user's principal
-    const currentCount = items.filter(([key, doc]) => {
+    const currentCount = items.filter(([_key, doc]) => {
       // Templates are stored with owner info in the key or we check the owner principal
       // Since owner is a Principal type, we need to convert and compare
       try {
