@@ -1,8 +1,8 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Settings, CreditCard, Activity } from 'lucide-react';
+import { User, Settings, CreditCard, Activity, Database } from 'lucide-react';
 
-export type ProfileSection = 'profile' | 'settings' | 'subscription' | 'activity';
+export type ProfileSection = 'profile' | 'settings' | 'subscription' | 'activity' | 'data';
 
 interface ProfileNavigationProps {
   activeSection: ProfileSection;
@@ -16,6 +16,7 @@ export const ProfileNavigation: FC<ProfileNavigationProps> = ({ activeSection, o
     { id: 'profile', icon: User, labelKey: 'profile.nav.profile' },
     { id: 'settings', icon: Settings, labelKey: 'profile.nav.settings' },
     { id: 'subscription', icon: CreditCard, labelKey: 'profile.nav.subscription' },
+    { id: 'data', icon: Database, labelKey: 'profile.nav.data' },
     { id: 'activity', icon: Activity, labelKey: 'profile.nav.activity' },
   ];
 

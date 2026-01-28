@@ -157,6 +157,51 @@ export const getPlan = (planId: string): SubscriptionPlan => {
 
 export const isUnlimited = (value: number): boolean => value === -1;
 
+/**
+ * Map Paddle price ID to plan ID
+ * Price IDs come from environment variables (works in both client and satellite)
+ * Note: In satellite functions, use process.env instead of import.meta.env
+ */
+export const getPlanIdFromPaddlePrice = (priceId: string, env?: Record<string, string>): string => {
+  // Use provided env (for satellite) or import.meta.env (for client)
+  const getEnv = (key: string): string => {
+    if (env) return env[key] || '';
+    return import.meta.env[key] || '';
+  };
+
+  const priceMapping: Record<string, string> = {
+    // Individual plans - monthly
+    [getEnv('VITE_PADDLE_PRICE_STARTER_MONTHLY')]: 'starter',
+    [getEnv('VITE_PADDLE_PRICE_PROFESSIONAL_MONTHLY')]: 'professional',
+    [getEnv('VITE_PADDLE_PRICE_ENTERPRISE_MONTHLY')]: 'enterprise',
+    
+    // Individual plans - annual
+    [getEnv('VITE_PADDLE_PRICE_STARTER_ANNUAL')]: 'starter',
+    [getEnv('VITE_PADDLE_PRICE_PROFESSIONAL_ANNUAL')]: 'professional',
+    [getEnv('VITE_PADDLE_PRICE_ENTERPRISE_ANNUAL')]: 'enterprise',
+    
+    // Organization plans - monthly
+    [getEnv('VITE_PADDLE_PRICE_TEAM_MONTHLY')]: 'team',
+    [getEnv('VITE_PADDLE_PRICE_BUSINESS_MONTHLY')]: 'business',
+    [getEnv('VITE_PADDLE_PRICE_ENTERPRISE_ORG_MONTHLY')]: 'enterprise_org',
+    
+    // Organization plans - annual
+    [getEnv('VITE_PADDLE_PRICE_TEAM_ANNUAL')]: 'team',
+    [getEnv('VITE_PADDLE_PRICE_BUSINESS_ANNUAL')]: 'business',
+    [getEnv('VITE_PADDLE_PRICE_ENTERPRISE_ORG_ANNUAL')]: 'enterprise_org',
+  };
+
+  return priceMapping[priceId] || 'free';
+};
+
+/**
+ * Get seat count for a plan from its configuration
+ * Returns undefined for individual plans (no seats)
+ */
+export const getSeatsIncluded = (planId: string): number | undefined => {
+  return SUBSCRIPTION_PLANS[planId]?.limits.seatsIncluded;
+};
+
 // ==============================================================================
 // RATE LIMITS CONFIGURATION (Server-Side Enforcement)
 // ==============================================================================

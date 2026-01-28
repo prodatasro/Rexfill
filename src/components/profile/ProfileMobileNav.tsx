@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Settings, CreditCard, Activity, ChevronDown } from 'lucide-react';
+import { User, Settings, CreditCard, Activity, ChevronDown, Database } from 'lucide-react';
 import { ProfileSection } from './ProfileNavigation';
 
 interface ProfileMobileNavProps {
@@ -15,6 +15,7 @@ export const ProfileMobileNav: FC<ProfileMobileNavProps> = ({ activeSection, onS
     { id: 'profile', icon: User, labelKey: 'profile.nav.profile' },
     { id: 'settings', icon: Settings, labelKey: 'profile.nav.settings' },
     { id: 'subscription', icon: CreditCard, labelKey: 'profile.nav.subscription' },
+    { id: 'data', icon: Database, labelKey: 'profile.nav.data' },
     { id: 'activity', icon: Activity, labelKey: 'profile.nav.activity' },
   ];
 

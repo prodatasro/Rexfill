@@ -21,6 +21,7 @@ import {
   setDocStore,
   getDocStore,
 } from '@junobuild/functions/sdk';
+import { getPlanIdFromPaddlePrice, getSeatsIncluded, getPlan } from '../config/plans';
 import { recordSecurityEvent } from './utils/monitoring';
 import {
   notifySubscriptionCanceled,
@@ -84,51 +85,7 @@ interface PaddleWebhookEvent {
   };
 }
 
-/**
- * Map Paddle price ID to our plan ID
- * This should match the price IDs configured in your Paddle dashboard
- */
-function getPlanIdFromPriceId(priceId: string): string {
-  const priceMapping: Record<string, string> = {
-    // Individual plans
-    [process.env.VITE_PADDLE_PRICE_STARTER_MONTHLY || '']: 'starter',
-    [process.env.VITE_PADDLE_PRICE_STARTER_ANNUAL || '']: 'starter',
-    [process.env.VITE_PADDLE_PRICE_PROFESSIONAL_MONTHLY || '']: 'professional',
-    [process.env.VITE_PADDLE_PRICE_PROFESSIONAL_ANNUAL || '']: 'professional',
-    [process.env.VITE_PADDLE_PRICE_ENTERPRISE_MONTHLY || '']: 'enterprise',
-    [process.env.VITE_PADDLE_PRICE_ENTERPRISE_ANNUAL || '']: 'enterprise',
-    
-    // Organization plans
-    [process.env.VITE_PADDLE_PRICE_TEAM_MONTHLY || '']: 'team',
-    [process.env.VITE_PADDLE_PRICE_TEAM_ANNUAL || '']: 'team',
-    [process.env.VITE_PADDLE_PRICE_BUSINESS_MONTHLY || '']: 'business',
-    [process.env.VITE_PADDLE_PRICE_BUSINESS_ANNUAL || '']: 'business',
-    [process.env.VITE_PADDLE_PRICE_ENTERPRISE_ORG_MONTHLY || '']: 'enterprise_org',
-    [process.env.VITE_PADDLE_PRICE_ENTERPRISE_ORG_ANNUAL || '']: 'enterprise_org',
-  };
-
-  return priceMapping[priceId] || 'free';
-}
-
-/**
- * Determine subscription type (individual vs organization) from plan ID
- */
-function getSubscriptionType(planId: string): 'individual' | 'organization' {
-  const orgPlans = ['team', 'business', 'enterprise_org'];
-  return orgPlans.includes(planId) ? 'organization' : 'individual';
-}
-
-/**
- * Get seat count for organization plans
- */
-function getSeatsIncluded(planId: string): number | undefined {
-  const seatsMapping: Record<string, number> = {
-    'team': 5,
-    'business': 15,
-    'enterprise_org': 50,
-  };
-  return seatsMapping[planId];
-}
+// Helper functions now imported from centralized plans.ts config
 
 /**
  * Verify Paddle webhook signature using Web Crypto API
@@ -236,8 +193,8 @@ export async function paddleWebhook(request: Request): Promise<Response> {
       return new Response('Bad Request: Missing price ID', { status: 400 });
     }
 
-    const planId = getPlanIdFromPriceId(priceId);
-    const subscriptionType = getSubscriptionType(planId);
+    const planId = getPlanIdFromPaddlePrice(priceId, process.env as Record<string, string>);
+    const subscriptionType = getPlan(planId).type;
     const seatsIncluded = getSeatsIncluded(planId);
 
     // Handle different event types

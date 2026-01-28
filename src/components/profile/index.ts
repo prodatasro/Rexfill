@@ -5,4 +5,5 @@ export { ProfileInfo } from './ProfileInfo';
 export { AccountSettings } from './AccountSettings';
 export { SubscriptionSection } from './SubscriptionSection';
 export { ActivityLogSection } from './ActivityLogSection';
+export { DataManagementSection } from './DataManagementSection';
 

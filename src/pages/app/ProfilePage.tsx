@@ -11,6 +11,7 @@ import {
   AccountSettings,
   SubscriptionSection,
   ActivityLogSection,
+  DataManagementSection,
 } from '../../components/profile';
 import type { ProfileSection } from '../../components/profile/ProfileNavigation';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -56,6 +57,8 @@ const ProfilePage: FC = () => {
         return <AccountSettings />;
       case 'subscription':
         return <SubscriptionSection />;
+      case 'data':
+        return <DataManagementSection />;
       case 'activity':
         return <ActivityLogSection />;
       default:
