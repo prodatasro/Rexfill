@@ -78,7 +78,7 @@ export function useDeleteTemplateMutation() {
         await templateStorage.delete(template.data.fullPath);
       }
       // Delete metadata
-      await templateRepository.delete(template);
+      await templateRepository.delete(template.key);
       return template;
     },
     // Optimistic update - remove from cache immediately
@@ -224,19 +224,15 @@ export function useMoveTemplateMutation() {
     mutationFn: async ({
       template,
       newFolderId,
-      newFolderPath,
-      newFullPath,
     }: {
       template: Doc<WordTemplateData>;
       newFolderId: string | null;
-      newFolderPath: string;
-      newFullPath: string;
     }) => {
       // Use repository to move template
       const updatedTemplate = await templateRepository.moveToFolder(template.key, newFolderId);
       return updatedTemplate;
     },
-    onMutate: async ({ template, newFolderId, newFolderPath, newFullPath }) => {
+    onMutate: async ({ template, newFolderId }) => {
       await queryClient.cancelQueries({ queryKey: templateKeys.lists() });
 
       const previousTemplates = queryClient.getQueryData<Doc<WordTemplateData>[]>(
@@ -254,8 +250,6 @@ export function useMoveTemplateMutation() {
                   data: {
                     ...t.data,
                     folderId: newFolderId,
-                    folderPath: newFolderPath,
-                    fullPath: newFullPath,
                   },
                 }
               : t

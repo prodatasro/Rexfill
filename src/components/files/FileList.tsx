@@ -1,7 +1,7 @@
 import { FC, useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ClipboardList, Search, ChevronLeft, ChevronRight, X, Loader2, Star, Trash2, CheckSquare, Square } from 'lucide-react';
-import { Doc, setDoc, getDoc } from '@junobuild/core';
+import { Doc, setDoc, getDoc, deleteDoc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -184,10 +184,7 @@ const FileList: FC<FileListProps> = ({
       }
 
       // 5. Download approved - fetch template metadata to get download URL
-      const templateMeta = await getDoc<WordTemplateData>({
-        collection: 'templates_meta',
-        key: template.key,
-      });
+      const templateMeta = await templateRepository.get(template.key);
 
       if (!templateMeta || !templateMeta.data.url) {
         showErrorToast(t('fileList.downloadFailed'));
@@ -290,10 +287,7 @@ const FileList: FC<FileListProps> = ({
     try {
       // Get storage assets to find the correct fullPath
       // Juno storage fullPath includes collection prefix: /templates/folder/file.docx
-      const storageAssets = await listAssetsWithTimeout({
-        collection: 'templates',
-        filter: {}
-      });
+      const storageAssets = await templateStorage.list({});
 
       // Build possible keys to match against storage
       const possibleKeys = [
@@ -306,7 +300,7 @@ const FileList: FC<FileListProps> = ({
 
       // Find matching storage asset
       let storageAsset = null;
-      for (const asset of storageAssets.items) {
+      for (const asset of storageAssets) {
         const junoFullPath = asset.fullPath;
         const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
         const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
@@ -326,10 +320,7 @@ const FileList: FC<FileListProps> = ({
 
       if (storageAsset) {
         try {
-          await deleteAssetWithTimeout({
-            collection: 'templates',
-            fullPath: storageAsset.fullPath
-          });
+          await templateStorage.delete(storageAsset.fullPath);
           console.log(`Deleted asset: ${storageAsset.fullPath}`);
         } catch (assetError: any) {
           console.warn('Failed to delete asset from storage:', assetError);
@@ -339,10 +330,7 @@ const FileList: FC<FileListProps> = ({
       }
 
       // Delete metadata from datastore
-      await deleteDocWithTimeout({
-        collection: 'templates_meta',
-        doc: template
-      });
+      await templateRepository.delete(template.key);
 
       // Remove from recent templates list
       onRemoveFromRecent?.(template.key);
@@ -429,14 +417,11 @@ const FileList: FC<FileListProps> = ({
 
       const targetFolder = targetFolderId ? getFolderFromTree(targetFolderId) : null;
       const newFolderPath = targetFolder?.data.path || '/';
-      const newFullPath = buildTemplatePath(newFolderPath, templateToMove.data.name);
 
       // Use mutation to update template metadata
       await moveTemplateMutation.mutateAsync({
         template: templateToMove,
         newFolderId: targetFolderId,
-        newFolderPath,
-        newFullPath,
       });
 
       // Log successful move
@@ -650,10 +635,7 @@ const FileList: FC<FileListProps> = ({
 
     try {
       // Get all storage assets once
-      const storageAssets = await listAssetsWithTimeout({
-        collection: 'templates',
-        filter: {}
-      });
+      const storageAssets = await templateStorage.list({});
 
       let successCount = 0;
       let failCount = 0;
@@ -671,7 +653,7 @@ const FileList: FC<FileListProps> = ({
 
           // Find matching storage asset
           let storageAsset = null;
-          for (const asset of storageAssets.items) {
+          for (const asset of storageAssets) {
             const junoFullPath = asset.fullPath;
             const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
             const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
@@ -691,20 +673,14 @@ const FileList: FC<FileListProps> = ({
 
           if (storageAsset) {
             try {
-              await deleteAssetWithTimeout({
-                collection: 'templates',
-                fullPath: storageAsset.fullPath
-              });
+              await templateStorage.delete(storageAsset.fullPath);
             } catch (assetError: any) {
               console.warn('Failed to delete asset from storage:', assetError);
             }
           }
 
           // Delete metadata from datastore
-          await deleteDocWithTimeout({
-            collection: 'templates_meta',
-            doc: template
-          });
+          await templateRepository.delete(template.key);
 
           // Remove from recent templates list
           onRemoveFromRecent?.(template.key);

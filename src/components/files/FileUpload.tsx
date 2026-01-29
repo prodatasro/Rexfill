@@ -239,14 +239,15 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             status: 'uploading'
           });
 
-          const result = await uploadFileWithTimeout({
-            data: file,
-            collection: 'templates',
-            filename: fullPath.startsWith('/') ? fullPath.substring(1) : fullPath
-          });
+          const storagePath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
+          await templateStorage.upload(
+            storagePath,
+            file
+          );
 
-          // Save fullPath for potential rollback
-          const uploadedAssetPath = result.fullPath;
+          // Juno automatically generates download URL based on storage path
+          const downloadUrl = `https://${process.env.VITE_JUNO_SATELLITE_ID || window.location.hostname}/storage/templates/${storagePath}`;
+          const uploadedAssetPath = `/${storagePath}`;
 
           // Update progress - saving metadata
           setUploadProgress({
@@ -257,24 +258,24 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
           });
 
           try {
+            // Generate unique key for template
+            const templateKey = storagePath.replace(/\//g, '_').replace(/\./g, '_');
+            
             // Store template metadata in datastore
-            await setDocWithTimeout({
-              collection: 'templates_meta',
-              doc: {
-                key: result.name, // Use the uploaded file name as key
-                data: {
-                  ...templateData,
-                  fullPath: result.fullPath,
-                  url: result.downloadUrl
-                }
+            await templateRepository.create(
+              templateKey,
+              {
+                ...templateData,
+                fullPath: storagePath,
+                url: downloadUrl
               }
-            });
+            );
 
             // Invalidate cache to refetch templates
             queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
 
             // Track the template key for saveAndProcess mode
-            savedTemplateKey = result.name;
+            savedTemplateKey = templateKey;
             successCount++;
 
             // Increment template count (fire-and-forget)
@@ -283,10 +284,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             // Rollback: Delete from storage
             console.error(`Metadata save failed for ${file.name}, rolling back:`, metadataError);
             try {
-              await deleteAssetWithTimeout({
-                collection: 'templates',
-                fullPath: uploadedAssetPath
-              });
+              await templateStorage.delete(uploadedAssetPath);
             } catch (rollbackError) {
               console.error('Rollback failed:', rollbackError);
             }
@@ -299,7 +297,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
             await logActivity({
               action: 'created',
               resource_type: 'template',
-              resource_id: result.name,
+              resource_id: savedTemplateKey || 'unknown',
               resource_name: file.name,
               created_by: user?.key || 'unknown',
               modified_by: user?.key || 'unknown',

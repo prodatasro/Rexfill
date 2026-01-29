@@ -1,5 +1,4 @@
 import type { AdminAction, PlatformAdmin } from '../types';
-import type { UserProfileData } from '../types/user-profile';
 import { adminRepository, userProfileRepository } from '../dal';
 import { getDoc } from '@junobuild/core';
 

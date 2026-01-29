@@ -191,16 +191,13 @@ const ImportDialog: FC<ImportDialogProps> = ({
               continue;
             } else if (conflictResolution === 'overwrite') {
               // Update existing folder
-              await setDocWithTimeout({
-                collection: 'folders',
-                doc: {
-                  ...existingConflict.existingFolder,
-                  data: {
-                    ...importFolder.data,
-                    updatedAt: Date.now(),
-                  },
-                },
-              });
+              await folderRepository.update(
+                existingConflict.existingFolder.key,
+                {
+                  ...importFolder.data,
+                  updatedAt: Date.now(),
+                }
+              );
               folderKeyMapping.set(importFolder.key, existingConflict.existingFolder.key);
               stats.importedFolders++;
               continue;
@@ -233,20 +230,17 @@ const ImportDialog: FC<ImportDialogProps> = ({
             ? folderKeyMapping.get(importFolder.data.parentId) || importFolder.data.parentId
             : null;
 
-          await setDocWithTimeout({
-            collection: 'folders',
-            doc: {
-              key: newKey,
-              data: {
-                ...importFolder.data,
-                name: newName,
-                path: newPath,
-                parentId: mappedParentId,
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-              } as FolderData,
-            },
-          });
+          await folderRepository.create(
+            newKey,
+            {
+              ...importFolder.data,
+              name: newName,
+              path: newPath,
+              parentId: mappedParentId,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            } as FolderData
+          );
 
           folderKeyMapping.set(importFolder.key, newKey);
           stats.importedFolders++;
@@ -288,25 +282,25 @@ const ImportDialog: FC<ImportDialogProps> = ({
                 existingConflict.existingTemplate.data.fullPath ||
                   existingConflict.existingTemplate.key
               );
-              const result = await uploadFileWithTimeout({
-                data: file,
-                collection: 'templates',
-                filename: storagePath,
-              });
+              await templateStorage.upload(
+                storagePath,
+                file
+              );
+
+              // Juno automatically generates download URL based on storage path
+              // Format: https://{satellite}.icp0.io/storage/templates/{path}
+              const downloadUrl = `https://${process.env.VITE_JUNO_SATELLITE_ID || window.location.hostname}/storage/templates/${storagePath}`;
 
               // Update metadata
-              await setDocWithTimeout({
-                collection: 'templates_meta',
-                doc: {
-                  ...existingConflict.existingTemplate,
-                  data: {
-                    ...existingConflict.existingTemplate.data,
-                    ...importTemplate.data,
-                    url: result.downloadUrl,
-                    uploadedAt: Date.now(),
-                  },
-                },
-              });
+              await templateRepository.update(
+                existingConflict.existingTemplate.key,
+                {
+                  ...existingConflict.existingTemplate.data,
+                  ...importTemplate.data,
+                  url: downloadUrl,
+                  uploadedAt: Date.now(),
+                }
+              );
 
               stats.importedTemplates++;
 
@@ -380,29 +374,29 @@ const ImportDialog: FC<ImportDialogProps> = ({
 
           // Upload file
           const renamedFile = new File([file], newName, { type: file.type });
-          const result = await uploadFileWithTimeout({
-            data: renamedFile,
-            collection: 'templates',
-            filename: storagePath,
-          });
+          await templateStorage.upload(
+            storagePath,
+            renamedFile
+          );
+
+          // Juno automatically generates download URL based on storage path
+          // Format: https://{satellite}.icp0.io/storage/templates/{path}
+          const downloadUrl = `https://${process.env.VITE_JUNO_SATELLITE_ID || window.location.hostname}/storage/templates/${storagePath}`;
 
           // Create metadata
           const newKey = storagePath.replace(/\//g, '_').replace(/\./g, '_');
-          await setDocWithTimeout({
-            collection: 'templates_meta',
-            doc: {
-              key: newKey,
-              data: {
-                ...importTemplate.data,
-                name: newName,
-                url: result.downloadUrl,
-                folderId: mappedFolderId,
-                folderPath: folderPath || '/',
-                fullPath,
-                uploadedAt: Date.now(),
-              } as WordTemplateData,
-            },
-          });
+          await templateRepository.create(
+            newKey,
+            {
+              ...importTemplate.data,
+              name: newName,
+              url: downloadUrl,
+              folderId: mappedFolderId,
+              folderPath: folderPath || '/',
+              fullPath,
+              uploadedAt: Date.now(),
+            } as WordTemplateData
+          );
 
           stats.importedTemplates++;
 

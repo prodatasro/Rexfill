@@ -32,7 +32,6 @@ import {
   fetchPaddleSubscription,
   fetchPaddleSubscriptionByUserId,
   updateSubscription as updateSubscriptionFromPaddle,
-  getProxyCanisterId,
   setProxyConfig,
 } from './paddle-poller';
 
@@ -193,13 +192,13 @@ export const onSetDoc = defineHook<OnSetDoc>({
         // If we have a subscription ID in the trigger, try direct lookup first
         if (triggerData.subscriptionId) {
           console.log('🟣 [PADDLE_SYNC_TRIGGER] Attempting direct lookup:', triggerData.subscriptionId);
-          paddleData = await fetchPaddleSubscription(triggerData.subscriptionId, config);
+          paddleData = await fetchPaddleSubscription(triggerData.subscriptionId);
         }
         
         // Fall back to userId-based query
         if (!paddleData) {
           console.log('🟣 [PADDLE_SYNC_TRIGGER] Querying by userId:', targetUserId);
-          paddleData = await fetchPaddleSubscriptionByUserId(targetUserId, config);
+          paddleData = await fetchPaddleSubscriptionByUserId(targetUserId);
         }
         
         if (!paddleData) {
@@ -304,12 +303,12 @@ export const onSetDoc = defineHook<OnSetDoc>({
           
           if (subData.paddleSubscriptionId) {
             console.log('🟣 [PADDLE_SYNC] Attempting direct subscription lookup:', subData.paddleSubscriptionId);
-            paddleData = await fetchPaddleSubscription(subData.paddleSubscriptionId, config);
+            paddleData = await fetchPaddleSubscription(subData.paddleSubscriptionId);
           }
           
           if (!paddleData) {
             console.log('🟣 [PADDLE_SYNC] Direct lookup failed, querying by userId:', userId);
-            paddleData = await fetchPaddleSubscriptionByUserId(userId, config);
+            paddleData = await fetchPaddleSubscriptionByUserId(userId);
           }
           
           if (!paddleData) {

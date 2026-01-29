@@ -104,7 +104,7 @@ export async function deleteTemplate(
   }
 
   // Always delete metadata
-  await templateRepository.delete(template);
+  await templateRepository.delete(template.key);
 
   return assetDeleted;
 }

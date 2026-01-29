@@ -16,19 +16,15 @@ import {
   encodeDocData,
   decodeDocData,
   setDocStore,
-  getDocStore,
-  listDocsStore
+  getDocStore
 } from '@junobuild/functions/sdk';
 import { IDL } from '@icp-sdk/core/candid';
 import { getPlanIdFromPaddlePrice, getSeatsIncluded } from '../config/plans';
-import { recordSecurityEvent } from './utils/monitoring';
 import { Principal } from '@dfinity/principal';
 import type { 
-  RexfillProxyActor, 
   PaddleSubscription, 
   PaddleApiResponse,
-  PaddleApiListResponse,
-  Result 
+  PaddleApiListResponse
 } from './motoko-proxy-types';
 
 /**
@@ -240,8 +236,7 @@ export async function getPaddleConfig(): Promise<{
  * Queries Paddle for active subscriptions by custom_data.userId
  */
 export async function fetchPaddleSubscriptionByUserId(
-  userId: string,
-  config: { environment: string }
+  userId: string
 ): Promise<PaddleSubscription | null> {
   console.log(`[PADDLE_PROXY] Querying subscription by userId: ${userId}`);
   
@@ -284,8 +279,7 @@ export async function fetchPaddleSubscriptionByUserId(
  * Fetch subscription from Paddle API via Motoko canister
  */
 export async function fetchPaddleSubscription(
-  subscriptionId: string,
-  config: { environment: string }
+  subscriptionId: string
 ): Promise<PaddleSubscription | null> {
   console.log(`[PADDLE_PROXY] Querying subscription: ${subscriptionId}`);
   

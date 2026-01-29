@@ -135,7 +135,9 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
                 );
                 
                 const updatedProfile = await userProfileRepository.get(user.key);
-                setProfile(updatedProfile);
+                if (updatedProfile) {
+                  setProfile(updatedProfile);
+                }
                 success = true;
               } catch (error: any) {
                 retryCount++;
@@ -297,7 +299,11 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
         // Upload to storage
         const avatarFile = new File([compressedBlob], 'avatar.jpg', { type: 'image/jpeg' });
         const filename = `${user.key}/avatar.jpg`;
-        const downloadUrl = await avatarStorage.upload(filename, avatarFile);
+        await avatarStorage.upload(filename, avatarFile);
+
+        // Juno automatically generates download URL based on storage path
+        // Format: https://{satellite}.icp0.io/storage/user_avatars/{path}
+        const downloadUrl = `https://${process.env.VITE_JUNO_SATELLITE_ID || window.location.hostname}/storage/user_avatars/${filename}`;
 
         // Update profile with avatar URL
         await updateProfile({ avatarUrl: downloadUrl });

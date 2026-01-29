@@ -276,14 +276,11 @@ export function useDeleteFolderMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      folder,
-      folders,
-    }: {
-      folder: Folder;
-      folders: Folder[];
-    }) => {
+    mutationFn: async ({ folder }: { folder: Folder; folders: Folder[] }) => {
       // Use repository's recursive delete which handles subfolders
+      if (!folder.owner) {
+        throw new Error('Folder owner is required for deletion');
+      }
       await folderRepository.deleteRecursive(folder.key, folder.owner);
       return folder;
     },
