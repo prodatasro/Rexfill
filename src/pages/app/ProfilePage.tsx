@@ -2,8 +2,11 @@ import { FC, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
+import { setDoc } from '@junobuild/core';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts';
 import { useUserProfile } from '../../contexts/UserProfileContext';
+import { useSubscription } from '../../contexts';
 import {
   ProfileNavigation,
   ProfileMobileNav,
@@ -23,6 +26,7 @@ const ProfilePage: FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { profile, loading } = useUserProfile();
+  const { subscription, refreshSubscription } = useSubscription();
   
   const [activeSection, setActiveSection] = useState<ProfileSection>('profile');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -30,13 +34,29 @@ const ProfilePage: FC = () => {
   // Handle success parameter from Paddle redirect
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('success') === 'true') {
+    const isSuccess = params.get('success') === 'true';
+    const transactionId = params.get('_ptxn');
+    
+    console.log('[PROFILE_PAGE] Paddle redirect params:', { 
+      isSuccess, 
+      transactionId,
+      userId: user?.key
+    });
+    
+    if (isSuccess && user) {
       setActiveSection('subscription');
       setShowSuccessDialog(true);
+      
+      console.log('[PROFILE_PAGE] Payment success, triggering sync for:', user.key);
+      toast.success('Payment confirmed! Syncing your subscription...');
+      
+      // Trigger refresh via event-driven pattern
+      refreshSubscription();
+      
       // Clean up URL
       window.history.replaceState({}, '', '/app/profile');
     }
-  }, [location.search]);
+  }, [location.search, user, refreshSubscription]);
 
   if (loading) {
     return (

@@ -20,12 +20,21 @@ import {
   decodeDocData,
   encodeDocData,
   setDocStore,
+  listDocsStore
 } from '@junobuild/functions/sdk';
+import { id } from '@junobuild/functions/ic-cdk';
 
 import { Principal } from '@dfinity/principal';
 
-// Import webhook handlers
-export { paddleWebhook } from './paddle-webhook';
+// Import Paddle API functions
+import {
+  getPaddleConfig,
+  fetchPaddleSubscription,
+  fetchPaddleSubscriptionByUserId,
+  updateSubscription as updateSubscriptionFromPaddle,
+  getProxyCanisterId,
+  setProxyConfig,
+} from './paddle-poller';
 
 // Import validation utilities
 import {
@@ -54,10 +63,343 @@ import {
 // you can selectively delete the features you do not need.
 
 export const onSetDoc = defineHook<OnSetDoc>({
-  collections: ['download_requests'],
+  collections: ['download_requests', 'subscriptions', 'paddle_sync_triggers', 'canister_config_triggers'],
   run: async (context) => {
     const { caller, data } = context;
     const userId = Principal.from(caller).toText();
+    const collection = context.data.collection;
+    
+    // ========================================
+    // CANISTER CONFIG TRIGGER
+    // ========================================
+    if (collection === 'canister_config_triggers') {
+      console.log('⚙️ [CANISTER_CONFIG] Configuration trigger received:', { userId, triggerId: data.key });
+      
+      try {
+        // Read secrets from datastore
+        const secrets = await listDocsStore({
+          caller: id(),
+          collection: 'secrets',
+          params: {}
+        });
+        
+        // Find required secrets and decode their data
+        const prodApiKeyDoc = secrets?.items.find(([key]: [string, any]) => key === 'PADDLE_API_KEY_PROD')?.[1];
+        const devApiKeyDoc = secrets?.items.find(([key]: [string, any]) => key === 'PADDLE_API_KEY_DEV')?.[1];
+        const prodWebhookSecretDoc = secrets?.items.find(([key]: [string, any]) => key === 'PADDLE_WEBHOOK_SECRET_PROD')?.[1];
+        const devWebhookSecretDoc = secrets?.items.find(([key]: [string, any]) => key === 'PADDLE_WEBHOOK_SECRET_DEV')?.[1];
+        
+        const prodApiKey = prodApiKeyDoc ? decodeDocData<{ value: string }>(prodApiKeyDoc.data) : null;
+        const devApiKey = devApiKeyDoc ? decodeDocData<{ value: string }>(devApiKeyDoc.data) : null;
+        const prodWebhookSecret = prodWebhookSecretDoc ? decodeDocData<{ value: string }>(prodWebhookSecretDoc.data) : null;
+        const devWebhookSecret = devWebhookSecretDoc ? decodeDocData<{ value: string }>(devWebhookSecretDoc.data) : null;
+
+        // Determine environment based on whether prod key exists
+        const isProd = !!prodApiKey?.value;
+        const apiKeyProd = prodApiKey?.value || '';
+        const apiKeySandbox = devApiKey?.value || '';
+        const webhookSecret = isProd ? (prodWebhookSecret?.value || '') : (devWebhookSecret?.value || '');
+        const environment = isProd ? { production: null } : { sandbox: null };
+        
+        if (!apiKeySandbox && !apiKeyProd) {
+          console.error('⚙️ [CANISTER_CONFIG] At least one Paddle API key is required');
+          return;
+        }
+        
+        console.log(`⚙️ [CANISTER_CONFIG] Configuring canister with environment: ${isProd ? 'production' : 'sandbox'}`);
+        
+        // Call RexfillProxy canister's setConfig method
+        const result = await setProxyConfig(
+          apiKeyProd,
+          apiKeySandbox,
+          webhookSecret,
+          environment
+        );
+        
+        if ('Err' in result) {
+          console.error('⚙️ [CANISTER_CONFIG] Failed to configure canister:', result.Err);
+          
+          await recordSecurityEvent({
+            eventType: 'paddle_api_error',
+            severity: 'warning',
+            userId,
+            endpoint: 'canister_config_trigger',
+            message: `Failed to configure canister: ${result.Err}`,
+            timestamp: Date.now(),
+          });
+          return;
+        }
+        
+        console.log('✅ [CANISTER_CONFIG] Canister configured successfully');
+        
+        // Log configuration event
+        await recordSecurityEvent({
+          eventType: 'paddle_api_access',
+          severity: 'info',
+          userId,
+          endpoint: 'canister_config_trigger',
+          message: `RexfillProxy canister configured (${isProd ? 'production' : 'sandbox'})`,
+          metadata: {
+            triggerId: data.key,
+            hasProdKey: !!apiKeyProd,
+            hasDevKey: !!apiKeySandbox,
+            hasProdWebhook: !!prodWebhookSecret?.value,
+            hasDevWebhook: !!devWebhookSecret?.value,
+          },
+          timestamp: Date.now(),
+        });
+        
+      } catch (error: any) {
+        console.error('❌ [CANISTER_CONFIG] Error configuring canister:', error);
+        
+        await recordSecurityEvent({
+          eventType: 'paddle_api_error',
+          severity: 'warning',
+          userId,
+          endpoint: 'canister_config_trigger',
+          message: `Failed to configure canister: ${error.message}`,
+          timestamp: Date.now(),
+        });
+      }
+      
+      return; // Exit early, don't process other hooks
+    }
+    
+    // ========================================
+    // PADDLE SYNC TRIGGER (Event-Driven Pattern)
+    // ========================================
+    if (collection === 'paddle_sync_triggers') {
+      console.log('🟣 [PADDLE_SYNC_TRIGGER] Sync trigger received:', { userId, triggerId: data.key });
+      
+      const triggerData = decodeDocData<any>(context.data.data.after.data);
+      const targetUserId = triggerData.userId || userId;
+      
+      console.log('🟣 [PADDLE_SYNC_TRIGGER] Target user:', targetUserId);
+      
+      try {
+        // Get Paddle API configuration using canister identity (not user principal)
+        const config = await getPaddleConfig();
+        
+        if (!config) {
+          console.error('🟣 [PADDLE_SYNC_TRIGGER] No Paddle API key configured');
+          return;
+        }
+        
+        console.log(`🟣 [PADDLE_SYNC_TRIGGER] Using Paddle API (${config.environment})`);
+        
+        // Query Paddle for user's subscription
+        let paddleData = null;
+        
+        // If we have a subscription ID in the trigger, try direct lookup first
+        if (triggerData.subscriptionId) {
+          console.log('🟣 [PADDLE_SYNC_TRIGGER] Attempting direct lookup:', triggerData.subscriptionId);
+          paddleData = await fetchPaddleSubscription(triggerData.subscriptionId, config);
+        }
+        
+        // Fall back to userId-based query
+        if (!paddleData) {
+          console.log('🟣 [PADDLE_SYNC_TRIGGER] Querying by userId:', targetUserId);
+          paddleData = await fetchPaddleSubscriptionByUserId(targetUserId, config);
+        }
+        
+        if (!paddleData) {
+          console.log('🟣 [PADDLE_SYNC_TRIGGER] No subscription found in Paddle');
+          return;
+        }
+        
+        console.log('🟣 [PADDLE_SYNC_TRIGGER] Found subscription:', paddleData.id);
+        
+        // Update the subscription collection
+        await updateSubscriptionFromPaddle(targetUserId, targetUserId, paddleData);
+        
+        console.log('✅ [PADDLE_SYNC_TRIGGER] Subscription synced successfully');
+        
+        // Log successful sync
+        await recordSecurityEvent({
+          eventType: 'paddle_api_access',
+          severity: 'info',
+          userId: targetUserId,
+          endpoint: 'paddle_sync_trigger',
+          message: `Subscription synced from Paddle via trigger (${config.environment})`,
+          metadata: {
+            triggerId: data.key,
+            subscriptionId: paddleData.id,
+            status: paddleData.status,
+          },
+          timestamp: Date.now(),
+        });
+        
+      } catch (error: any) {
+        console.error('❌ [PADDLE_SYNC_TRIGGER] Error syncing subscription:', error);
+        
+        await recordSecurityEvent({
+          eventType: 'paddle_api_error',
+          severity: 'warning',
+          userId: targetUserId,
+          endpoint: 'paddle_sync_trigger',
+          message: `Failed to sync subscription: ${error.message}`,
+          timestamp: Date.now(),
+        });
+      }
+      
+      return; // Exit early, don't process other hooks
+    }
+    
+    // ========================================
+    // PADDLE SUBSCRIPTION AUTO-REFRESH (Legacy)
+    // ========================================
+    if (collection === 'subscriptions') {
+      console.log('🟣 [PADDLE_SYNC] onSetDoc hook triggered for subscriptions:', { userId, key: data.key });
+      
+      const subData = decodeDocData<any>(context.data.data.after.data);
+      console.log('🟣 [PADDLE_SYNC] Subscription data:', {
+        paddleSubscriptionId: subData.paddleSubscriptionId,
+        status: subData.status,
+        needsRefresh: subData.needsRefresh,
+      });
+      
+      // Only auto-refresh if refresh is needed
+      if (subData.needsRefresh === true) {
+        console.log('🟣 [PADDLE_SYNC] Auto-refreshing subscription from Paddle API...');
+        
+        try {
+          // Get Paddle API configuration using canister identity (not user principal)
+          const config = await getPaddleConfig();
+          
+          if (!config) {
+            console.error('🟣 [PADDLE_SYNC] No Paddle API key configured - skipping refresh');
+            
+            // Update document to clear refresh flag and note the error
+            await setDocStore({
+              caller,
+              collection: 'subscriptions',
+              key: data.key,
+              doc: {
+                data: encodeDocData({
+                  ...subData,
+                  needsRefresh: false,
+                  lastSyncError: 'No Paddle API key configured',
+                  lastSyncAttempt: Date.now(),
+                }),
+                version: context.data.data.after.version,
+              },
+            });
+            
+            await recordSecurityEvent({
+              eventType: 'paddle_api_error',
+              severity: 'critical',
+              userId,
+              endpoint: 'onSetDoc_subscription_refresh',
+              message: 'Attempted to refresh subscription without Paddle API key',
+              timestamp: Date.now(),
+            });
+            return;
+          }
+          
+          console.log(`🟣 [PADDLE_SYNC] Using Paddle API (${config.environment})`);
+          
+          // Fetch subscription from Paddle
+          // Try direct lookup first if we have the ID, otherwise query by userId
+          let paddleData = null;
+          
+          if (subData.paddleSubscriptionId) {
+            console.log('🟣 [PADDLE_SYNC] Attempting direct subscription lookup:', subData.paddleSubscriptionId);
+            paddleData = await fetchPaddleSubscription(subData.paddleSubscriptionId, config);
+          }
+          
+          if (!paddleData) {
+            console.log('🟣 [PADDLE_SYNC] Direct lookup failed, querying by userId:', userId);
+            paddleData = await fetchPaddleSubscriptionByUserId(userId, config);
+          }
+          
+          if (!paddleData) {
+            console.log('🟣 [PADDLE_SYNC] No subscription found in Paddle (may not be created yet)');
+            
+            // Update document to clear refresh flag
+            await setDocStore({
+              caller,
+              collection: 'subscriptions',
+              key: data.key,
+              doc: {
+                data: encodeDocData({
+                  ...subData,
+                  needsRefresh: false,
+                  lastSyncError: 'Subscription not found in Paddle API',
+                  lastSyncAttempt: Date.now(),
+                }),
+                version: context.data.data.after.version,
+              },
+            });
+            return;
+          }
+          
+          console.log('🟣 [PADDLE_SYNC] Successfully fetched from Paddle:', {
+            status: paddleData.status,
+            customerId: paddleData.customer_id,
+          });
+          
+          // Update the subscription with fresh Paddle data
+          await updateSubscriptionFromPaddle(userId, data.key, paddleData);
+          
+          console.log('✅ [PADDLE_SYNC] Subscription successfully synced from Paddle');
+          
+          // Log successful sync
+          await recordSecurityEvent({
+            eventType: 'paddle_api_access',
+            severity: 'info',
+            userId,
+            endpoint: 'onSetDoc_subscription_refresh',
+            message: `Subscription auto-refreshed from Paddle (${config.environment})`,
+            metadata: {
+              subscriptionId: subData.paddleSubscriptionId,
+              status: paddleData.status,
+            },
+            timestamp: Date.now(),
+          });
+          
+        } catch (error: any) {
+          console.error('❌ [PADDLE_SYNC] Error refreshing subscription:', error);
+          
+          // Update document to clear refresh flag and note the error
+          await setDocStore({
+            caller,
+            collection: 'subscriptions',
+            key: data.key,
+            doc: {
+              data: encodeDocData({
+                ...subData,
+                needsRefresh: false,
+                lastSyncError: error.message || 'Unknown error',
+                lastSyncAttempt: Date.now(),
+              }),
+              version: context.data.data.after.version,
+            },
+          });
+          
+          await recordSecurityEvent({
+            eventType: 'paddle_api_error',
+            severity: 'warning',
+            userId,
+            endpoint: 'onSetDoc_subscription_refresh',
+            message: `Subscription refresh failed: ${error.message}`,
+            metadata: {
+              subscriptionId: subData.paddleSubscriptionId,
+              error: error.message,
+            },
+            timestamp: Date.now(),
+          });
+        }
+      } else {
+        console.log('🟣 [PADDLE_SYNC] Skipping refresh - conditions not met');
+      }
+      
+      return; // Exit after handling subscription
+    }
+    
+    // ========================================
+    // DOWNLOAD REQUEST VALIDATION
+    // ========================================
+    if (collection === 'download_requests') {
     
     console.log('🔵 [DOWNLOAD_REQUEST] onSetDoc hook triggered:', { userId, key: data.key });
     
@@ -276,6 +618,7 @@ export const onSetDoc = defineHook<OnSetDoc>({
     }
 
     console.log('🔵 [DOWNLOAD_REQUEST] Hook completed');
+    } // End download_requests handling
   }
 });
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from 'react';
 import { getDoc, setDoc, listDocs } from '@junobuild/core';
+import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 import { useUserProfile } from './UserProfileContext';
 import { SUBSCRIPTION_PLANS, SubscriptionPlan, isUnlimited } from '../config/plans';
@@ -25,6 +26,7 @@ interface SubscriptionContextType {
   showUpgradePrompt: () => void;
   hideUpgradePrompt: () => void;
   refreshUsage: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
   updateSubscription: (planId: PlanId, paddleData?: { subscriptionId: string; customerId: string }) => Promise<void>;
   gracePeriodEndsAt: number | null; // If organization subscription is in grace period
 }
@@ -58,8 +60,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
     : SUBSCRIPTION_PLANS.free;
 
   // Load subscription and usage data from Juno
-  useEffect(() => {
-    const loadSubscriptionData = async () => {
+  const loadSubscription = useCallback(async () => {
       if (!user) {
         setSubscription(null);
         setUsage({
@@ -244,25 +245,87 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
       } finally {
         setIsLoading(false);
       }
-    };
+    }, [user, isAdmin]);
 
-    loadSubscriptionData();
-  }, [user, isAdmin]);
+  // Load on mount and when user/isAdmin changes
+  useEffect(() => {
+    loadSubscription();
+  }, [loadSubscription]);
 
   // Listen for Paddle checkout completion events
   useEffect(() => {
     const handleCheckoutCompleted = async (event: Event) => {
-      console.log('Paddle checkout completed, refreshing subscription...', (event as CustomEvent).detail);
+      console.log('🔴 [PADDLE_CHECKOUT] ========== CHECKOUT EVENT FIRED ==========');
+      console.log('[PADDLE_CHECKOUT] Event detail:', (event as CustomEvent).detail);
+      console.log('[PADDLE_CHECKOUT] Current user:', user);
       
-      if (!user) return;
+      if (!user) {
+        console.error('[PADDLE_CHECKOUT] ❌ No user logged in, aborting');
+        return;
+      }
 
-      // Poll for subscription update with exponential backoff
-      const maxAttempts = 10;
-      const pollInterval = 1000; // Start with 1 second
-      let attempts = 0;
+      const eventDetail = (event as CustomEvent).detail;
+      const subscriptionId = eventDetail?.transaction?.subscription_id || eventDetail?.subscriptionId;
 
-      const pollSubscription = async (): Promise<void> => {
-        attempts++;
+      console.log('[PADDLE_CHECKOUT] Extracted subscription ID:', subscriptionId);
+
+      if (!subscriptionId) {
+        console.error('[PADDLE_CHECKOUT] ❌ No subscription ID found in checkout event');
+        toast.error('Payment confirmed, but subscription ID not found. Please contact support.');
+        return;
+      }
+
+      // Show immediate feedback
+      toast.success('Payment confirmed! Syncing your subscription...');
+
+      console.log('[PADDLE_CHECKOUT] Calling setDoc with data:', {
+        key: user.key,
+        paddleSubscriptionId: subscriptionId,
+        status: 'pending_verification',
+        needsRefresh: true,
+      });
+
+      // Create/update subscription document with needsRefresh flag
+      // This triggers the onSetDoc hook which fetches from Paddle API
+      try {
+        const result = await setDoc({
+          collection: 'subscriptions',
+          doc: {
+            key: user.key,
+            data: {
+              ...(subscription || {}),
+              paddleSubscriptionId: subscriptionId,
+              status: 'pending_verification',
+              needsRefresh: true,
+              lastSyncAttempt: Date.now(),
+              updatedAt: Date.now(),
+            },
+          },
+        });
+
+        console.log('[PADDLE_CHECKOUT] ✅ setDoc completed successfully, result:', result);
+        console.log('[PADDLE_CHECKOUT] Hook should fire now - check satellite logs at http://localhost:5866');
+        toast.loading('Fetching subscription details from Paddle...');
+      } catch (error) {
+        console.error('[PADDLE_CHECKOUT] ❌ Error updating subscription:', error);
+        toast.error('Failed to initialize subscription sync');
+      }
+    };
+
+    console.log('[PADDLE_CHECKOUT] Event listener registered for paddle:checkout-completed');
+    window.addEventListener('paddle:checkout-completed', handleCheckoutCompleted);
+    
+    return () => {
+      console.log('[PADDLE_CHECKOUT] Event listener removed');
+      window.removeEventListener('paddle:checkout-completed', handleCheckoutCompleted);
+    };
+  }, [user, subscription]);
+
+  // Listen for subscription updates from other tabs
+  useEffect(() => {
+    const handleStorageChange = async (event: StorageEvent) => {
+      if (event.key === 'subscription_updated' && user) {
+        console.log('[SUBSCRIPTION_SYNC] Subscription updated in another tab, refreshing...');
         
         try {
           const subscriptionDoc = await getDoc({
@@ -272,29 +335,17 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
           
           if (subscriptionDoc) {
             setSubscription(subscriptionDoc.data as SubscriptionData);
-            console.log('Subscription updated successfully');
-            return;
           }
         } catch (error) {
-          console.error('Failed to refresh subscription:', error);
+          console.error('[SUBSCRIPTION_SYNC] Failed to sync subscription:', error);
         }
-
-        if (attempts < maxAttempts) {
-          const nextDelay = pollInterval * Math.pow(1.5, attempts - 1);
-          setTimeout(() => pollSubscription(), nextDelay);
-        } else {
-          console.warn('Max polling attempts reached for subscription update');
-        }
-      };
-
-      // Start polling after initial delay
-      setTimeout(() => pollSubscription(), 1000);
+      }
     };
 
-    window.addEventListener('paddle:checkout-completed', handleCheckoutCompleted);
+    window.addEventListener('storage', handleStorageChange);
     
     return () => {
-      window.removeEventListener('paddle:checkout-completed', handleCheckoutCompleted);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [user]);
 
@@ -456,6 +507,50 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
     }
   }, [user, isAdmin]);
 
+  /**
+   * Manual refresh subscription from Paddle API
+   * Uses trigger collection pattern to avoid version conflicts
+   */
+  const refreshSubscription = useCallback(async () => {
+    if (!user) {
+      toast.error('No user found');
+      return;
+    }
+
+    try {
+      toast.loading('Refreshing subscription from Paddle...');
+      
+      // Create a sync trigger (event-driven pattern)
+      const triggerId = `${user.key}_${Date.now()}`;
+      
+      await setDoc({
+        collection: 'paddle_sync_triggers',
+        doc: {
+          key: triggerId,
+          data: {
+            userId: user.key,
+            subscriptionId: subscription?.paddleSubscriptionId,
+            triggeredAt: Date.now(),
+            source: 'manual_refresh',
+          },
+        },
+      });
+      
+      console.log('[REFRESH_SUBSCRIPTION] Sync trigger created:', triggerId);
+      
+      // Give the hook a moment to process, then reload
+      setTimeout(async () => {
+        await loadSubscription();
+        toast.dismiss();
+        toast.success('Subscription refreshed');
+      }, 2000);
+      
+    } catch (error: any) {
+      console.error('[REFRESH_SUBSCRIPTION] Error:', error);
+      toast.error('Failed to refresh subscription');
+    }
+  }, [user, subscription, loadSubscription]);
+
   const updateSubscription = useCallback(async (planId: PlanId, paddleData?: { subscriptionId: string; customerId: string }) => {
     if (!user) return;
 
@@ -548,6 +643,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         showUpgradePrompt,
         hideUpgradePrompt,
         refreshUsage,
+        refreshSubscription,
         updateSubscription,
         gracePeriodEndsAt,
       }}

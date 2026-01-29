@@ -17,11 +17,12 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "tunnel": "lt --port 5173 --subdomain rexfill-paddle-webhook",
     "postinstall:copy-auth": "node -e \"require('fs').cpSync('node_modules/@junobuild/core/dist/workers/', './public/workers', {recursive: true});\"",
     "postinstall": "npm run postinstall:copy-auth"
   },
   "dependencies": {
+    "@dfinity/agent": "^3.4.3",
+    "@dfinity/candid": "^3.4.3",
     "@dfinity/principal": "^3.4.3",
     "@dfinity/utils": "^4.1.0",
     "@icp-sdk/auth": "^5.0.0",

@@ -18,6 +18,10 @@ export interface SubscriptionData {
   cancelAtPeriodEnd: boolean;
   createdAt: number;
   updatedAt: number;
+  // Paddle API sync fields (used by onSetDoc hook)
+  needsRefresh?: boolean; // Flag to trigger Paddle API refresh
+  lastSyncAttempt?: number; // Timestamp of last sync attempt
+  lastSyncError?: string; // Error message from last sync attempt (if any)
 }
 
 export interface UsageData {

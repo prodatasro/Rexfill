@@ -168,8 +168,20 @@ const handlePaddleEvent = (event: PaddleEvent) => {
   switch (event.name) {
     case 'checkout.completed':
       // Subscription was successfully created
-      // You should verify this server-side via webhook
-      console.log('Checkout completed:', event.data);
+      console.log('✅ Checkout completed:', event.data);
+      
+      // Store subscription ID in localStorage for the redirect
+      const subscriptionId = (event.data as any)?.subscription?.id;
+      const transactionId = (event.data as any)?.transaction_id;
+      
+      console.log('Subscription ID:', subscriptionId);
+      console.log('Transaction ID:', transactionId);
+      
+      if (subscriptionId) {
+        localStorage.setItem('paddle_checkout_subscription_id', subscriptionId);
+        localStorage.setItem('paddle_checkout_timestamp', Date.now().toString());
+      }
+      
       // Trigger a refresh of subscription data
       window.dispatchEvent(new CustomEvent('paddle:checkout-completed', { detail: event.data }));
       break;
@@ -228,6 +240,8 @@ export const openCheckout = async (
       }),
     };
 
+    console.log('[PADDLE] Opening checkout with customData:', customData);
+
     window.Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
       ...(Object.keys(customData).length > 0 && { customData }),
@@ -237,6 +251,8 @@ export const openCheckout = async (
         theme: options?.theme || 'light',
         locale: options?.locale || 'en',
         allowLogout: false,
+        // Paddle will append ?_ptxn={transaction_id} automatically
+        // We need to use checkout.completed event instead for subscription_id
         successUrl: `${window.location.origin}/app/profile?success=true`,
       },
     });

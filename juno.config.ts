@@ -33,6 +33,8 @@ export default defineConfig(({ mode }) => ({
         // Subscription and billing collections - RESTRICTED write (satellite-only via assertion hooks)
         // NOTE: All collections use mandatory pagination due to unbounded growth
         { collection: 'subscriptions', read: 'managed', write: 'private', memory: 'stable' },
+        { collection: 'paddle_sync_triggers', read: 'managed', write: 'managed', memory: 'stable' },
+        { collection: 'canister_config_triggers', read: 'managed', write: 'managed', memory: 'stable' },
         { collection: 'usage', read: 'managed', write: 'managed', memory: 'stable' },
         { collection: 'subscription_overrides', read: 'managed', write: 'managed', memory: 'stable' },
         
@@ -58,6 +60,7 @@ export default defineConfig(({ mode }) => ({
         { collection: 'admin_actions', read: 'managed', write: 'managed', memory: 'stable' },
         { collection: 'suspended_users', read: 'managed', write: 'managed', memory: 'stable' },
         { collection: 'webhook_history', read: 'managed', write: 'managed', memory: 'stable' },
+        { collection: 'secrets', read: 'managed', write: 'managed', memory: 'stable' },
       ],
       storage: [
         { collection: 'templates', read: 'private', write: 'private', memory: 'stable'},

@@ -18,8 +18,16 @@ export function AdminGuard({ children }: AdminGuardProps) {
   const { isAdmin, isLoading } = useAdmin();
   const navigate = useNavigate();
   const previousIsAdminRef = useRef<boolean | null>(null);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
+    // Skip revocation check until we've established an initial baseline
+    if (!isLoading && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      previousIsAdminRef.current = isAdmin;
+      return;
+    }
+
     // Detect when admin status changes from true to false (revocation)
     if (previousIsAdminRef.current === true && isAdmin === false && !isLoading) {
       showWarningToast('Your admin access has been revoked');

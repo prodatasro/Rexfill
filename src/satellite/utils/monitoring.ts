@@ -30,7 +30,9 @@ export type SecurityEventType =
   | 'override_applied'
   | 'override_removed'
   | 'user_suspended'
-  | 'user_unsuspended';
+  | 'user_unsuspended'
+  | 'paddle_api_access'
+  | 'paddle_api_error';
 
 export type SeverityLevel = 'info' | 'warning' | 'critical';
 

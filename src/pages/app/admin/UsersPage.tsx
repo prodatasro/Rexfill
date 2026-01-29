@@ -1,9 +1,9 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
+import { listDocs, setDoc, deleteDoc, getDoc } from '@junobuild/core';
 import { toast } from 'sonner';
-import { Search, Download, Ban, CheckCircle, Settings, Zap, TrendingUp, Award, Trash2 } from 'lucide-react';
+import { Search, Download, Ban, CheckCircle, Settings, Zap, TrendingUp, Award, Trash2, RefreshCw } from 'lucide-react';
 import type { UserProfile, SubscriptionData, SubscriptionOverride, SuspendedUser } from '../../../types';
 import { SUBSCRIPTION_PLANS } from '../../../config/plans';
 import { useAuth } from '../../../contexts';
@@ -30,6 +30,7 @@ const UsersPage: FC = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 25;
+  const [refreshingSubscriptions, setRefreshingSubscriptions] = useState<Set<string>>(new Set());
 
   // Fetch all user profiles
   const { data: users, isLoading } = useQuery({
@@ -454,6 +455,84 @@ const UsersPage: FC = () => {
     overrideMutation.mutate(override);
   };
 
+  // Refresh subscription from Paddle API
+  const handleRefreshSubscription = async (userId: string, subscriptionId: string) => {
+    if (refreshingSubscriptions.has(userId)) return;
+
+    setRefreshingSubscriptions(prev => new Set(prev).add(userId));
+
+    try {
+      // Get current subscription document
+      const currentDoc = await getDoc({
+        collection: 'subscriptions',
+        key: userId,
+      });
+
+      if (!currentDoc) {
+        toast.error('Subscription not found');
+        setRefreshingSubscriptions(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+        return;
+      }
+
+      // Update document with needsRefresh flag to trigger onSetDoc hook
+      await setDoc({
+        collection: 'subscriptions',
+        doc: {
+          key: userId,
+          data: {
+            ...(currentDoc.data as SubscriptionData),
+            needsRefresh: true,
+            lastSyncAttempt: Date.now(),
+          },
+        },
+      });
+
+      console.log('[ADMIN_REFRESH] Triggered subscription refresh for user:', userId);
+      toast.loading('Refreshing subscription from Paddle...');
+
+      // Wait for hook to process, then refresh the query
+      setTimeout(async () => {
+        queryClient.invalidateQueries({ queryKey: ['admin_subscriptions'] });
+        
+        // Check if refresh was successful
+        const updatedDoc = await getDoc({
+          collection: 'subscriptions',
+          key: userId,
+        });
+        
+        if (updatedDoc) {
+          const data = updatedDoc.data as SubscriptionData & { lastSyncError?: string };
+          
+          if (data.lastSyncError) {
+            toast.error(`Refresh failed: ${data.lastSyncError}`);
+          } else if (!data.needsRefresh) {
+            toast.success(`Subscription refreshed for user ${userId.substring(0, 8)}...`);
+          }
+        }
+        
+        setRefreshingSubscriptions(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+      }, 2000); // Wait 2 seconds for hook processing
+
+    } catch (error: any) {
+      console.error('[ADMIN_REFRESH_SUBSCRIPTION] Error:', error);
+      toast.error('Failed to refresh subscription');
+    } finally {
+      setRefreshingSubscriptions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -572,9 +651,21 @@ const UsersPage: FC = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                        {sub?.planId || 'free'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                          {sub?.planId || 'free'}
+                        </span>
+                        {sub?.paddleSubscriptionId && (
+                          <button
+                            onClick={() => handleRefreshSubscription(item.key, sub.paddleSubscriptionId!)}
+                            disabled={refreshingSubscriptions.has(item.key)}
+                            className="text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Refresh subscription from Paddle API"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${refreshingSubscriptions.has(item.key) ? 'animate-spin' : ''}`} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
                       {org ? (
@@ -744,7 +835,7 @@ const UsersPage: FC = () => {
             }}
             title={t('admin.users.overrideDialog.title', 'Subscription Override')}
           >
-            <div className="space-y-6 max-h-[600px] overflow-y-auto">
+            <div className="space-y-6 max-h-150 overflow-y-auto">
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 {t('admin.users.overrideDialog.description', 'Set custom quota limits for')}:{' '}
                 <strong>{(selectedUser.data as any).displayName || (selectedUser.data as any).email}</strong>

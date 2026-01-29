@@ -1,5 +1,5 @@
 import { FC, useState } from 'react';
-import { CreditCard, Calendar, AlertCircle, CheckCircle, XCircle, ArrowUpRight, Loader2, Building2, AlertTriangle, Download } from 'lucide-react';
+import { CreditCard, Calendar, AlertCircle, CheckCircle, XCircle, ArrowUpRight, Loader2, Building2, AlertTriangle, Download, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { useOrganization } from '../../contexts/OrganizationContext';
@@ -13,10 +13,11 @@ export const SubscriptionSection: FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { isAdmin } = useUserProfile();
-  const { plan, subscription, individualSubscription, organizationSubscription, gracePeriodEndsAt, usage, isLoading } = useSubscription();
+  const { plan, subscription, individualSubscription, organizationSubscription, gracePeriodEndsAt, usage, isLoading, refreshSubscription } = useSubscription();
   const { currentOrganization, exportOrganizationData } = useOrganization();
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [refreshLoading, setRefreshLoading] = useState(false);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString(undefined, {
@@ -90,7 +91,17 @@ export const SubscriptionSection: FC = () => {
       setExportLoading(false);
     }
   };
-
+  const handleRefresh = async () => {
+    setRefreshLoading(true);
+    try {
+      await refreshSubscription();
+    } catch (error) {
+      console.error('Failed to refresh subscription:', error);
+      showErrorToast('Failed to refresh subscription');
+    } finally {
+      setRefreshLoading(false);
+    }
+  };
   const calculateUsagePercentage = (current: number, limit: number) => {
     if (isUnlimited(limit)) return 0;
     return Math.min(Math.round((current / limit) * 100), 100);
@@ -221,12 +232,22 @@ export const SubscriptionSection: FC = () => {
           {subscription && (
             <div className="flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-lg">
               <Calendar className="w-5 h-5 text-primary-600" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm text-slate-600 dark:text-slate-400">{t('subscription.renewsOn')}</p>
                 <p className="text-lg font-semibold text-slate-900 dark:text-white">
                   {formatDate(subscription.currentPeriodEnd)}
                 </p>
               </div>
+              {subscription.paddleSubscriptionId && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshLoading}
+                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh subscription from Paddle"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshLoading ? 'animate-spin' : ''}`} />
+                </button>
+              )}
             </div>
           )}
         </div>

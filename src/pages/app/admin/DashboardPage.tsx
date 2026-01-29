@@ -1,8 +1,9 @@
 import { FC, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
-import { Users, CreditCard, FileText, Activity, TrendingUp } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
+import { toast } from 'sonner';
+import { Users, CreditCard, FileText, Activity, TrendingUp, Key, Plus, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
 import { 
   getCurrentUTCDate, 
   getDateRangeInUTC, 
@@ -15,15 +16,25 @@ import {
 import ChartErrorBoundary from '../../../components/admin/ChartErrorBoundary';
 import UsageChart from '../../../components/admin/UsageChart';
 import DailyUsageDetailModal from '../../../components/admin/DailyUsageDetailModal';
+import { Dialog, Button } from '../../../components/ui';
+import { useAuth } from '../../../contexts';
 
 const DashboardPage: FC = () => {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // State for chart interactions
   const [timeRange, setTimeRange] = useState<7 | 14 | 30>(7);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // State for secrets management
+  const [showSecretDialog, setShowSecretDialog] = useState(false);
+  const [secretFormData, setSecretFormData] = useState({ key: '', value: '', description: '', version: undefined as bigint | undefined });
+  const [editingSecret, setEditingSecret] = useState<string | null>(null);
+  const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set());
 
   const { data: users } = useQuery({
     queryKey: ['admin_dashboard_users'],
@@ -70,6 +81,24 @@ const DashboardPage: FC = () => {
       });
       return items;
     },
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+  });
+
+  // Check if current user is platform admin
+  const isPlatformAdmin = platformAdmins?.some(admin => admin.key === user?.key) || false;
+
+  // Fetch secrets (only for platform admins)
+  const { data: secrets } = useQuery({
+    queryKey: ['admin_secrets'],
+    queryFn: async () => {
+      if (!isPlatformAdmin) return [];
+      const { items } = await listDocs({
+        collection: 'secrets',
+      });
+      return items;
+    },
+    enabled: isPlatformAdmin,
     refetchInterval: 30000,
     refetchIntervalInBackground: false,
   });
@@ -208,6 +237,140 @@ const DashboardPage: FC = () => {
     setSelectedDate(date);
     setModalVisible(true);
   }, []);
+
+  // Secrets mutations
+  const saveSecretMutation = useMutation({
+    mutationFn: async (data: { key: string; value: string; description: string; version?: bigint }) => {
+      if (!user) return;
+
+      await setDoc({
+        collection: 'secrets',
+        doc: {
+          key: data.key,
+          data: {
+            value: data.value,
+            description: data.description,
+            createdAt: Date.now(),
+            createdBy: user.key,
+          },
+          ...(data.version !== undefined && { version: data.version }),
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_secrets'] });
+      setShowSecretDialog(false);
+      setSecretFormData({ key: '', value: '', description: '', version: undefined });
+      setEditingSecret(null);
+      toast.success(editingSecret ? 'Secret updated successfully' : 'Secret created successfully');
+    },
+    onError: () => {
+      toast.error('Failed to save secret');
+    },
+  });
+
+  const deleteSecretMutation = useMutation({
+    mutationFn: async (key: string) => {
+      const secretDoc = secrets?.find(s => s.key === key);
+      if (!secretDoc) throw new Error('Secret not found');
+
+      await deleteDoc({
+        collection: 'secrets',
+        doc: secretDoc,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_secrets'] });
+      toast.success('Secret deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete secret');
+    },
+  });
+
+  const configureCanisterMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('User not authenticated');
+
+      // Get required secrets
+      const prodApiKey = secrets?.find(s => s.key === 'PADDLE_API_KEY_PROD')?.data as any;
+      const devApiKey = secrets?.find(s => s.key === 'PADDLE_API_KEY_DEV')?.data as any;
+      const prodWebhookSecret = secrets?.find(s => s.key === 'PADDLE_WEBHOOK_SECRET_PROD')?.data as any;
+      const devWebhookSecret = secrets?.find(s => s.key === 'PADDLE_WEBHOOK_SECRET_DEV')?.data as any;
+
+      // Validate at least one API key exists
+      if (!devApiKey?.value && !prodApiKey?.value) {
+        throw new Error('At least one Paddle API key (DEV or PROD) is required');
+      }
+
+      // Create trigger document to invoke satellite function
+      // The satellite function will read secrets and configure the canister
+      const triggerId = `config_${Date.now()}`;
+      
+      await setDoc({
+        collection: 'canister_config_triggers',
+        doc: {
+          key: triggerId,
+          data: {
+            action: 'configure',
+            timestamp: Date.now(),
+            triggeredBy: user.key,
+            // Metadata for logging purposes
+            hasProdKey: !!prodApiKey?.value,
+            hasDevKey: !!devApiKey?.value,
+            hasProdWebhook: !!prodWebhookSecret?.value,
+            hasDevWebhook: !!devWebhookSecret?.value,
+          },
+        },
+      });
+
+      return triggerId;
+    },
+    onSuccess: () => {
+      toast.success('Configuration request sent to RexfillProxy canister');
+    },
+    onError: (error: any) => {
+      console.error('Failed to trigger canister configuration:', error);
+      toast.error(`Failed to configure canister: ${error.message || 'Unknown error'}`);
+    },
+  });
+
+  const handleAddSecret = () => {
+    setEditingSecret(null);
+    setSecretFormData({ key: '', value: '', description: '', version: undefined });
+    setShowSecretDialog(true);
+  };
+
+  const handleEditSecret = (secret: any) => {
+    setEditingSecret(secret.key);
+    setSecretFormData({
+      key: secret.key,
+      value: secret.data.value || '',
+      description: secret.data.description || '',
+      version: secret.version,
+    });
+    setShowSecretDialog(true);
+  };
+
+  const handleSaveSecret = () => {
+    if (!secretFormData.key || !secretFormData.value) {
+      toast.error('Key and value are required');
+      return;
+    }
+    saveSecretMutation.mutate(secretFormData);
+  };
+
+  const toggleSecretVisibility = (key: string) => {
+    setVisibleSecrets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -314,6 +477,110 @@ const DashboardPage: FC = () => {
         </div>
       </div>
 
+      {/* API Credentials Section - Only for Platform Admins */}
+      {isPlatformAdmin && (
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                {t('admin.dashboard.apiCredentials', 'API Credentials')}
+              </h2>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => configureCanisterMutation.mutate()}
+                disabled={configureCanisterMutation.isPending || !secrets || secrets.length === 0}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {configureCanisterMutation.isPending ? 'Configuring...' : 'Configure Canister'}
+              </Button>
+              <Button onClick={handleAddSecret}>
+                <Plus className="w-4 h-4 mr-2" />
+                {t('admin.dashboard.addSecret', 'Add Secret')}
+              </Button>
+            </div>
+          </div>
+
+          {secrets && secrets.length > 0 ? (
+            <div className="space-y-3">
+              {secrets.map(secret => {
+                const data = secret.data as any;
+                const isVisible = visibleSecrets.has(secret.key);
+                
+                return (
+                  <div key={secret.key} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">
+                          {secret.key}
+                        </span>
+                        {secret.key.includes('_DEV') && (
+                          <span className="px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded">
+                            Development
+                          </span>
+                        )}
+                        {secret.key.includes('_PROD') && (
+                          <span className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                            Production
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                        {data.description || 'No description'}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <code className="text-xs px-2 py-1 bg-slate-200 dark:bg-slate-800 rounded font-mono">
+                          {isVisible ? data.value : '••••••••••••••••'}
+                        </code>
+                        <button
+                          onClick={() => toggleSecretVisibility(secret.key)}
+                          className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        >
+                          {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditSecret(secret)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this secret?')) {
+                            deleteSecretMutation.mutate(secret.key);
+                          }
+                        }}
+                        disabled={deleteSecretMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+              <Key className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">
+                {t('admin.dashboard.noSecrets', 'No API credentials configured yet.')}
+              </p>
+              <p className="text-xs mt-1">
+                {t('admin.dashboard.addSecretHint', 'Add your Paddle API keys to enable subscription polling.')}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Usage Trends Section */}
       <div className="space-y-6">
         {/* Comparison Mode Toggle */}
@@ -417,6 +684,128 @@ const DashboardPage: FC = () => {
             setSelectedDate(null);
           }}
         />
+      )}
+
+      {/* Add/Edit Secret Dialog */}
+      {showSecretDialog && (
+        <Dialog
+          isOpen={true}
+          onClose={() => {
+            setShowSecretDialog(false);
+            setSecretFormData({ key: '', value: '', description: '', version: undefined });
+            setEditingSecret(null);
+          }}
+          title={editingSecret ? 'Edit Secret' : 'Add Secret'}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Key *
+              </label>
+              {editingSecret ? (
+                <input
+                  type="text"
+                  value={secretFormData.key}
+                  disabled
+                  className="w-full px-4 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white opacity-50 cursor-not-allowed"
+                />
+              ) : (
+                <select
+                  value={secretFormData.key}
+                  onChange={(e) => setSecretFormData(d => ({ ...d, key: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                >
+                  <option value="">Select a key...</option>
+                  <option value="REXFILL_PROXY_CANISTER_ID">REXFILL_PROXY_CANISTER_ID</option>
+                  <option value="PADDLE_ENVIRONMENT">PADDLE_ENVIRONMENT</option>
+                  <option value="PADDLE_API_KEY_DEV">PADDLE_API_KEY_DEV</option>
+                  <option value="PADDLE_API_KEY_PROD">PADDLE_API_KEY_PROD</option>
+                  <option value="PADDLE_WEBHOOK_SECRET_DEV">PADDLE_WEBHOOK_SECRET_DEV</option>
+                  <option value="PADDLE_WEBHOOK_SECRET_PROD">PADDLE_WEBHOOK_SECRET_PROD</option>
+                </select>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Value *
+              </label>
+              {secretFormData.key === 'PADDLE_ENVIRONMENT' ? (
+                <select
+                  value={secretFormData.value}
+                  onChange={(e) => setSecretFormData(d => ({ ...d, value: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                >
+                  <option value="">Select environment...</option>
+                  <option value="DEV">DEV (Sandbox)</option>
+                  <option value="PROD">PROD (Production)</option>
+                </select>
+              ) : (
+                <input
+                  type={secretFormData.key === 'REXFILL_PROXY_CANISTER_ID' ? 'text' : 'password'}
+                  value={secretFormData.value}
+                  onChange={(e) => setSecretFormData(d => ({ ...d, value: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                  placeholder={
+                    secretFormData.key === 'REXFILL_PROXY_CANISTER_ID'
+                      ? 'xxxxx-xxxxx-xxxxx-xxxxx-cai'
+                      : secretFormData.key.includes('PADDLE_API_KEY') 
+                      ? 'Enter your Paddle API key...'
+                      : 'Enter secret value...'
+                  }
+                />
+              )}
+              {secretFormData.key === 'REXFILL_PROXY_CANISTER_ID' && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Enter the canister ID of your deployed RexfillProxy Motoko canister. Get this from <code className="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">dfx deploy</code> output.
+                </p>
+              )}
+              {secretFormData.key === 'PADDLE_ENVIRONMENT' && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Select DEV for Paddle Sandbox environment or PROD for Production. This determines which API keys and webhooks are used.
+                </p>
+              )}
+              {secretFormData.key.includes('PADDLE_API_KEY') && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Get your API key from <a href="https://vendors.paddle.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">vendors.paddle.com</a> → Developer Tools → Authentication
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={secretFormData.description}
+                onChange={(e) => setSecretFormData(d => ({ ...d, description: e.target.value }))}
+                rows={2}
+                className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                placeholder="Optional description..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSecretDialog(false);
+                  setSecretFormData({ key: '', value: '', description: '', version: undefined });
+                  setEditingSecret(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveSecret}
+                disabled={!secretFormData.key || !secretFormData.value || saveSecretMutation.isPending}
+              >
+                <Key className="w-4 h-4 mr-2" />
+                {editingSecret ? 'Update' : 'Save'} Secret
+              </Button>
+            </div>
+          </div>
+        </Dialog>
       )}
     </div>
   );
