@@ -1,6 +1,6 @@
 import { Doc } from '@junobuild/core';
 import { ActivityLogData } from '../types/activity-log';
-import { setDocWithTimeout, listDocsWithTimeout } from './junoWithTimeout';
+import { activityLogRepository } from '../dal';
 
 /**
  * Log an activity to the activity_logs collection
@@ -10,18 +10,17 @@ export async function logActivity(
   logData: Omit<ActivityLogData, 'timestamp'>
 ): Promise<void> {
   try {
+    const key = `${logData.resource_id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const data: ActivityLogData = {
       ...logData,
       timestamp: Date.now(),
     };
 
-    await setDocWithTimeout({
-      collection: 'activity_logs',
-      doc: {
-        key: `${logData.resource_id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        data,
-      },
-    });
+    await activityLogRepository.log(
+      logData.created_by,
+      key,
+      data
+    );
   } catch (error) {
     // Silent failure - logging should not break user operations
     console.warn('Failed to log activity:', error);
@@ -36,16 +35,9 @@ export async function fetchLogsForResource(
   resourceId: string
 ): Promise<Doc<ActivityLogData>[]> {
   try {
-    const { items } = await listDocsWithTimeout<ActivityLogData>({
-      collection: 'activity_logs',
-      filter: {},
-    });
-
-    // Filter by resource_id and sort by timestamp descending
-    const logs = items
-      .filter((log) => log.data.resource_id === resourceId)
-      .sort((a, b) => b.data.timestamp - a.data.timestamp);
-
+    // Get all logs and filter by resource_id (user would be the resource owner)
+    // Note: This assumes we have the userId context available
+    const logs = await activityLogRepository.getByEntityId('', resourceId);
     return logs;
   } catch (error) {
     console.error('Failed to fetch logs:', error);
@@ -59,15 +51,9 @@ export async function fetchLogsForResource(
  */
 export async function fetchAllLogs(): Promise<Doc<ActivityLogData>[]> {
   try {
-    const { items } = await listDocsWithTimeout<ActivityLogData>({
-      collection: 'activity_logs',
-      filter: {},
-    });
-
-    // Sort by timestamp descending
-    const logs = items.sort((a, b) => b.data.timestamp - a.data.timestamp);
-
-    return logs;
+    // Get all logs (admin operation)
+    const logs = await activityLogRepository.list();
+    return logs.sort((a, b) => b.data.timestamp - a.data.timestamp);
   } catch (error) {
     console.error('Failed to fetch all logs:', error);
     throw error;

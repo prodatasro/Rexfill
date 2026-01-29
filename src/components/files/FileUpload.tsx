@@ -10,11 +10,11 @@ import { extractMetadataFromFile } from '../../utils/extractMetadata';
 import FolderSelector from '../folders/FolderSelector';
 import { useTranslation } from 'react-i18next';
 import { templateKeys } from '../../hooks/useTemplatesQuery';
-import { uploadFileWithTimeout, setDocWithTimeout, deleteAssetWithTimeout } from '../../utils/junoWithTimeout';
 import { TimeoutError } from '../../utils/fetchWithTimeout';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth, useSubscription } from '../../contexts';
 import { useUserProfile } from '../../contexts/UserProfileContext';
+import { templateRepository, templateStorage } from '../../dal';
 
 interface FileUploadProps {
   onUploadSuccess: (uploadedToFolderId?: string | null) => void;

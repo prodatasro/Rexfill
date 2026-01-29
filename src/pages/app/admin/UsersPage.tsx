@@ -1,13 +1,14 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listDocs, setDoc, deleteDoc, getDoc } from '@junobuild/core';
+import { setDoc, getDoc, listDocs, deleteDoc } from '@junobuild/core';
 import { toast } from 'sonner';
 import { Search, Download, Ban, CheckCircle, Settings, Zap, TrendingUp, Award, Trash2, RefreshCw } from 'lucide-react';
 import type { UserProfile, SubscriptionData, SubscriptionOverride, SuspendedUser } from '../../../types';
 import { SUBSCRIPTION_PLANS } from '../../../config/plans';
 import { useAuth } from '../../../contexts';
 import { logAdminAction } from '../../../utils/adminLogger';
+import { userProfileRepository, subscriptionRepository, organizationRepository, adminRepository } from '../../../dal';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Dialog, Button } from '../../../components/ui';
 
@@ -16,7 +17,7 @@ const UsersPage: FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<{ key: string; data: UserProfile } | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [suspendReason, setSuspendReason] = useState('');
@@ -36,10 +37,7 @@ const UsersPage: FC = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin_users'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'user_profiles',
-      });
-      return items;
+      return await userProfileRepository.list();
     },
   });
 
@@ -47,10 +45,7 @@ const UsersPage: FC = () => {
   const { data: subscriptions } = useQuery({
     queryKey: ['admin_subscriptions'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'subscriptions',
-      });
-      return items;
+      return await subscriptionRepository.list();
     },
   });
 
@@ -58,10 +53,7 @@ const UsersPage: FC = () => {
   const { data: organizations } = useQuery({
     queryKey: ['admin_organizations'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'organizations',
-      });
-      return items;
+      return await organizationRepository.list();
     },
   });
 
@@ -69,10 +61,14 @@ const UsersPage: FC = () => {
   const { data: orgMembers } = useQuery({
     queryKey: ['admin_org_members'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'organization_members',
-      });
-      return items;
+      // Get all members from all organizations
+      const orgs = await organizationRepository.list();
+      const allMembers = [];
+      for (const org of orgs) {
+        const members = await organizationRepository.getMembers(org.key);
+        allMembers.push(...members);
+      }
+      return allMembers;
     },
   });
 
@@ -80,10 +76,7 @@ const UsersPage: FC = () => {
   const { data: suspendedUsers } = useQuery({
     queryKey: ['admin_suspended_users'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'suspended_users',
-      });
-      return items;
+      return await adminRepository.getSuspendedUsers();
     },
   });
 
@@ -420,12 +413,12 @@ const UsersPage: FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleSuspend = (userItem: { key: string; data: UserProfile }) => {
+  const handleSuspend = (userItem: UserProfile) => {
     setSelectedUser(userItem);
     setShowSuspendDialog(true);
   };
 
-  const handleOverride = (userItem: { key: string; data: UserProfile }) => {
+  const handleOverride = (userItem: UserProfile) => {
     setSelectedUser(userItem);
     setShowOverrideDialog(true);
   };
@@ -456,7 +449,7 @@ const UsersPage: FC = () => {
   };
 
   // Refresh subscription from Paddle API
-  const handleRefreshSubscription = async (userId: string, subscriptionId: string) => {
+  const handleRefreshSubscription = async (userId: string, _subscriptionId: string) => {
     if (refreshingSubscriptions.has(userId)) return;
 
     setRefreshingSubscriptions(prev => new Set(prev).add(userId));
@@ -705,14 +698,14 @@ const UsersPage: FC = () => {
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleSuspend({ key: item.key, data: item.data as UserProfile })}
+                            onClick={() => handleSuspend(item)}
                             className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
                           >
                             {t('admin.users.suspend', 'Suspend')}
                           </button>
                         )}
                         <button
-                          onClick={() => handleOverride({ key: item.key, data: item.data as UserProfile })}
+                          onClick={() => handleOverride(item)}
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-1"
                         >
                           <Settings className="w-4 h-4" />

@@ -2,7 +2,6 @@ import { FC, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
-import { setDoc } from '@junobuild/core';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts';
 import { useUserProfile } from '../../contexts/UserProfileContext';
@@ -26,7 +25,7 @@ const ProfilePage: FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { profile, loading } = useUserProfile();
-  const { subscription, refreshSubscription } = useSubscription();
+  const { refreshSubscription } = useSubscription();
   
   const [activeSection, setActiveSection] = useState<ProfileSection>('profile');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);

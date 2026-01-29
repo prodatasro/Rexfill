@@ -1,8 +1,8 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import { subscriptionRepository } from '../../../dal';
 import { Button } from '../../../components/ui';
 import { CreditCard } from 'lucide-react';
 
@@ -14,10 +14,7 @@ const SubscriptionsPage: FC = () => {
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ['admin_all_subscriptions'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'subscriptions',
-      });
-      return items;
+      return await subscriptionRepository.list();
     },
   });
 

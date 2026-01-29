@@ -1,10 +1,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode, FC, useCallback } from 'react';
-import { uploadFile, listDocs } from '@junobuild/core';
 import { useAuth } from './AuthContext';
 import { UserProfile, UserProfileData } from '../types';
-import { getDocWithTimeout, setDocWithTimeout } from '../utils/junoWithTimeout';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { logActivity } from '../utils/activityLogger';
+import { userProfileRepository, avatarStorage } from '../dal';
 
 interface UserProfileContextType {
   profile: UserProfile | null;
@@ -100,20 +99,14 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
         // Check if user is a platform admin
         let adminStatus = false;
         try {
-          const { items: admins } = await listDocs({
-            collection: 'platform_admins',
-          });
-          adminStatus = admins.some(admin => admin.key === user.key);
+          adminStatus = await userProfileRepository.isAdmin(user.key);
         } catch (error) {
           console.error('Failed to check admin status:', error);
         }
         
         setIsAdmin(adminStatus);
         
-        const doc = await getDocWithTimeout<UserProfileData>({
-          collection: 'user_profiles',
-          key: user.key,
-        });
+        const doc = await userProfileRepository.get(user.key);
         
         if (doc) {
           // Update profile with current admin status if it's changed
@@ -126,28 +119,22 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
             while (!success && retryCount < maxRetries) {
               try {
                 // Fetch the latest version before updating to avoid version conflicts
-                const latestDoc = await getDocWithTimeout<UserProfileData>({
-                  collection: 'user_profiles',
-                  key: user.key,
-                });
+                const latestDoc = await userProfileRepository.get(user.key);
                 
                 if (!latestDoc) {
                   throw new Error('Profile not found during update');
                 }
                 
-                const updatedProfile = {
-                  ...latestDoc,
-                  data: {
+                await userProfileRepository.update(
+                  user.key,
+                  {
                     ...latestDoc.data,
                     isAdmin: adminStatus,
                   },
-                };
+                  latestDoc.version
+                );
                 
-                await setDocWithTimeout({
-                  collection: 'user_profiles',
-                  doc: updatedProfile,
-                });
-                
+                const updatedProfile = await userProfileRepository.get(user.key);
                 setProfile(updatedProfile);
                 success = true;
               } catch (error: any) {
@@ -177,10 +164,7 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
           while (!created && retryCount < maxRetries) {
             try {
               // Double-check profile doesn't exist (race condition protection)
-              const existingDoc = await getDocWithTimeout<UserProfileData>({
-                collection: 'user_profiles',
-                key: user.key,
-              });
+              const existingDoc = await userProfileRepository.get(user.key);
               
               if (existingDoc) {
                 // Profile was created by another process, use it
@@ -190,27 +174,20 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
                 break;
               }
               
-              const defaultProfile: UserProfile = {
-                key: user.key,
-                owner: user.key,
-                data: {
-                  displayName: '',
-                  preferences: {},
-                  isAdmin: adminStatus,
-                  createdAt: Date.now(),
-                  updatedAt: Date.now(),
-                },
-                created_at: BigInt(Date.now() * 1000000),
-                updated_at: BigInt(Date.now() * 1000000),
-                version: undefined, // Let Juno assign the version
+              const profileData: UserProfileData = {
+                displayName: '',
+                preferences: {},
+                isAdmin: adminStatus,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
               };
 
-              await setDocWithTimeout({
-                collection: 'user_profiles',
-                doc: defaultProfile,
-              });
+              const newProfile = await userProfileRepository.upsert(
+                user.key,
+                profileData
+              );
 
-              setProfile(defaultProfile);
+              setProfile(newProfile);
               created = true;
 
               // Log profile creation
@@ -254,28 +231,23 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
 
       try {
         // Fetch the latest version to avoid version conflicts
-        const currentDoc = await getDocWithTimeout<UserProfileData>({
-          collection: 'user_profiles',
-          key: user.key,
-        });
+        const currentDoc = await userProfileRepository.get(user.key);
 
         if (!currentDoc) {
           throw new Error('Profile not found');
         }
 
-        const updatedProfile: UserProfile = {
-          ...currentDoc,
-          data: {
-            ...currentDoc.data,
-            ...data,
-            updatedAt: Date.now(),
-          },
+        const updatedData: UserProfileData = {
+          ...currentDoc.data,
+          ...data,
+          updatedAt: Date.now(),
         };
 
-        await setDocWithTimeout({
-          collection: 'user_profiles',
-          doc: updatedProfile,
-        });
+        const updatedProfile = await userProfileRepository.update(
+          user.key,
+          updatedData,
+          currentDoc.version
+        );
 
         setProfile(updatedProfile);
         showSuccessToast('Profile updated successfully');
@@ -322,14 +294,10 @@ export const UserProfileProvider: FC<UserProfileProviderProps> = ({ children }) 
         // Compress image
         const compressedBlob = await compressImage(file, 256, 0.85);
 
-        // Upload to Juno storage
-        // Convert Blob to File for uploadFile API
+        // Upload to storage
         const avatarFile = new File([compressedBlob], 'avatar.jpg', { type: 'image/jpeg' });
-        const { downloadUrl } = await uploadFile({
-          data: avatarFile,
-          collection: 'user_avatars',
-          filename: `${user.key}/avatar.jpg`,
-        });
+        const filename = `${user.key}/avatar.jpg`;
+        const downloadUrl = await avatarStorage.upload(filename, avatarFile);
 
         // Update profile with avatar URL
         await updateProfile({ avatarUrl: downloadUrl });

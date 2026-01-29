@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Upload, Loader2, X, Folder, FileText, AlertTriangle, Check } from 'lucide-react';
 import type { Doc } from '@junobuild/core';
 import { useQueryClient } from '@tanstack/react-query';
-import { setDocWithTimeout, uploadFileWithTimeout } from '../../utils/junoWithTimeout';
 import PizZip from 'pizzip';
 import { templateKeys } from '../../hooks/useTemplatesQuery';
 import type { WordTemplateData } from '../../types/word-template';
@@ -23,6 +22,7 @@ import { buildFolderPath } from '../../utils/folderUtils';
 import { showSuccessToast, showErrorToast, showWarningToast } from '../../utils/toast';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { templateRepository, templateStorage, folderRepository } from '../../dal';
 
 interface ImportDialogProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 import { FC, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listDocs, setDoc, deleteDoc } from '@junobuild/core';
+import { setDoc, deleteDoc, listDocs } from '@junobuild/core';
 import { toast } from 'sonner';
 import { Users, CreditCard, FileText, Activity, TrendingUp, Key, Plus, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
 import { 
@@ -18,6 +18,7 @@ import UsageChart from '../../../components/admin/UsageChart';
 import DailyUsageDetailModal from '../../../components/admin/DailyUsageDetailModal';
 import { Dialog, Button } from '../../../components/ui';
 import { useAuth } from '../../../contexts';
+import { userProfileRepository, subscriptionRepository, templateRepository, adminRepository } from '../../../dal';
 
 const DashboardPage: FC = () => {
   const { t, i18n } = useTranslation();
@@ -39,10 +40,7 @@ const DashboardPage: FC = () => {
   const { data: users } = useQuery({
     queryKey: ['admin_dashboard_users'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'user_profiles',
-      });
-      return items;
+      return await userProfileRepository.list();
     },
     refetchInterval: 30000,
     refetchIntervalInBackground: false, // Only refetch when tab is visible
@@ -51,10 +49,7 @@ const DashboardPage: FC = () => {
   const { data: subscriptions } = useQuery({
     queryKey: ['admin_dashboard_subscriptions'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'subscriptions',
-      });
-      return items;
+      return await subscriptionRepository.list();
     },
     refetchInterval: 30000,
     refetchIntervalInBackground: false,
@@ -63,10 +58,7 @@ const DashboardPage: FC = () => {
   const { data: templateMeta } = useQuery({
     queryKey: ['admin_dashboard_templates'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'templates_meta',
-      });
-      return items;
+      return await templateRepository.list();
     },
     refetchInterval: 30000,
     refetchIntervalInBackground: false,
@@ -76,10 +68,7 @@ const DashboardPage: FC = () => {
   const { data: platformAdmins } = useQuery({
     queryKey: ['platform_admins'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'platform_admins',
-      });
-      return items;
+      return await adminRepository.list();
     },
     refetchInterval: 30000,
     refetchIntervalInBackground: false,

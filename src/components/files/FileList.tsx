@@ -1,7 +1,7 @@
 import { FC, useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ClipboardList, Search, ChevronLeft, ChevronRight, X, Loader2, Star, Trash2, CheckSquare, Square } from 'lucide-react';
-import { Doc, setDoc, getDoc, deleteDoc } from '@junobuild/core';
+import { Doc, setDoc, getDoc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -16,12 +16,12 @@ import DocxPreviewModal from '../modals/DocxPreviewModal';
 import { buildTemplatePath } from '../../utils/templatePathUtils';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useMoveTemplateMutation, useUpdateTemplateMutation, useToggleFavoriteMutation, useCreateTemplateMutation } from '../../hooks/useTemplatesQuery';
-import { deleteDocWithTimeout, deleteAssetWithTimeout, listAssetsWithTimeout } from '../../utils/junoWithTimeout';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { fetchLogsForResource, generateLogCSV, downloadLogCSV, logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { nanoid } from 'nanoid';
+import { templateRepository, templateStorage } from '../../dal';
 
 // Type for download request document data
 interface DownloadRequestData {

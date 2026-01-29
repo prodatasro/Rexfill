@@ -1,7 +1,7 @@
-import { setDoc, getDoc, listDocs, deleteDoc } from '@junobuild/core';
 import type { AdminAction, PlatformAdmin } from '../types';
-import { getDocWithTimeout } from './junoWithTimeout';
 import type { UserProfileData } from '../types/user-profile';
+import { adminRepository, userProfileRepository } from '../dal';
+import { getDoc } from '@junobuild/core';
 
 /**
  * Log an admin action to the admin_actions collection
@@ -15,6 +15,8 @@ export async function logAdminAction(
   changes?: Record<string, any>
 ): Promise<void> {
   try {
+    const key = `${adminId}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    
     const actionData: AdminAction = {
       adminId,
       action,
@@ -24,15 +26,7 @@ export async function logAdminAction(
       timestamp: Date.now(),
     };
 
-    const key = `${adminId}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    await setDoc({
-      collection: 'admin_actions',
-      doc: {
-        key,
-        data: actionData,
-      },
-    });
+    await adminRepository.logAction(key, actionData);
   } catch (error) {
     console.error('Failed to log admin action:', error);
     // Don't throw - logging failure shouldn't break the actual action
@@ -49,9 +43,7 @@ export async function promoteToAdmin(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // 1. Verify the caller is the first admin
-    const { items: admins } = await listDocs({
-      collection: 'platform_admins',
-    });
+    const admins = await adminRepository.list();
 
     if (admins.length === 0) {
       return { success: false, error: 'No admins found in system' };
@@ -75,29 +67,14 @@ export async function promoteToAdmin(
     }
 
     // 3. Validate that the user exists
-    const userProfile = await getDocWithTimeout<UserProfileData>({
-      collection: 'user_profiles',
-      key: principalId.trim(),
-    });
+    const userProfile = await userProfileRepository.get(principalId.trim());
 
     if (!userProfile) {
       return { success: false, error: 'User not found. Please check the Principal ID.' };
     }
 
     // 4. Add the user as an admin
-    const adminData: PlatformAdmin = {
-      principalId: principalId.trim(),
-      addedAt: Date.now(),
-      addedBy: currentAdminId,
-    };
-
-    await setDoc({
-      collection: 'platform_admins',
-      doc: {
-        key: principalId.trim(),
-        data: adminData,
-      },
-    });
+    await adminRepository.addAdmin(principalId.trim(), currentAdminId);
 
     // 5. Log the action
     await logAdminAction(
@@ -126,9 +103,7 @@ export async function revokeAdmin(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // 1. Get all admins
-    const { items: admins } = await listDocs({
-      collection: 'platform_admins',
-    });
+    const admins = await adminRepository.list();
 
     if (admins.length === 0) {
       return { success: false, error: 'No admins found in system' };
@@ -164,10 +139,7 @@ export async function revokeAdmin(
     }
 
     // 6. Remove the admin
-    await deleteDoc({
-      collection: 'platform_admins',
-      doc: targetAdmin,
-    });
+    await adminRepository.removeAdmin(principalId.trim());
 
     // 7. Log the action
     await logAdminAction(
@@ -189,11 +161,7 @@ export async function revokeAdmin(
  */
 export async function isUserSuspended(userId: string): Promise<boolean> {
   try {
-    const doc = await getDoc({
-      collection: 'suspended_users',
-      key: userId,
-    });
-    return doc !== undefined && doc !== null;
+    return await adminRepository.isSuspended(userId);
   } catch (error) {
     console.error('Failed to check user suspension:', error);
     return false;

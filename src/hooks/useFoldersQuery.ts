@@ -3,11 +3,6 @@ import { useMemo } from 'react';
 import type { Doc } from '@junobuild/core';
 import type { Folder } from '../types/folder';
 import type { WordTemplateData } from '../types/word-template';
-import {
-  listDocsWithTimeout,
-  setDocWithTimeout,
-  deleteDocWithTimeout,
-} from '../utils/junoWithTimeout';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { TimeoutError } from '../utils/fetchWithTimeout';
@@ -15,6 +10,7 @@ import { validateFolderName, buildFolderPath, buildFolderTree } from '../utils/f
 import { templateKeys } from './useTemplatesQuery';
 import { useAuth } from '../contexts';
 import { useAdmin } from '../contexts/AdminContext';
+import { folderRepository } from '../dal';
 
 // Query keys for cache management
 export const folderKeys = {
@@ -25,8 +21,7 @@ export const folderKeys = {
 
 // Fetch all folders
 async function fetchFolders(userKey?: string | null, isAdmin?: boolean): Promise<Folder[]> {
-  const result = await listDocsWithTimeout({ collection: 'folders' });
-  const items = result.items as Folder[];
+  const items = await folderRepository.list() as Folder[];
   
   // Admin users see all folders; regular users see only their own
   if (isAdmin || !userKey) {
@@ -110,30 +105,22 @@ export function useCreateFolderMutation() {
       // Create folder with generated key
       const key = `folder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-      const newFolder: Folder = {
-        key,
-        data: {
-          name,
-          parentId,
-          path,
-          level,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          order: 0,
-        },
-        owner: '', // Will be set by Juno
-        created_at: BigInt(0),
-        updated_at: BigInt(0),
-        version: BigInt(0),
+      const folderData = {
+        name,
+        parentId,
+        path,
+        level,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        order: 0,
       };
 
-      await setDocWithTimeout({
-        collection: 'folders',
-        doc: {
-          key,
-          data: newFolder.data,
-        },
-      });
+      // Assume user.key as owner (will be set properly by repository)
+      await folderRepository.createFolder(
+        key,
+        folderData,
+        '' // Owner will be set by Juno
+      );
 
       return { key, name };
     },
@@ -189,18 +176,16 @@ export function useRenameFolderMutation() {
       const newPath = buildFolderPath(newName, parentFolder?.data.path || null);
 
       // Update the folder
-      await setDocWithTimeout({
-        collection: 'folders',
-        doc: {
-          ...folder,
-          data: {
-            ...folder.data,
-            name: newName,
-            path: newPath,
-            updatedAt: Date.now(),
-          },
+      await folderRepository.update(
+        folder.key,
+        {
+          ...folder.data,
+          name: newName,
+          path: newPath,
+          updatedAt: Date.now(),
         },
-      });
+        folder.version
+      );
 
       // Update all subfolders' paths in parallel
       const subfolders = folders.filter((f) => f.data.parentId === folder.key);
@@ -208,17 +193,15 @@ export function useRenameFolderMutation() {
         await Promise.all(
           subfolders.map((subfolder) => {
             const newSubPath = subfolder.data.path.replace(oldPath, newPath);
-            return setDocWithTimeout({
-              collection: 'folders',
-              doc: {
-                ...subfolder,
-                data: {
-                  ...subfolder.data,
-                  path: newSubPath,
-                  updatedAt: Date.now(),
-                },
+            return folderRepository.update(
+              subfolder.key,
+              {
+                ...subfolder.data,
+                path: newSubPath,
+                updatedAt: Date.now(),
               },
-            });
+              subfolder.version
+            );
           })
         );
       }
@@ -300,27 +283,8 @@ export function useDeleteFolderMutation() {
       folder: Folder;
       folders: Folder[];
     }) => {
-      // Get all subfolders
-      const subfolders = folders.filter((f) => f.data.parentId === folder.key);
-
-      // Delete all subfolders in parallel
-      if (subfolders.length > 0) {
-        await Promise.all(
-          subfolders.map((subfolder) =>
-            deleteDocWithTimeout({
-              collection: 'folders',
-              doc: subfolder,
-            })
-          )
-        );
-      }
-
-      // Delete the folder itself
-      await deleteDocWithTimeout({
-        collection: 'folders',
-        doc: folder,
-      });
-
+      // Use repository's recursive delete which handles subfolders
+      await folderRepository.deleteRecursive(folder.key, folder.owner);
       return folder;
     },
     onMutate: async ({ folder, folders }) => {

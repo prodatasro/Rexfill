@@ -1,8 +1,8 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import { templateRepository } from '../../../dal';
 import { Button } from '../../../components/ui';
 import { HardDrive } from 'lucide-react';
 
@@ -14,10 +14,7 @@ const TemplatesPage: FC = () => {
   const { data: templateMeta, isLoading } = useQuery({
     queryKey: ['admin_templates_meta'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'templates_meta',
-      });
-      return items;
+      return await templateRepository.list();
     },
   });
 

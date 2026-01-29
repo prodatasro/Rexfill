@@ -1,7 +1,7 @@
-import { listDocs } from '@junobuild/core';
 import type { Folder, FolderData, FolderTreeNode } from '../types/folder';
 import type { WordTemplateData } from '../types/word-template';
 import type { Doc } from '@junobuild/core';
+import { folderRepository } from '../dal';
 
 /**
  * Validate folder name and check for duplicates at the same level
@@ -33,8 +33,7 @@ export const validateFolderName = async (
 
   // Check for duplicates at same level
   try {
-    const result = await listDocs({ collection: 'folders' });
-    const folders = result.items as Doc<FolderData>[];
+    const folders = await folderRepository.list() as Doc<FolderData>[];
     const siblings = folders.filter(
       (f) =>
         f.data.parentId === parentId && f.key !== excludeFolderId

@@ -6,11 +6,11 @@ import { useUserProfile } from '../../contexts/UserProfileContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { createGDPRExportZip, downloadBlob } from '../../utils/exportImport';
 import { fetchAllLogs } from '../../utils/activityLogger';
-import { listDocsWithTimeout } from '../../utils/junoWithTimeout';
 import type { WordTemplateData, Folder } from '../../types';
 import type { Doc } from '@junobuild/core';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { showErrorToast, showSuccessToast } from '../../utils/toast';
+import { templateRepository, folderRepository } from '../../dal';
 
 interface GDPRExportDialogProps {
   isOpen: boolean;
@@ -38,20 +38,11 @@ export const GDPRExportDialog: FC<GDPRExportDialogProps> = ({ isOpen, onClose })
 
       // Step 1: Fetch templates
       setProgress(t('profile.gdpr.fetchingTemplates'));
-      const templatesResult = await listDocsWithTimeout<WordTemplateData>({
-        collection: 'templates_meta',
-        filter: {
-          owner: user.key,
-        },
-      });
-      const templates = templatesResult.items;
+      const templates = await templateRepository.getByOwner(user.key);
 
       // Step 2: Fetch folders
       setProgress(t('profile.gdpr.fetchingFolders'));
-      const foldersResult = await listDocsWithTimeout({
-        collection: 'folders',
-      });
-      const folders = foldersResult.items as Folder[];
+      const folders = await folderRepository.list() as Folder[];
 
       // Step 3: Fetch activity logs
       setProgress(t('profile.gdpr.fetchingLogs'));

@@ -3,12 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Download, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts';
 import { GDPRExportDialog } from '../dialogs/GDPRExportDialog';
-import { listDocsWithTimeout, deleteDocWithTimeout } from '../../utils/junoWithTimeout';
 import { deleteTemplates, buildStorageAssetMap } from '../../utils/templateDeletion';
 import { showErrorToast, showSuccessToast } from '../../utils/toast';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import type { WordTemplateData, Folder } from '../../types';
-import type { Doc } from '@junobuild/core';
+import { templateRepository, folderRepository } from '../../dal';
 
 export const DataManagementSection: FC = () => {
   const { t } = useTranslation();
@@ -34,30 +32,18 @@ export const DataManagementSection: FC = () => {
 
       // Step 1: Fetch and delete all templates
       setProgress(t('profile.gdpr.deletingTemplates'));
-      const templatesResult = await listDocsWithTimeout<WordTemplateData>({
-        collection: 'templates_meta',
-        filter: {
-          owner: user.key,
-        },
-      });
-      const templates = templatesResult.items;
+      const templates = await templateRepository.getByOwner(user.key);
 
       const storageMap = await buildStorageAssetMap();
       await deleteTemplates(templates, storageMap);
 
       // Step 2: Fetch and delete all folders
       setProgress(t('profile.gdpr.deletingFolders'));
-      const foldersResult = await listDocsWithTimeout({
-        collection: 'folders',
-      });
-      const folders = foldersResult.items as Doc<Folder>[];
+      const folders = await folderRepository.list();
 
       for (const folder of folders) {
         try {
-          await deleteDocWithTimeout({
-            collection: 'folders',
-            doc: folder,
-          });
+          await folderRepository.delete(folder.key);
         } catch (error) {
           console.error(`Failed to delete folder ${folder.key}:`, error);
         }

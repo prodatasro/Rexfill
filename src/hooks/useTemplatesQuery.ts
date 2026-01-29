@@ -1,19 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Doc } from '@junobuild/core';
 import type { WordTemplateData } from '../types/word-template';
-import {
-  listDocsWithTimeout,
-  setDocWithTimeout,
-  deleteDocWithTimeout,
-  deleteAssetWithTimeout,
-  getDocWithTimeout,
-} from '../utils/junoWithTimeout';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { TimeoutError } from '../utils/fetchWithTimeout';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useAuth } from '../contexts';
 import { useAdmin } from '../contexts/AdminContext';
+import { templateRepository, templateStorage } from '../dal';
 
 // Query keys for cache management
 export const templateKeys = {
@@ -28,11 +22,10 @@ export const templateKeys = {
 // Fetch all templates
 async function fetchTemplates(userKey?: string | null, isAdmin?: boolean): Promise<Doc<WordTemplateData>[]> {
   // Admin users see all templates; regular users filtered by owner
-  const result = await listDocsWithTimeout({
-    collection: 'templates_meta',
-    ...(!isAdmin && userKey ? { filter: { owner: userKey } } : {})
-  });
-  return result.items as Doc<WordTemplateData>[];
+  if (isAdmin || !userKey) {
+    return await templateRepository.list();
+  }
+  return await templateRepository.getByOwner(userKey);
 }
 
 /**
@@ -82,16 +75,10 @@ export function useDeleteTemplateMutation() {
     mutationFn: async (template: Doc<WordTemplateData>) => {
       // Delete from storage first
       if (template.data.fullPath) {
-        await deleteAssetWithTimeout({
-          collection: 'templates',
-          fullPath: template.data.fullPath,
-        });
+        await templateStorage.delete(template.data.fullPath);
       }
       // Delete metadata
-      await deleteDocWithTimeout({
-        collection: 'templates_meta',
-        doc: template,
-      });
+      await templateRepository.delete(template);
       return template;
     },
     // Optimistic update - remove from cache immediately
@@ -144,10 +131,11 @@ export function useUpdateTemplateMutation() {
 
   return useMutation({
     mutationFn: async (template: Doc<WordTemplateData>) => {
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: template,
-      });
+      await templateRepository.update(
+        template.key,
+        template.data,
+        template.version
+      );
       return template;
     },
     onMutate: async (template) => {
@@ -190,28 +178,8 @@ export function useToggleFavoriteMutation() {
 
   return useMutation({
     mutationFn: async (template: Doc<WordTemplateData>) => {
-      // Fetch the latest version from Juno to avoid version conflicts
-      const latestDoc = await getDocWithTimeout<WordTemplateData>({
-        collection: 'templates_meta',
-        key: template.key,
-      });
-
-      if (!latestDoc) {
-        throw new Error('Document not found');
-      }
-
-      const updatedTemplate = {
-        ...latestDoc,
-        data: {
-          ...latestDoc.data,
-          isFavorite: !latestDoc.data.isFavorite,
-        },
-      };
-
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: updatedTemplate,
-      });
+      // Use repository to toggle favorite (handles version conflicts)
+      const updatedTemplate = await templateRepository.toggleFavorite(template.key);
       return updatedTemplate;
     },
     onMutate: async (template) => {
@@ -264,19 +232,8 @@ export function useMoveTemplateMutation() {
       newFolderPath: string;
       newFullPath: string;
     }) => {
-      const updatedTemplate = {
-        ...template,
-        data: {
-          ...template.data,
-          folderId: newFolderId,
-          folderPath: newFolderPath,
-          fullPath: newFullPath,
-        },
-      };
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: updatedTemplate,
-      });
+      // Use repository to move template
+      const updatedTemplate = await templateRepository.moveToFolder(template.key, newFolderId);
       return updatedTemplate;
     },
     onMutate: async ({ template, newFolderId, newFolderPath, newFullPath }) => {
@@ -335,13 +292,14 @@ export function useBulkUpdateTemplatesMutation() {
 
   return useMutation({
     mutationFn: async (templates: Doc<WordTemplateData>[]) => {
-      // Update all templates in parallel
+      // Update all templates using repository (it handles batching internally)
       await Promise.all(
         templates.map((template) =>
-          setDocWithTimeout({
-            collection: 'templates_meta',
-            doc: template,
-          })
+          templateRepository.update(
+            template.key,
+            template.data,
+            template.version
+          )
         )
       );
       return templates;
@@ -389,10 +347,11 @@ export function useCreateTemplateMutation() {
 
   return useMutation({
     mutationFn: async (template: Doc<WordTemplateData>) => {
-      await setDocWithTimeout({
-        collection: 'templates_meta',
-        doc: template,
-      });
+      await templateRepository.create(
+        template.key,
+        template.data,
+        template.owner
+      );
       return template;
     },
     onMutate: async (template) => {

@@ -1,7 +1,7 @@
 import { Doc } from '@junobuild/core';
-import { deleteAssetWithTimeout, listAssetsWithTimeout, deleteDocWithTimeout } from './junoWithTimeout';
 import { WordTemplateData } from '../types/word-template';
 import { FolderTreeNode } from '../types/folder';
+import { templateRepository, templateStorage } from '../dal';
 
 /**
  * Get all subfolder IDs recursively from a given folder ID
@@ -32,14 +32,11 @@ export function getAllSubfolderIds(folderId: string, folderTree: FolderTreeNode[
  * Build a map of storage assets for efficient lookup by various path formats
  */
 export async function buildStorageAssetMap(): Promise<Map<string, { fullPath: string }>> {
-  const storageAssets = await listAssetsWithTimeout({
-    collection: 'templates',
-    filter: {}
-  });
+  const storageAssets = await templateStorage.list({});
 
   const storageAssetMap = new Map<string, { fullPath: string }>();
 
-  for (const asset of storageAssets.items) {
+  for (const asset of storageAssets) {
     const junoFullPath = asset.fullPath; // e.g., /templates/tt/file.docx
 
     // Map by full Juno path
@@ -91,10 +88,7 @@ export async function deleteTemplate(
 
     if (storageAsset) {
       try {
-        await deleteAssetWithTimeout({
-          collection: 'templates',
-          fullPath: storageAsset.fullPath
-        });
+        await templateStorage.delete(storageAsset.fullPath);
         assetDeleted = true;
         console.log(`Deleted asset: ${storageAsset.fullPath}`);
         break;
@@ -110,10 +104,7 @@ export async function deleteTemplate(
   }
 
   // Always delete metadata
-  await deleteDocWithTimeout({
-    collection: 'templates_meta',
-    doc: template
-  });
+  await templateRepository.delete(template);
 
   return assetDeleted;
 }
