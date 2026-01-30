@@ -1,12 +1,11 @@
 import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from 'react';
-import { setDoc, getDoc } from '@junobuild/core';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 import { useUserProfile } from './UserProfileContext';
 import { SUBSCRIPTION_PLANS, SubscriptionPlan, isUnlimited } from '../config/plans';
 import { SubscriptionData, UsageSummary, PlanId, SubscriptionType } from '../types/subscription';
 import { logActivity } from '../utils/activityLogger';
-import { subscriptionRepository, organizationRepository, templateRepository } from '../dal';
+import { subscriptionRepository, organizationRepository, templateRepository, usageRepository } from '../dal';
 
 interface SubscriptionContextType {
   plan: SubscriptionPlan;
@@ -204,11 +203,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
 
   // Listen for Paddle checkout completion events
   useEffect(() => {
-    const handleCheckoutCompleted = async (event: Event) => {
-      console.log('🔴 [PADDLE_CHECKOUT] ========== CHECKOUT EVENT FIRED ==========');
-      console.log('[PADDLE_CHECKOUT] Event detail:', (event as CustomEvent).detail);
-      console.log('[PADDLE_CHECKOUT] Current user:', user);
-      
+    const handleCheckoutCompleted = async (event: Event) => {      
       if (!user) {
         console.error('[PADDLE_CHECKOUT] ❌ No user logged in, aborting');
         return;
@@ -238,22 +233,19 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
       // Create/update subscription document with needsRefresh flag
       // This triggers the onSetDoc hook which fetches from Paddle API
       try {
-        const result = await setDoc({
-          collection: 'subscriptions',
-          doc: {
-            key: user.key,
-            data: {
-              ...(subscription || {}),
-              paddleSubscriptionId: subscriptionId,
-              status: 'pending_verification',
-              needsRefresh: true,
-              lastSyncAttempt: Date.now(),
-              updatedAt: Date.now(),
-            },
-          },
-        });
+        const result = await subscriptionRepository.update(
+          user.key,
+          {
+            ...(subscription || {}),
+            paddleSubscriptionId: subscriptionId,
+            status: 'pending_verification',
+            needsRefresh: true,
+            lastSyncAttempt: Date.now(),
+            updatedAt: Date.now(),
+          } as any
+        );
 
-        console.log('[PADDLE_CHECKOUT] ✅ setDoc completed successfully, result:', result);
+        console.log('[PADDLE_CHECKOUT] ✅ update completed successfully, result:', result);
         console.log('[PADDLE_CHECKOUT] Hook should fire now - check satellite logs at http://localhost:5866');
         toast.loading('Fetching subscription details from Paddle...');
       } catch (error) {
@@ -262,11 +254,9 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
       }
     };
 
-    console.log('[PADDLE_CHECKOUT] Event listener registered for paddle:checkout-completed');
     window.addEventListener('paddle:checkout-completed', handleCheckoutCompleted);
     
     return () => {
-      console.log('[PADDLE_CHECKOUT] Event listener removed');
       window.removeEventListener('paddle:checkout-completed', handleCheckoutCompleted);
     };
   }, [user, subscription]);
@@ -278,10 +268,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
         console.log('[SUBSCRIPTION_SYNC] Subscription updated in another tab, refreshing...');
         
         try {
-          const subscriptionDoc = await getDoc({
-            collection: 'subscriptions',
-            key: user.key,
-          });
+          const subscriptionDoc = await subscriptionRepository.get(user.key);
           
           if (subscriptionDoc) {
             setSubscription(subscriptionDoc.data as SubscriptionData);
@@ -413,13 +400,10 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
     
     try {
       const today = new Date().toISOString().split('T')[0];
-      const usageDoc = await getDoc({
-        collection: 'usage',
-        key: `${user.key}_${today}`,
-      });
+      const usageDoc = await usageRepository.getByUserAndDate(user.key, today);
 
       if (usageDoc) {
-        const usageData = usageDoc.data as any;
+        const usageData = usageDoc.data;
         
         // Calculate monthly usage (simplified - use today's as monthly for now)
         const documentsThisMonth = usageData.documentsProcessed || 0;
@@ -455,18 +439,17 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
       // Create a sync trigger (event-driven pattern)
       const triggerId = `${user.key}_${Date.now()}`;
       
-      await setDoc({
-        collection: 'paddle_sync_triggers',
-        doc: {
-          key: triggerId,
-          data: {
-            userId: user.key,
-            subscriptionId: subscription?.paddleSubscriptionId,
-            triggeredAt: Date.now(),
-            source: 'manual_refresh',
-          },
+      // Use direct repository access for paddle_sync_triggers collection
+      await (subscriptionRepository as any).create(
+        triggerId,
+        {
+          userId: user.key,
+          subscriptionId: subscription?.paddleSubscriptionId,
+          triggeredAt: Date.now(),
+          source: 'manual_refresh',
         },
-      });
+        user.key
+      );
       
       console.log('[REFRESH_SUBSCRIPTION] Sync trigger created:', triggerId);
       
@@ -510,14 +493,7 @@ export const SubscriptionProvider: FC<SubscriptionProviderProps> = ({ children }
       };
 
       // Save to Juno datastore
-      await setDoc({
-        collection: 'subscriptions',
-        doc: {
-          key: user.key,
-          data: newSubscription,
-          updated_at: BigInt(Date.now()),
-        },
-      });
+      await subscriptionRepository.update(user.key, newSubscription);
 
       setSubscription(newSubscription);
 

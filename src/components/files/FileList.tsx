@@ -1,7 +1,7 @@
 import { FC, useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ClipboardList, Search, ChevronLeft, ChevronRight, X, Loader2, Star, Trash2, CheckSquare, Square } from 'lucide-react';
-import { Doc, setDoc, getDoc, deleteDoc } from '@junobuild/core';
+import { Doc } from '@junobuild/core';
 import { WordTemplateData } from '../../types/word-template';
 import type { FolderTreeNode } from '../../types/folder';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -20,25 +20,9 @@ import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
 import { fetchLogsForResource, generateLogCSV, downloadLogCSV, logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
-import { nanoid } from 'nanoid';
-import { templateRepository } from '../../dal';
+import { templateRepository, downloadRequestRepository } from '../../dal';
+import type { DownloadRequestData } from '../../dal/repositories/DownloadRequestRepository';
 import { deleteTemplate, buildStorageAssetMap } from '../../utils/templateDeletion';
-
-// Type for download request document data
-interface DownloadRequestData {
-  requestType: 'download' | 'export';
-  status: 'pending' | 'approved' | 'rejected';
-  templateIds: string[];
-  approvedTemplateIds?: string[];
-  createdAt: number;
-  error?: {
-    code: string;
-    message: string;
-    limit?: number;
-    used?: number;
-    retryAfterSeconds?: number;
-  };
-}
 
 // Threshold for enabling virtualization - only virtualize when we have many items
 const VIRTUALIZATION_THRESHOLD = 20;
@@ -120,47 +104,23 @@ const FileList: FC<FileListProps> = ({
       }
 
       // 1. Create download request document
-      requestKey = `${user.key}_${Date.now()}_${nanoid()}`;
-      await setDoc<DownloadRequestData>({
-        collection: 'download_requests',
-        doc: {
-          key: requestKey,
-          data: {
-            requestType: 'download',
-            status: 'pending',
-            templateIds: [template.key],
-            createdAt: Date.now(),
-          },
-        },
-      });
+      const { key: requestKey } = await downloadRequestRepository.createRequest(
+        user.key,
+        'download',
+        [template.key]
+      );
 
       // 2. Poll for request status (500ms intervals, 10s timeout)
-      const pollStartTime = Date.now();
-      const pollTimeout = 10000; // 10 seconds
-      const pollInterval = 500; // 500ms
-      
-      while (Date.now() - pollStartTime < pollTimeout) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-        
-        const doc = await getDoc<DownloadRequestData>({
-          collection: 'download_requests',
-          key: requestKey,
-        });
-
-        if (doc && doc.data.status !== 'pending') {
-          requestDoc = doc;
-          break;
-        }
-      }
+      requestDoc = await downloadRequestRepository.pollForStatus(requestKey, 10000, 500);
 
       // 3. Handle timeout
-      if (!requestDoc || requestDoc.data.status === 'pending') {
+      if (!requestDoc) {
         showErrorToast(t('fileList.serverBusy'));
         return;
       }
 
       // 4. Handle rejection
-      if (requestDoc.data.status === 'rejected') {
+      if (downloadRequestRepository.isRejected(requestDoc)) {
         const error = requestDoc.data.error;
         
         if (error?.code === 'subscription_expired') {
@@ -247,22 +207,8 @@ const FileList: FC<FileListProps> = ({
       showErrorToast(t('fileList.downloadFailed'));
     } finally {
       // 9. Delete request document with retries (3 attempts with exponential backoff)
-      if (requestDoc) {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            await deleteDoc({
-              collection: 'download_requests',
-              doc: requestDoc,
-            });
-            break; // Success, exit retry loop
-          } catch (deleteError) {
-            console.warn(`Failed to delete request document (attempt ${attempt + 1}/3):`, deleteError);
-            if (attempt < 2) {
-              // Exponential backoff: 1s, 2s, 4s
-              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-            }
-          }
-        }
+      if (requestKey) {
+        await downloadRequestRepository.deleteWithRetry(requestKey, 3);
       }
       
       setDownloadingIds(prev => {

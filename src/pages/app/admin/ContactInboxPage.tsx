@@ -1,7 +1,6 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listDocs, setDoc } from '@junobuild/core';
 import { toast } from 'sonner';
 import { Mail, Search, Download, Reply, Check } from 'lucide-react';
 import type { ContactSubmission } from '../../../types';
@@ -9,6 +8,7 @@ import { useAuth } from '../../../contexts';
 import { logAdminAction } from '../../../utils/adminLogger';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Dialog, Button } from '../../../components/ui';
+import { contactSubmissionRepository } from '../../../dal';
 
 type StatusFilter = 'all' | 'new' | 'read' | 'replied';
 
@@ -27,14 +27,7 @@ const ContactInboxPage: FC = () => {
   const { data: submissions, isLoading } = useQuery({
     queryKey: ['contact_submissions'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'contact_submissions',
-      });
-      return items.sort((a, b) => {
-        const aData = a.data as ContactSubmission;
-        const bData = b.data as ContactSubmission;
-        return bData.submittedAt - aData.submittedAt;
-      });
+      return await contactSubmissionRepository.listAllSorted();
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -42,20 +35,7 @@ const ContactInboxPage: FC = () => {
   // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (key: string) => {
-      const submission = submissions?.find(s => s.key === key);
-      if (!submission) return;
-
-      const data = submission.data as ContactSubmission;
-      await setDoc({
-        collection: 'contact_submissions',
-        doc: {
-          ...submission,
-          data: {
-            ...data,
-            status: 'read',
-          },
-        },
-      });
+      await contactSubmissionRepository.markAsRead(key);
 
       if (user) {
         await logAdminAction(user.key, 'mark_contact_read', 'contact_submission', key);
@@ -69,24 +49,9 @@ const ContactInboxPage: FC = () => {
   // Reply mutation
   const replyMutation = useMutation({
     mutationFn: async ({ key, reply }: { key: string; reply: string }) => {
-      const submission = submissions?.find(s => s.key === key);
-      if (!submission || !user) return;
+      if (!user) return;
 
-      const data = submission.data as ContactSubmission;
-      await setDoc({
-        collection: 'contact_submissions',
-        doc: {
-          ...submission,
-          data: {
-            ...data,
-            status: 'replied',
-            reply,
-            repliedAt: Date.now(),
-            repliedBy: user.key,
-          },
-        },
-      });
-
+      await contactSubmissionRepository.addReply(key, reply, user.key);
       await logAdminAction(user.key, 'reply_contact', 'contact_submission', key, { reply });
     },
     onSuccess: () => {

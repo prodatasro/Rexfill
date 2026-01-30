@@ -13,19 +13,10 @@
 
 import { FC, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listDocs, setDoc } from '@junobuild/core';
 import { Bell, AlertTriangle, Info, CheckCircle, X, User, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface AdminNotification {
-  key: string;
-  message: string;
-  severity: 'critical' | 'warning' | 'info';
-  userId: string;
-  metadata?: Record<string, any>;
-  timestamp: number;
-  read: boolean;
-}
+import { adminNotificationRepository } from '../../dal';
+import type { ParsedAdminNotification } from '../../dal/repositories/AdminNotificationRepository';
 
 interface NotificationInboxProps {
   onNavigateToUser?: (userId: string) => void;
@@ -47,37 +38,7 @@ const NotificationInbox: FC<NotificationInboxProps> = ({
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['admin_notifications', selectedSeverity],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'admin_notifications',
-      });
-
-      // Parse notifications from keys and description
-      const parsed: AdminNotification[] = items.map(item => {
-        const key = item.key;
-        const parts = key.split('_');
-        const timestamp = parseInt(parts[0]);
-        const severity = parts[1] as 'critical' | 'warning' | 'info';
-        const userId = parts[2];
-        
-        // Parse description for read status and message
-        const description = (item.data as any).description || '';
-        const readMatch = description.match(/read:(true|false);/);
-        const read = readMatch ? readMatch[1] === 'true' : false;
-        const messageMatch = description.match(/message:([^;]+)/);
-        const message = messageMatch ? messageMatch[1] : '';
-        
-        return {
-          key,
-          message,
-          severity,
-          userId,
-          metadata: (item.data as any).metadata,
-          timestamp,
-          read,
-        };
-      }).sort((a, b) => b.timestamp - a.timestamp);
-
-      return parsed;
+      return adminNotificationRepository.getAllParsed();
     },
     refetchInterval: 30000, // Poll every 30 seconds
   });
@@ -99,19 +60,8 @@ const NotificationInbox: FC<NotificationInboxProps> = ({
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
-    mutationFn: async (notification: AdminNotification) => {
-      const description = `read:true;message:${notification.message}`;
-      
-      await setDoc({
-        collection: 'admin_notifications',
-        doc: {
-          key: notification.key,
-          data: {
-            description,
-            metadata: notification.metadata,
-          },
-        },
-      });
+    mutationFn: async (notification: ParsedAdminNotification) => {
+      return adminNotificationRepository.markAsRead(notification);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_notifications'] });

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
-import { listDocs, setDoc } from '@junobuild/core';
 import type { Doc } from '@junobuild/core';
 import type { PlatformAdmin } from '../types';
+import { adminRepository } from '../dal';
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -41,9 +41,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       // List all platform admins - ensure we get fresh data
-      const { items } = await listDocs<PlatformAdmin>({
-        collection: 'platform_admins',
-      });
+      const items = await adminRepository.list();
 
       // If no admins exist, first user becomes admin
       if (items.length === 0) {
@@ -53,21 +51,11 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           addedBy: user.key,
         };
 
-        await setDoc({
-          collection: 'platform_admins',
-          doc: {
-            key: user.key,
-            data: adminData,
-          },
-        });
+        const adminDoc = await adminRepository.create(user.key, adminData, user.key);
 
         setIsAdmin(true);
         setIsFirstAdmin(true);
-        setAdminsList([{
-          key: user.key,
-          data: adminData,
-          owner: user.key,
-        } as Doc<PlatformAdmin>]);
+        setAdminsList([adminDoc]);
         previousIsAdminRef.current = true;
         return;
       }

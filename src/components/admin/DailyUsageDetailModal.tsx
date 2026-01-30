@@ -1,10 +1,10 @@
 import { FC, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
 import { X, Download, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
 import { formatDateLocal, downloadFile } from '../../utils/dateUtils';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import { usageRepository, userProfileRepository, adminRepository } from '../../dal';
 
 interface DailyUsageDetailModalProps {
   isOpen: boolean;
@@ -43,17 +43,7 @@ const DailyUsageDetailModal: FC<DailyUsageDetailModalProps> = ({
     queryKey: ['daily_usage_detail', selectedDate],
     queryFn: async () => {
       if (!selectedDate) return [];
-      
-      const { items } = await listDocs({
-        collection: 'usage',
-        filter: {
-          matcher: {
-            key: `.*_${selectedDate}$`,
-          },
-        },
-      });
-      
-      return items;
+      return usageRepository.getByDate(selectedDate);
     },
     enabled: isOpen && !!selectedDate,
   });
@@ -62,10 +52,7 @@ const DailyUsageDetailModal: FC<DailyUsageDetailModalProps> = ({
   const { data: userProfiles, isLoading: profilesLoading } = useQuery({
     queryKey: ['user_profiles_for_usage'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'user_profiles',
-      });
-      return items;
+      return userProfileRepository.list();
     },
     enabled: isOpen,
   });
@@ -74,10 +61,7 @@ const DailyUsageDetailModal: FC<DailyUsageDetailModalProps> = ({
   const { data: platformAdmins } = useQuery({
     queryKey: ['platform_admins_for_usage'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'platform_admins',
-      });
-      return items;
+      return adminRepository.list();
     },
     enabled: isOpen,
   });

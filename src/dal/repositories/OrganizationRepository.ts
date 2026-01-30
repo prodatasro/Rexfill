@@ -77,6 +77,13 @@ export class OrganizationRepository extends BaseRepository<OrganizationData> {
   }
 
   /**
+   * Get all members across all organizations (for admin)
+   */
+  async getAllMembers(): Promise<Array<Doc<OrganizationMemberData>>> {
+    return await this.memberRepository.list();
+  }
+
+  /**
    * Get member by user ID
    */
   async getMember(orgId: string, userId: string): Promise<Doc<OrganizationMemberData> | undefined> {

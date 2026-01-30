@@ -1,7 +1,6 @@
 import { FC, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { setDoc, deleteDoc, listDocs } from '@junobuild/core';
 import { toast } from 'sonner';
 import { Users, CreditCard, FileText, Activity, TrendingUp, Key, Plus, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
 import { 
@@ -18,7 +17,7 @@ import UsageChart from '../../../components/admin/UsageChart';
 import DailyUsageDetailModal from '../../../components/admin/DailyUsageDetailModal';
 import { Dialog, Button } from '../../../components/ui';
 import { useAuth } from '../../../contexts';
-import { userProfileRepository, subscriptionRepository, templateRepository, adminRepository } from '../../../dal';
+import { userProfileRepository, subscriptionRepository, templateRepository, adminRepository, usageRepository, secretRepository, canisterConfigTriggerRepository } from '../../../dal';
 
 const DashboardPage: FC = () => {
   const { t, i18n } = useTranslation();
@@ -82,10 +81,7 @@ const DashboardPage: FC = () => {
     queryKey: ['admin_secrets'],
     queryFn: async () => {
       if (!isPlatformAdmin) return [];
-      const { items } = await listDocs({
-        collection: 'secrets',
-      });
-      return items;
+      return await secretRepository.listAllSecrets();
     },
     enabled: isPlatformAdmin,
     refetchInterval: 30000,
@@ -97,15 +93,7 @@ const DashboardPage: FC = () => {
     queryKey: ['admin_dashboard_usage_today'],
     queryFn: async () => {
       const today = getCurrentUTCDate();
-      const { items } = await listDocs({
-        collection: 'usage',
-        filter: {
-          matcher: {
-            key: `_${today}$`
-          }
-        }
-      });
-      return items;
+      return await usageRepository.getByDate(today);
     },
     refetchInterval: 30000,
     refetchIntervalInBackground: false,
@@ -116,18 +104,12 @@ const DashboardPage: FC = () => {
     queryKey: ['admin_dashboard_usage_historical', timeRange],
     queryFn: async () => {
       const dateRange = getDateRangeInUTC(timeRange);
-      const { items } = await listDocs({
-        collection: 'usage',
-        filter: {
-          matcher: {
-            createdAt: {
-              matcher: 'greaterThan',
-              timestamp: dateRange.start
-            }
-          }
-        }
+      const allUsage = await usageRepository.list();
+      // Filter by created_at timestamp
+      return allUsage.filter(doc => {
+        const createdAt = doc.created_at ? Number(doc.created_at) / 1_000_000 : 0;
+        return createdAt > dateRange.start;
       });
-      return items;
     },
     refetchInterval: 60000, // 1 minute
     refetchIntervalInBackground: false,
@@ -232,19 +214,13 @@ const DashboardPage: FC = () => {
     mutationFn: async (data: { key: string; value: string; description: string; version?: bigint }) => {
       if (!user) return;
 
-      await setDoc({
-        collection: 'secrets',
-        doc: {
-          key: data.key,
-          data: {
-            value: data.value,
-            description: data.description,
-            createdAt: Date.now(),
-            createdBy: user.key,
-          },
-          ...(data.version !== undefined && { version: data.version }),
-        },
-      });
+      await secretRepository.upsertSecret(
+        data.key,
+        data.value,
+        data.description,
+        user.key,
+        data.version
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_secrets'] });
@@ -260,13 +236,7 @@ const DashboardPage: FC = () => {
 
   const deleteSecretMutation = useMutation({
     mutationFn: async (key: string) => {
-      const secretDoc = secrets?.find(s => s.key === key);
-      if (!secretDoc) throw new Error('Secret not found');
-
-      await deleteDoc({
-        collection: 'secrets',
-        doc: secretDoc,
-      });
+      await secretRepository.deleteSecret(key);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_secrets'] });
@@ -294,24 +264,16 @@ const DashboardPage: FC = () => {
 
       // Create trigger document to invoke satellite function
       // The satellite function will read secrets and configure the canister
-      const triggerId = `config_${Date.now()}`;
-      
-      await setDoc({
-        collection: 'canister_config_triggers',
-        doc: {
-          key: triggerId,
-          data: {
-            action: 'configure',
-            timestamp: Date.now(),
-            triggeredBy: user.key,
-            // Metadata for logging purposes
-            hasProdKey: !!prodApiKey?.value,
-            hasDevKey: !!devApiKey?.value,
-            hasProdWebhook: !!prodWebhookSecret?.value,
-            hasDevWebhook: !!devWebhookSecret?.value,
-          },
-        },
-      });
+      const triggerId = await canisterConfigTriggerRepository.createTrigger(
+        'configure',
+        user.key,
+        {
+          hasProdKey: !!prodApiKey?.value,
+          hasDevKey: !!devApiKey?.value,
+          hasProdWebhook: !!prodWebhookSecret?.value,
+          hasDevWebhook: !!devWebhookSecret?.value,
+        }
+      );
 
       return triggerId;
     },

@@ -1,6 +1,5 @@
 import type { AdminAction, PlatformAdmin } from '../types';
-import { adminRepository, userProfileRepository } from '../dal';
-import { getDoc } from '@junobuild/core';
+import { adminRepository, userProfileRepository, subscriptionOverrideRepository } from '../dal';
 
 /**
  * Log an admin action to the admin_actions collection
@@ -172,14 +171,11 @@ export async function isUserSuspended(userId: string): Promise<boolean> {
  */
 export async function getSubscriptionOverride(userId: string) {
   try {
-    const doc = await getDoc({
-      collection: 'subscription_overrides',
-      key: userId,
-    });
+    const doc = await subscriptionOverrideRepository.getByUser(userId);
     
     if (!doc) return null;
     
-    const override = doc.data as any;
+    const override = doc.data;
     
     // Check if override has expired
     if (override.expiresAt && override.expiresAt < Date.now()) {

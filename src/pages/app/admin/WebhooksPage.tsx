@@ -1,9 +1,9 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Webhook } from 'lucide-react';
+import { webhookHistoryRepository } from '../../../dal';
 
 const WebhooksPage: FC = () => {
   const { t } = useTranslation();
@@ -11,10 +11,7 @@ const WebhooksPage: FC = () => {
   const { data: webhooks, isLoading } = useQuery({
     queryKey: ['admin_webhooks'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'webhook_history',
-      });
-      return items.sort((a, b) => (b.data as any).receivedAt - (a.data as any).receivedAt);
+      return await webhookHistoryRepository.listAllSorted();
     },
   });
 

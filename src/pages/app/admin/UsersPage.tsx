@@ -1,14 +1,13 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { setDoc, getDoc, listDocs, deleteDoc } from '@junobuild/core';
 import { toast } from 'sonner';
 import { Search, Download, Ban, CheckCircle, Settings, Zap, TrendingUp, Award, Trash2, RefreshCw } from 'lucide-react';
-import type { UserProfile, SubscriptionData, SubscriptionOverride, SuspendedUser } from '../../../types';
+import type { UserProfile, SubscriptionData, SubscriptionOverride } from '../../../types';
 import { SUBSCRIPTION_PLANS } from '../../../config/plans';
 import { useAuth } from '../../../contexts';
 import { logAdminAction } from '../../../utils/adminLogger';
-import { userProfileRepository, subscriptionRepository, organizationRepository, adminRepository } from '../../../dal';
+import { userProfileRepository, subscriptionRepository, organizationRepository, adminRepository, templateRepository, subscriptionOverrideRepository, securityEventRepository } from '../../../dal';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Dialog, Button } from '../../../components/ui';
 
@@ -84,10 +83,7 @@ const UsersPage: FC = () => {
   const { data: subscriptionOverrides } = useQuery({
     queryKey: ['admin_subscription_overrides'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'subscription_overrides',
-      });
-      return items;
+      return await subscriptionOverrideRepository.list();
     },
   });
 
@@ -95,10 +91,12 @@ const UsersPage: FC = () => {
   const { data: securityEvents } = useQuery({
     queryKey: ['admin_security_events'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'security_events',
-      });
-      return items;
+      const events = await securityEventRepository.listAllParsed();
+      // Convert back to key-based format for compatibility with existing code
+      return events.map(e => ({
+        key: `${e.timestamp}_${e.userId}_${e.eventType}`,
+        data: { description: `severity:${e.severity};message:${e.message}` },
+      }));
     },
   });
 
@@ -106,9 +104,7 @@ const UsersPage: FC = () => {
   const { data: templateCounts } = useQuery({
     queryKey: ['admin_template_counts'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'templates_meta',
-      });
+      const items = await templateRepository.list();
       
       // Count templates per user
       const counts: Record<string, number> = {};
@@ -127,21 +123,7 @@ const UsersPage: FC = () => {
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
       if (!user) return;
 
-      const suspendData: SuspendedUser = {
-        userId,
-        reason,
-        suspendedAt: Date.now(),
-        suspendedBy: user.key,
-      };
-
-      await setDoc({
-        collection: 'suspended_users',
-        doc: {
-          key: userId,
-          data: suspendData,
-        },
-      });
-
+      await adminRepository.suspendUser(userId, reason, user.key);
       await logAdminAction(user.key, 'suspend_user', 'user', userId, { reason });
     },
     onSuccess: () => {
@@ -161,26 +143,7 @@ const UsersPage: FC = () => {
     mutationFn: async (userId: string) => {
       if (!user) return;
 
-      // Fetch the suspended user doc to get the version
-      const { items } = await listDocs({
-        collection: 'suspended_users',
-        filter: {
-          matcher: {
-            key: userId,
-          },
-        },
-      });
-
-      const suspendedDoc = items[0];
-      if (!suspendedDoc) {
-        throw new Error('Suspended user record not found');
-      }
-
-      await deleteDoc({
-        collection: 'suspended_users',
-        doc: suspendedDoc,
-      });
-
+      await adminRepository.unsuspendUser(userId);
       await logAdminAction(user.key, 'unsuspend_user', 'user', userId);
     },
     onSuccess: () => {
@@ -197,16 +160,13 @@ const UsersPage: FC = () => {
     mutationFn: async (data: SubscriptionOverride) => {
       if (!user) return;
 
-      await setDoc({
-        collection: 'subscription_overrides',
-        doc: {
-          key: data.userId,
-          data: {
-            ...data,
-            createdAt: Date.now(),
-            createdBy: user.key,
-          },
-        },
+      await subscriptionOverrideRepository.upsertOverride({
+        userId: data.userId,
+        overrideQuotas: data.overrideQuotas || {},
+        reason: data.reason,
+        expiresAt: data.expiresAt,
+        createdAt: Date.now(),
+        createdBy: user.key,
       });
 
       await logAdminAction(user.key, 'override_subscription', 'subscription', data.userId, data);
@@ -320,14 +280,7 @@ const UsersPage: FC = () => {
     mutationFn: async (userId: string) => {
       if (!user) return;
 
-      const overrideDoc = subscriptionOverrides?.find(s => s.key === userId);
-      if (!overrideDoc) throw new Error('Override not found');
-
-      await deleteDoc({
-        collection: 'subscription_overrides',
-        doc: overrideDoc,
-      });
-
+      await subscriptionOverrideRepository.removeOverride(userId);
       await logAdminAction(user.key, 'remove_override', 'subscription', userId);
     },
     onSuccess: () => {
@@ -456,10 +409,7 @@ const UsersPage: FC = () => {
 
     try {
       // Get current subscription document
-      const currentDoc = await getDoc({
-        collection: 'subscriptions',
-        key: userId,
-      });
+      const currentDoc = await subscriptionRepository.get(userId);
 
       if (!currentDoc) {
         toast.error('Subscription not found');
@@ -472,17 +422,11 @@ const UsersPage: FC = () => {
       }
 
       // Update document with needsRefresh flag to trigger onSetDoc hook
-      await setDoc({
-        collection: 'subscriptions',
-        doc: {
-          key: userId,
-          data: {
-            ...(currentDoc.data as SubscriptionData),
-            needsRefresh: true,
-            lastSyncAttempt: Date.now(),
-          },
-        },
-      });
+      await subscriptionRepository.update(userId, {
+        ...currentDoc.data,
+        needsRefresh: true,
+        lastSyncAttempt: Date.now(),
+      } as any);
 
       console.log('[ADMIN_REFRESH] Triggered subscription refresh for user:', userId);
       toast.loading('Refreshing subscription from Paddle...');
@@ -492,10 +436,7 @@ const UsersPage: FC = () => {
         queryClient.invalidateQueries({ queryKey: ['admin_subscriptions'] });
         
         // Check if refresh was successful
-        const updatedDoc = await getDoc({
-          collection: 'subscriptions',
-          key: userId,
-        });
+        const updatedDoc = await subscriptionRepository.get(userId);
         
         if (updatedDoc) {
           const data = updatedDoc.data as SubscriptionData & { lastSyncError?: string };

@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from 'react';
-import { getDoc, setDoc, listDocs, deleteDoc } from '@junobuild/core';
 import type { Doc } from '@junobuild/core';
 import { useAuth } from './AuthContext';
 import { useSubscription } from './SubscriptionContext';
@@ -13,6 +12,7 @@ import {
 } from '../types/organization';
 import { showSuccessToast, showErrorToast } from '../utils/toast';
 import { logActivity } from '../utils/activityLogger';
+import { organizationRepository, subscriptionRepository, templateRepository } from '../dal';
 
 interface OrganizationContextType {
   currentOrganization: Doc<OrganizationData> | null;
@@ -74,22 +74,18 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
     if (!user) return;
 
     try {
-      const allInvitations = await listDocs({
-        collection: 'organization_invitations',
-      });
+      // Access the invitation repository through organizationRepository
+      const allInvitations = await (organizationRepository as any).invitationRepository.list();
 
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      const expiredInvitations = allInvitations.items.filter(doc => {
+      const expiredInvitations = allInvitations.filter((doc: Doc<InvitationData>) => {
         const invitation = doc.data as InvitationData;
         return invitation.expiresAt < Date.now() && invitation.createdAt < thirtyDaysAgo;
       });
 
       for (const invDoc of expiredInvitations) {
         try {
-          await deleteDoc({
-            collection: 'organization_invitations',
-            doc: invDoc,
-          });
+          await (organizationRepository as any).invitationRepository.delete(invDoc.key);
         } catch (error) {
           console.error('Failed to delete expired invitation:', error);
         }
@@ -107,12 +103,10 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
     }
 
     try {
-      const allInvitations = await listDocs({
-        collection: 'organization_invitations',
-      });
+      const allInvitations = await (organizationRepository as any).invitationRepository.list();
 
       // Filter invitations for this user by principalId
-      const userInvites = allInvitations.items.filter(doc => {
+      const userInvites = allInvitations.filter((doc: Doc<InvitationData>) => {
         const invitation = doc.data as InvitationData;
         return (
           invitation.status === 'pending' &&
@@ -120,7 +114,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         );
       });
 
-      setUserInvitations(userInvites as Doc<InvitationData>[]);
+      setUserInvitations(userInvites);
     } catch (error) {
       console.error('Failed to load user invitations:', error);
     }
@@ -149,12 +143,10 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
 
         // Check if user is a member of any organization
         // Since member docs are keyed by ${orgId}_${userId}, we need to list all and filter
-        const allMembershipDocs = await listDocs({
-          collection: 'organization_members',
-        });
+        const allMembershipDocs = await (organizationRepository as any).memberRepository.list();
 
         // Filter to find this user's memberships
-        const userMemberships = allMembershipDocs.items.filter(doc => {
+        const userMemberships = allMembershipDocs.filter((doc: Doc<OrganizationMemberData>) => {
           const memberData = doc.data as OrganizationMemberData;
           return memberData.userId === user.key;
         });
@@ -174,36 +166,19 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         setUserRole(membership.role);
 
         // Load organization details
-        const orgDoc = await getDoc({
-          collection: 'organizations',
-          key: membership.organizationId,
-        });
+        const orgDoc = await organizationRepository.get(membership.organizationId);
 
         if (orgDoc) {
-          setCurrentOrganization(orgDoc as Doc<OrganizationData>);
+          setCurrentOrganization(orgDoc);
 
           // Load all organization members
-          const allMembersDocs = await listDocs({
-            collection: 'organization_members',
-          });
-
-          const orgMembers = allMembersDocs.items.filter(
-            (doc) => (doc.data as OrganizationMemberData).organizationId === membership.organizationId
-          );
-          setMembers(orgMembers as Doc<OrganizationMemberData>[]);
+          const orgMembers = await organizationRepository.getMembers(membership.organizationId);
+          setMembers(orgMembers);
 
           // Load pending invitations (if user is owner or admin)
           if (membership.role === 'owner' || membership.role === 'admin') {
-            const invitationDocs = await listDocs({
-              collection: 'organization_invitations',
-            });
-
-            const orgInvitations = invitationDocs.items.filter(
-              (doc) => 
-                (doc.data as InvitationData).organizationId === membership.organizationId &&
-                (doc.data as InvitationData).status === 'pending'
-            );
-            setPendingInvitations(orgInvitations as Doc<InvitationData>[]);
+            const orgInvitations = await organizationRepository.getInvitations(membership.organizationId);
+            setPendingInvitations(orgInvitations);
           }
         }
       } catch (error) {
@@ -240,30 +215,10 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
       };
 
       // Create organization
-      await setDoc({
-        collection: 'organizations',
-        doc: {
-          key: orgId,
-          data: organizationData,
-        },
-      });
+      await organizationRepository.create(orgId, organizationData, user.key);
 
       // Create owner membership
-      const memberData: OrganizationMemberData = {
-        userId: user.key,
-        organizationId: orgId,
-        role: 'owner',
-        joinedAt: Date.now(),
-        invitedBy: user.key,
-      };
-
-      await setDoc({
-        collection: 'organization_members',
-        doc: {
-          key: `${orgId}_${user.key}`,
-          data: memberData,
-        },
-      });
+      await organizationRepository.addMember(orgId, user.key, 'owner', user.key);
 
       // Log activity
       await logActivity({
@@ -298,26 +253,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
     }
 
     try {
-      const invitationId = `inv_${Date.now()}_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
-      const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-
-      const invitationData: InvitationData = {
-        organizationId: currentOrganization.key,
-        email,
-        role,
-        status: 'pending',
-        invitedBy: user.key,
-        createdAt: Date.now(),
-        expiresAt,
-      };
-
-      await setDoc({
-        collection: 'organization_invitations',
-        doc: {
-          key: invitationId,
-          data: invitationData,
-        },
-      });
+      const invitation = await organizationRepository.createInvitation(currentOrganization.key, email, role, user.key);
 
       // Send invitation email (stub for future email service)
       await sendInvitationEmail(
@@ -329,7 +265,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
 
       setPendingInvitations((prev) => [
         ...prev,
-        { key: invitationId, data: invitationData } as Doc<InvitationData>,
+        invitation,
       ]);
 
       showSuccessToast(`Invitation sent to ${email}`);
@@ -364,17 +300,16 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         expiresAt,
       };
 
-      await setDoc({
-        collection: 'organization_invitations',
-        doc: {
-          key: invitationId,
-          data: invitationData,
-        },
-      });
+      // Use invitationRepository directly for principalId invitations
+      const invitation = await (organizationRepository as any).invitationRepository.create(
+        invitationId,
+        invitationData,
+        user.key
+      );
 
       setPendingInvitations((prev) => [
         ...prev,
-        { key: invitationId, data: invitationData } as Doc<InvitationData>,
+        invitation,
       ]);
 
       showSuccessToast('Invitation sent');
@@ -389,10 +324,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
     if (!user) throw new Error('User not authenticated');
 
     try {
-      const invitationDoc = await getDoc({
-        collection: 'organization_invitations',
-        key: invitationId,
-      });
+      const invitationDoc = await (organizationRepository as any).invitationRepository.get(invitationId);
 
       if (!invitationDoc) throw new Error('Invitation not found');
 
@@ -404,81 +336,47 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         return;
       }
 
-      // Create membership
-      const memberData: OrganizationMemberData = {
-        userId: user.key,
-        organizationId: invitation.organizationId,
-        role: invitation.role,
-        joinedAt: Date.now(),
-        invitedBy: invitation.invitedBy,
-      };
-
-      await setDoc({
-        collection: 'organization_members',
-        doc: {
-          key: `${invitation.organizationId}_${user.key}`,
-          data: memberData,
-        },
-      });
+      // Create membership using repository method
+      await organizationRepository.addMember(
+        invitation.organizationId,
+        user.key,
+        invitation.role,
+        invitation.invitedBy
+      );
 
       // Update invitation status
-      await setDoc({
-        collection: 'organization_invitations',
-        doc: {
-          ...invitationDoc,
-          data: {
-            ...invitation,
-            status: 'accepted' as InvitationStatus,
-            acceptedAt: Date.now(),
-          },
-        },
-      });
+      await (organizationRepository as any).invitationRepository.update(invitationId, {
+        ...invitation,
+        status: 'accepted' as InvitationStatus,
+        acceptedAt: Date.now(),
+      }, invitationDoc.version);
 
       // Update organization member count
-      const orgDoc = await getDoc({
-        collection: 'organizations',
-        key: invitation.organizationId,
-      });
+      const orgDoc = await organizationRepository.get(invitation.organizationId);
 
       if (orgDoc) {
         const orgData = orgDoc.data as OrganizationData;
-        await setDoc({
-          collection: 'organizations',
-          doc: {
-            ...orgDoc,
-            data: {
-              ...orgData,
-              memberIds: [...orgData.memberIds, user.key],
-              seatsUsed: orgData.seatsUsed + 1,
-              updatedAt: Date.now(),
-            },
-          },
-        });
+        await organizationRepository.update(invitation.organizationId, {
+          ...orgData,
+          memberIds: [...orgData.memberIds, user.key],
+          seatsUsed: orgData.seatsUsed + 1,
+          updatedAt: Date.now(),
+        }, orgDoc.version);
       }
 
       // Cancel user's individual subscription at period end (if they have one)
       try {
-        const userSubscription = await getDoc({
-          collection: 'subscriptions',
-          key: user.key,
-        });
+        const userSubscription = await subscriptionRepository.get(user.key);
 
         if (userSubscription) {
           const subData = userSubscription.data as any;
           // Only cancel if it's an individual subscription (not organization)
           if (subData.type === 'individual' && subData.planId !== 'free') {
-            await setDoc({
-              collection: 'subscriptions',
-              doc: {
-                ...userSubscription,
-                data: {
-                  ...subData,
-                  cancelAtPeriodEnd: true,
-                  updatedAt: Date.now(),
-                },
-                updated_at: BigInt(Date.now()),
-              },
-            });
+            await subscriptionRepository.update(user.key, {
+              ...subData,
+              cancelAtPeriodEnd: true,
+              updatedAt: Date.now(),
+            }, userSubscription.version);
           }
         }
       } catch (error) {
@@ -499,26 +397,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
 
   const rejectInvitation = useCallback(async (invitationId: string) => {
     try {
-      const invitationDoc = await getDoc({
-        collection: 'organization_invitations',
-        key: invitationId,
-      });
-
-      if (!invitationDoc) return;
-
-      const invitation = invitationDoc.data as InvitationData;
-
-      await setDoc({
-        collection: 'organization_invitations',
-        doc: {
-          ...invitationDoc,
-          data: {
-            ...invitation,
-            status: 'rejected' as InvitationStatus,
-          },
-        },
-      });
-
+      await organizationRepository.rejectInvitation(invitationId);
       showSuccessToast('Invitation rejected');
     } catch (error) {
       console.error('Failed to reject invitation:', error);
@@ -541,26 +420,17 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
         return;
       }
 
-      // Delete membership
-      await deleteDoc({
-        collection: 'organization_members',
-        doc: memberToRemove,
-      });
+      // Delete membership using repository method
+      await organizationRepository.removeMember(currentOrganization.key, memberData.userId);
 
       // Update organization
       const orgData = currentOrganization.data as OrganizationData;
-      await setDoc({
-        collection: 'organizations',
-        doc: {
-          ...currentOrganization,
-          data: {
-            ...orgData,
-            memberIds: orgData.memberIds.filter((id) => id !== memberData.userId),
-            seatsUsed: Math.max(0, orgData.seatsUsed - 1),
-            updatedAt: Date.now(),
-          },
-        },
-      });
+      await organizationRepository.update(currentOrganization.key, {
+        ...orgData,
+        memberIds: orgData.memberIds.filter((id) => id !== memberData.userId),
+        seatsUsed: Math.max(0, orgData.seatsUsed - 1),
+        updatedAt: Date.now(),
+      }, currentOrganization.version);
 
       setMembers((prev) => prev.filter((m) => m.key !== memberId));
       showSuccessToast('Member removed');
@@ -581,16 +451,7 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
 
       const memberData = memberDoc.data as OrganizationMemberData;
 
-      await setDoc({
-        collection: 'organization_members',
-        doc: {
-          ...memberDoc,
-          data: {
-            ...memberData,
-            role: newRole,
-          },
-        },
-      });
+      await organizationRepository.updateMemberRole(currentOrganization.key, memberData.userId, newRole);
 
       setMembers((prev) =>
         prev.map((m) =>
@@ -620,26 +481,17 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
       const memberDoc = members.find((m) => m.key === memberKey);
       
       if (memberDoc) {
-        await deleteDoc({
-          collection: 'organization_members',
-          doc: memberDoc,
-        });
+        await organizationRepository.removeMember(currentOrganization.key, user.key);
       }
 
       // Update organization
       const orgData = currentOrganization.data as OrganizationData;
-      await setDoc({
-        collection: 'organizations',
-        doc: {
-          ...currentOrganization,
-          data: {
-            ...orgData,
-            memberIds: orgData.memberIds.filter((id) => id !== user.key),
-            seatsUsed: Math.max(0, orgData.seatsUsed - 1),
-            updatedAt: Date.now(),
-          },
-        },
-      });
+      await organizationRepository.update(currentOrganization.key, {
+        ...orgData,
+        memberIds: orgData.memberIds.filter((id) => id !== user.key),
+        seatsUsed: Math.max(0, orgData.seatsUsed - 1),
+        updatedAt: Date.now(),
+      }, currentOrganization.version);
 
       showSuccessToast('Left organization');
       window.location.reload();
@@ -655,12 +507,10 @@ export const OrganizationProvider: FC<OrganizationProviderProps> = ({ children }
 
     try {
       // Get all templates owned by organization members
-      const templates = await listDocs({
-        collection: 'templates_meta',
-      });
+      const templates = await templateRepository.list();
 
       const memberIds = (currentOrganization.data as OrganizationData).memberIds;
-      const orgTemplates = templates.items.filter(doc => 
+      const orgTemplates = templates.filter((doc: Doc<any>) => 
         memberIds.includes(doc.owner ?? '')
       );
 

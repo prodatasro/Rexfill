@@ -13,7 +13,6 @@
 import { FC, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
 import {
   Shield,
   AlertTriangle,
@@ -26,16 +25,7 @@ import {
 } from 'lucide-react';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Button } from '../../../components/ui';
-
-interface SecurityEvent {
-  eventType: string;
-  severity: 'critical' | 'warning' | 'info';
-  userId: string;
-  endpoint: string;
-  message: string;
-  metadata?: Record<string, any>;
-  timestamp: number;
-}
+import { securityEventRepository } from '../../../dal';
 
 const SecurityPage: FC = () => {
   useTranslation();
@@ -56,40 +46,11 @@ const SecurityPage: FC = () => {
       else if (dateRange === '7d') startTime = now - 7 * 24 * 60 * 60 * 1000;
       else if (dateRange === '30d') startTime = now - 30 * 24 * 60 * 60 * 1000;
 
-      const { items } = await listDocs({
-        collection: 'security_events',
-      });
-
-      // Parse events from keys and description
-      const events: SecurityEvent[] = items
-        .map(item => {
-          const key = item.key;
-          const parts = key.split('_');
-          const timestamp = parseInt(parts[0]);
-          const userId = parts[1];
-          const eventType = parts[2];
-          
-          // Parse description for severity and message
-          const description = (item.data as any).description || '';
-          const severityMatch = description.match(/severity:(critical|warning|info);/);
-          const severity = severityMatch ? severityMatch[1] as 'critical' | 'warning' | 'info' : 'info';
-          const messageMatch = description.match(/message:([^;]+)/);
-          const message = messageMatch ? messageMatch[1] : '';
-          
-          return {
-            eventType,
-            severity,
-            userId,
-            endpoint: (item.data as any).endpoint || '',
-            message,
-            metadata: (item.data as any).metadata,
-            timestamp,
-          };
-        })
-        .filter(event => startTime === 0 || event.timestamp >= startTime)
-        .sort((a, b) => b.timestamp - a.timestamp);
-
-      return events;
+      if (startTime === 0) {
+        return await securityEventRepository.listAllParsed();
+      }
+      
+      return await securityEventRepository.getByTimeRange(startTime);
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });

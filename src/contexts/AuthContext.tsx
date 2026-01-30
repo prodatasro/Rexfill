@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode, FC, useRef } from 'react';
-import { initSatellite, onAuthStateChange, signIn, signOut, User, SignInUserInterruptError, setDoc, getDoc } from '@junobuild/core';
+import { initSatellite, onAuthStateChange, signIn, signOut, User, SignInUserInterruptError } from '@junobuild/core';
 import { initOrbiter } from '@junobuild/analytics';
 import { showErrorToast } from '../utils/toast';
 import { logActivity } from '../utils/activityLogger';
-import type { UserProfileData } from '../types/user-profile';
+import { userProfileRepository } from '../dal';
 
 // Type for Google OpenID profile data
 interface GoogleProfileData {
@@ -52,28 +52,16 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       const displayName = googleProfile.name || 
         `${googleProfile.givenName || ''} ${googleProfile.familyName || ''}`.trim();
 
-      // Get existing profile to preserve user-entered data and version
-      const existingProfile = await getDoc<UserProfileData>({
-        collection: 'user_profiles',
-        key: authUser.key,
-      });
+      // Get existing profile to preserve user-entered data
+      const existingProfile = await userProfileRepository.get(authUser.key);
 
-      // Merge Google data with existing profile data
-      await setDoc({
-        collection: 'user_profiles',
-        doc: {
-          key: authUser.key,
-          data: {
-            // Preserve existing bio if user has set it
-            bio: existingProfile?.data?.bio || '',
-            // Update display name and email from Google
-            displayName: displayName || existingProfile?.data?.displayName || '',
-            email: googleProfile.email || existingProfile?.data?.email || '',
-            owner: authUser.key
-          },
-          // Preserve version to ensure proper document versioning
-          ...(existingProfile?.version && { version: existingProfile.version })
-        }
+      // Merge Google data with existing profile data using upsert
+      await userProfileRepository.upsert(authUser.key, {
+        // Preserve existing bio if user has set it
+        bio: existingProfile?.data?.bio || '',
+        // Update display name and email from Google
+        displayName: displayName || existingProfile?.data?.displayName || '',
+        email: googleProfile.email || existingProfile?.data?.email || '',
       });
     } catch (error) {
       console.error('Error saving Google profile data:', error);

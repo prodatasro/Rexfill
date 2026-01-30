@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, FC, ReactNode } from 'react';
-import { setDoc, listDocs, deleteDoc } from '@junobuild/core';
 import { useAuth } from './AuthContext';
 import { NotificationData, NotificationContextType } from '../types/notification';
 import type { Doc } from '@junobuild/core';
+import { notificationRepository } from '../dal';
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -28,14 +28,9 @@ export const NotificationProvider: FC<NotificationProviderProps> = ({ children }
 
     setIsLoading(true);
     try {
-      const notificationDocs = await listDocs({
-        collection: 'notifications',
-        filter: {
-          owner: user.key,
-        },
-      });
+      const notificationDocs = await notificationRepository.getByUser(user.key);
 
-      const userNotifications = notificationDocs.items.map(doc => ({
+      const userNotifications = notificationDocs.map((doc: Doc<NotificationData>) => ({
         id: doc.key,
         ...(doc.data as Omit<NotificationData, 'id'>),
       })) as NotificationData[];
@@ -44,21 +39,18 @@ export const NotificationProvider: FC<NotificationProviderProps> = ({ children }
       userNotifications.sort((a, b) => b.createdAt - a.createdAt);
 
       setNotifications(userNotifications);
-      setNotificationDocs(notificationDocs.items as Doc<NotificationData>[]);
+      setNotificationDocs(notificationDocs);
 
       // Clean up old read notifications (older than 30 days)
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      const oldReadDocs = notificationDocs.items.filter(doc => {
+      const oldReadDocs = notificationDocs.filter((doc: Doc<NotificationData>) => {
         const data = doc.data as NotificationData;
         return data.read && data.readAt && data.readAt < thirtyDaysAgo;
       });
 
       for (const docToDelete of oldReadDocs) {
         try {
-          await deleteDoc({
-            collection: 'notifications',
-            doc: docToDelete,
-          });
+          await notificationRepository.delete(docToDelete.key);
         } catch (error) {
           console.error('Failed to delete old notification:', error);
         }
@@ -90,13 +82,7 @@ export const NotificationProvider: FC<NotificationProviderProps> = ({ children }
         ...notification,
       };
 
-      await setDoc({
-        collection: 'notifications',
-        doc: {
-          key: notificationId,
-          data: newNotification,
-        },
-      });
+      await notificationRepository.create(notificationId, newNotification, user.key);
 
       setNotifications(prev => [newNotification, ...prev]);
     } catch (error) {
@@ -118,13 +104,7 @@ export const NotificationProvider: FC<NotificationProviderProps> = ({ children }
         readAt: Date.now(),
       };
 
-      await setDoc({
-        collection: 'notifications',
-        doc: {
-          key: notificationId,
-          data: updatedNotification,
-        },
-      });
+      await notificationRepository.update(notificationId, updatedNotification);
 
       setNotifications(prev =>
         prev.map(n => n.id === notificationId ? updatedNotification : n)
@@ -147,13 +127,7 @@ export const NotificationProvider: FC<NotificationProviderProps> = ({ children }
           readAt: Date.now(),
         };
 
-        await setDoc({
-          collection: 'notifications',
-          doc: {
-            key: notification.id,
-            data: updatedNotification,
-          },
-        });
+        await notificationRepository.update(notification.id, updatedNotification);
       }
 
       setNotifications(prev =>
@@ -171,10 +145,7 @@ export const NotificationProvider: FC<NotificationProviderProps> = ({ children }
       const docToDelete = notificationDocs.find(doc => doc.key === notificationId);
       if (!docToDelete) return;
 
-      await deleteDoc({
-        collection: 'notifications',
-        doc: docToDelete,
-      });
+      await notificationRepository.delete(notificationId);
 
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       setNotificationDocs(prev => prev.filter(doc => doc.key !== notificationId));

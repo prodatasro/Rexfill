@@ -1,10 +1,10 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Button } from '../../../components/ui';
 import { Building2, Users } from 'lucide-react';
+import { organizationRepository } from '../../../dal';
 
 const OrganizationsPage: FC = () => {
   const { t } = useTranslation();
@@ -14,20 +14,14 @@ const OrganizationsPage: FC = () => {
   const { data: organizations, isLoading } = useQuery({
     queryKey: ['admin_organizations'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'organizations',
-      });
-      return items;
+      return await organizationRepository.list();
     },
   });
 
   const { data: members } = useQuery({
     queryKey: ['admin_org_members'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'organization_members',
-      });
-      return items;
+      return await organizationRepository.getAllMembers();
     },
   });
 

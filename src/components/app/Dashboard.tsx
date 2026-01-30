@@ -5,7 +5,8 @@ import { Doc } from '@junobuild/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { WordTemplateData } from '../../types/word-template';
 import { fetchWithTimeout } from '../../utils/fetchWithTimeout';
-import { setDocWithTimeout, uploadFileWithTimeout, deleteAssetWithTimeout } from '../../utils/junoWithTimeout';
+import { uploadFileWithTimeout, deleteAssetWithTimeout } from '../../utils/junoWithTimeout';
+import { templateRepository } from '../../dal';
 import type { Folder } from '../../types/folder';
 import FileList from '../files/FileList';
 import { VIRTUAL_FOLDER_FAVORITES, VIRTUAL_FOLDER_RECENT } from '../folders/FolderTree';
@@ -468,17 +469,11 @@ const Dashboard: FC = () => {
                 const oldFullPath = template.data.fullPath || `${oldPath}/${template.data.name}`;
                 const newFullPath = updateTemplatePathAfterRename(oldFullPath, oldPath, newPath);
 
-                return setDocWithTimeout({
-                  collection: 'templates_meta',
-                  doc: {
-                    ...template,
-                    data: {
-                      ...template.data,
-                      folderPath: newPath,
-                      fullPath: newFullPath
-                    }
-                  }
-                });
+                return templateRepository.update(template.key, {
+                  ...template.data,
+                  folderPath: newPath,
+                  fullPath: newFullPath
+                }, template.version);
               })
             );
           }
@@ -718,16 +713,10 @@ const Dashboard: FC = () => {
           });
 
           try {
-            await setDocWithTimeout({
-              collection: 'templates_meta',
-              doc: {
-                key: result.name,
-                data: {
-                  ...templateData,
-                  url: result.downloadUrl
-                }
-              }
-            });
+            await templateRepository.create(result.name, {
+              ...templateData,
+              url: result.downloadUrl
+            }, user?.key);
 
             // Invalidate cache to refetch templates
             queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
@@ -942,16 +931,10 @@ const Dashboard: FC = () => {
           });
 
           try {
-            await setDocWithTimeout({
-              collection: 'templates_meta',
-              doc: {
-                key: result.name,
-                data: {
-                  ...templateData,
-                  url: result.downloadUrl
-                }
-              }
-            });
+            await templateRepository.create(result.name, {
+              ...templateData,
+              url: result.downloadUrl
+            }, user?.key);
 
             // Invalidate cache to refetch templates
             queryClient.invalidateQueries({ queryKey: templateKeys.lists() });

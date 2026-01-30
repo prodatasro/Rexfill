@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
+import { activityLogRepository } from '../../../dal';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -13,10 +13,7 @@ const ActivityLogsPage: FC = () => {
   const { data: logs, isLoading } = useQuery({
     queryKey: ['admin_activity_logs'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'activity_logs',
-      });
-      return items.sort((a, b) => (b.data as any).timestamp - (a.data as any).timestamp);
+      return await activityLogRepository.listAll();
     },
     refetchInterval: 5000, // Refetch every 5 seconds
   });

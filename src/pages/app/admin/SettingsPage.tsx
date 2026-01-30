@@ -1,7 +1,6 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { listDocs } from '@junobuild/core';
 import { ShieldCheck, UserPlus, Trash2 } from 'lucide-react';
 import type { PlatformAdmin } from '../../../types';
 import { useAuth, useAdmin } from '../../../contexts';
@@ -9,6 +8,7 @@ import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import { promoteToAdmin, revokeAdmin } from '../../../utils/adminLogger';
 import { showSuccessToast, showErrorToast } from '../../../utils/toast';
 import { useConfirm } from '../../../contexts/ConfirmContext';
+import { adminRepository, adminActionRepository } from '../../../dal';
 
 const SettingsPage: FC = () => {
   const { t } = useTranslation();
@@ -21,9 +21,7 @@ const SettingsPage: FC = () => {
   const { data: admins, isLoading, refetch } = useQuery({
     queryKey: ['admin_platform_admins'],
     queryFn: async () => {
-      const { items } = await listDocs({
-        collection: 'platform_admins',
-      });
+      const items = await adminRepository.list();
       // Sort by addedAt to show first admin first
       return items.sort((a, b) => {
         const aData = a.data as PlatformAdmin;
@@ -37,12 +35,7 @@ const SettingsPage: FC = () => {
     queryKey: ['admin_all_actions'],
     queryFn: async () => {
       // Fetch ALL admin actions (not filtered by current user)
-      const { items } = await listDocs({
-        collection: 'admin_actions',
-      });
-      return items
-        .sort((a, b) => (b.data as any).timestamp - (a.data as any).timestamp)
-        .slice(0, 50);
+      return await adminActionRepository.listAllSorted(50);
     },
   });
 

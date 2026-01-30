@@ -2,7 +2,6 @@ import { FC, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2, X, Folder, FileText, Check } from 'lucide-react';
 import type { Doc } from '@junobuild/core';
-import { setDoc, getDoc, deleteDoc } from '@junobuild/core';
 import type { WordTemplateData } from '../../types/word-template';
 import type { Folder as FolderType, FolderTreeNode } from '../../types/folder';
 import {
@@ -14,24 +13,7 @@ import {
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
-import { nanoid } from 'nanoid';
-
-// Type for download request document data
-interface DownloadRequestData {
-  requestType: 'download' | 'export';
-  status: 'pending' | 'approved' | 'rejected';
-  templateIds: string[];
-  approvedTemplateIds?: string[];
-  createdAt: number;
-  error?: {
-    code: string;
-    message: string;
-    limit?: number;
-    used?: number;
-    requested?: number;
-    retryAfterSeconds?: number;
-  };
-}
+import { downloadRequestRepository } from '../../dal';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -126,48 +108,23 @@ const ExportDialog: FC<ExportDialogProps> = ({
 
       // 1. Create export request document
       const templateIds = selectedTemplates.map((t) => t.key);
-      requestKey = `${user.key}_${Date.now()}_${nanoid()}`;
-      await setDoc<DownloadRequestData>({
-        collection: 'download_requests',
-        doc: {
-          key: requestKey,
-          data: {
-            requestType: 'export',
-            status: 'pending',
-            templateIds,
-            createdAt: Date.now(),
-          },
-        },
-      });
+      const { key: requestKey } = await downloadRequestRepository.createRequest(
+        user.key,
+        'export',
+        templateIds
+      );
 
       // 2. Poll for request status (500ms intervals, 30s timeout)
-      const pollStartTime = Date.now();
-      const pollTimeout = 30000; // 30 seconds
-      const pollInterval = 500; // 500ms
-      
-      let requestDoc: Doc<DownloadRequestData> | null = null;
-      while (Date.now() - pollStartTime < pollTimeout) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-        
-        const doc = await getDoc<DownloadRequestData>({
-          collection: 'download_requests',
-          key: requestKey,
-        });
-
-        if (doc && doc.data.status !== 'pending') {
-          requestDoc = doc;
-          break;
-        }
-      }
+      const requestDoc = await downloadRequestRepository.pollForStatus(requestKey, 30000, 500);
 
       // 3. Handle timeout
-      if (!requestDoc || requestDoc.data.status === 'pending') {
+      if (!requestDoc) {
         showErrorToast(t('exportImport.serverBusy'));
         return;
       }
 
       // 4. Handle rejection
-      if (requestDoc.data.status === 'rejected') {
+      if (downloadRequestRepository.isRejected(requestDoc)) {
         const { error } = requestDoc.data;
 
         if (error?.code === 'subscription_expired') {
@@ -200,7 +157,7 @@ const ExportDialog: FC<ExportDialogProps> = ({
       }
 
       // 5. Export approved - get approved template IDs
-      const approvedTemplateIds = requestDoc.data.approvedTemplateIds || templateIds;
+      const approvedTemplateIds = downloadRequestRepository.getApprovedTemplateIds(requestDoc);
       const approvedTemplates = selectedTemplates.filter(t => 
         approvedTemplateIds.includes(t.key)
       );
@@ -288,23 +245,7 @@ const ExportDialog: FC<ExportDialogProps> = ({
     } finally {
       // 6. Delete request document with retries (3 attempts with exponential backoff)
       if (requestKey) {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            await deleteDoc({
-              collection: 'download_requests',
-              doc: {
-                key: requestKey,
-              } as Doc<DownloadRequestData>,
-            });
-            break; // Success, exit retry loop
-          } catch (deleteError) {
-            console.warn(`Failed to delete request document (attempt ${attempt + 1}/3):`, deleteError);
-            if (attempt < 2) {
-              // Exponential backoff: 1s, 2s, 4s
-              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-            }
-          }
-        }
+        await downloadRequestRepository.deleteWithRetry(requestKey, 3);
       }
       
       setIsExporting(false);
