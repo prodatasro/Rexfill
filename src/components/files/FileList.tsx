@@ -21,7 +21,8 @@ import { fetchLogsForResource, generateLogCSV, downloadLogCSV, logActivity } fro
 import { useAuth } from '../../contexts/AuthContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { nanoid } from 'nanoid';
-import { templateRepository, templateStorage } from '../../dal';
+import { templateRepository } from '../../dal';
+import { deleteTemplate, buildStorageAssetMap } from '../../utils/templateDeletion';
 
 // Type for download request document data
 interface DownloadRequestData {
@@ -285,52 +286,11 @@ const FileList: FC<FileListProps> = ({
 
     setDeletingIds(prev => new Set([...prev, template.key]));
     try {
-      // Get storage assets to find the correct fullPath
-      // Juno storage fullPath includes collection prefix: /templates/folder/file.docx
-      const storageAssets = await templateStorage.list({});
+      // Build storage asset map for efficient deletion
+      const storageAssetMap = await buildStorageAssetMap();
 
-      // Build possible keys to match against storage
-      const possibleKeys = [
-        template.key,
-        `/${template.key}`,
-        template.data.fullPath,
-        `/templates/${template.key}`,
-        template.data.name,
-      ].filter(Boolean);
-
-      // Find matching storage asset
-      let storageAsset = null;
-      for (const asset of storageAssets) {
-        const junoFullPath = asset.fullPath;
-        const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
-        const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
-          ? pathWithoutCollection.substring(1)
-          : pathWithoutCollection;
-        const filename = junoFullPath.split('/').pop() || '';
-
-        for (const key of possibleKeys) {
-          if (key === junoFullPath || key === pathWithoutCollection ||
-              key === pathNoLeadingSlash || key === filename) {
-            storageAsset = asset;
-            break;
-          }
-        }
-        if (storageAsset) break;
-      }
-
-      if (storageAsset) {
-        try {
-          await templateStorage.delete(storageAsset.fullPath);
-          console.log(`Deleted asset: ${storageAsset.fullPath}`);
-        } catch (assetError: any) {
-          console.warn('Failed to delete asset from storage:', assetError);
-        }
-      } else {
-        console.warn('Asset not found in storage for:', template.data.name);
-      }
-
-      // Delete metadata from datastore
-      await templateRepository.delete(template.key);
+      // Delete template using centralized utility
+      await deleteTemplate(template, storageAssetMap);
 
       // Remove from recent templates list
       onRemoveFromRecent?.(template.key);
@@ -634,53 +594,16 @@ const FileList: FC<FileListProps> = ({
     setDeletingIds(prev => new Set([...prev, ...selectedTemplateIds]));
 
     try {
-      // Get all storage assets once
-      const storageAssets = await templateStorage.list({});
+      // Build storage asset map once for all deletions
+      const storageAssetMap = await buildStorageAssetMap();
 
       let successCount = 0;
       let failCount = 0;
 
       for (const template of selectedTemplates) {
         try {
-          // Build possible keys to match against storage
-          const possibleKeys = [
-            template.key,
-            `/${template.key}`,
-            template.data.fullPath,
-            `/templates/${template.key}`,
-            template.data.name,
-          ].filter(Boolean);
-
-          // Find matching storage asset
-          let storageAsset = null;
-          for (const asset of storageAssets) {
-            const junoFullPath = asset.fullPath;
-            const pathWithoutCollection = junoFullPath.replace(/^\/templates/, '');
-            const pathNoLeadingSlash = pathWithoutCollection.startsWith('/')
-              ? pathWithoutCollection.substring(1)
-              : pathWithoutCollection;
-            const filename = junoFullPath.split('/').pop() || '';
-
-            for (const key of possibleKeys) {
-              if (key === junoFullPath || key === pathWithoutCollection ||
-                  key === pathNoLeadingSlash || key === filename) {
-                storageAsset = asset;
-                break;
-              }
-            }
-            if (storageAsset) break;
-          }
-
-          if (storageAsset) {
-            try {
-              await templateStorage.delete(storageAsset.fullPath);
-            } catch (assetError: any) {
-              console.warn('Failed to delete asset from storage:', assetError);
-            }
-          }
-
-          // Delete metadata from datastore
-          await templateRepository.delete(template.key);
+          // Delete template using centralized utility
+          await deleteTemplate(template, storageAssetMap);
 
           // Remove from recent templates list
           onRemoveFromRecent?.(template.key);

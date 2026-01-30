@@ -88,7 +88,9 @@ export async function deleteTemplate(
 
     if (storageAsset) {
       try {
-        await templateStorage.delete(storageAsset.fullPath);
+        // Strip /templates/ prefix since templateStorage.delete() adds it automatically
+        const pathWithoutPrefix = storageAsset.fullPath.replace(/^\/templates\//, '');
+        await templateStorage.delete(pathWithoutPrefix);
         assetDeleted = true;
         console.log(`Deleted asset: ${storageAsset.fullPath}`);
         break;

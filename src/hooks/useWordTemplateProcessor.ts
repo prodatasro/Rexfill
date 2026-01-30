@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Doc } from "@junobuild/core";
 import PizZip from "pizzip";
+import { useQueryClient } from '@tanstack/react-query';
 import { WordTemplateData } from "../types/word-template";
 import { FolderTreeNode, FolderData } from "../types/folder";
 import { readCustomProperties, writeCustomProperties, updateDocumentFields } from "../utils/customProperties";
@@ -15,6 +16,8 @@ import { uploadFileWithRetry, setDocWithTimeout, listDocsWithTimeout, getDocWith
 import { logActivity, computeFileHash } from "../utils/activityLogger";
 import { useAuth } from "../contexts/AuthContext";
 import { useSubscription } from "../contexts/SubscriptionContext";
+import { templateKeys } from './useTemplatesQuery';
+import { folderKeys } from './useFoldersQuery';
 
 const FETCH_TIMEOUT = 30000; // 30 seconds for fetching templates
 
@@ -35,6 +38,7 @@ export const useWordTemplateProcessor = ({
   const { user } = useAuth();
   const { canProcessDocument, incrementDocumentUsage, showUpgradePrompt } = useSubscription();
   const { processDocument: workerProcessDocument, extractCustomProperties: workerExtractCustomProperties, progress: workerProgress, isWorkerReady } = useDocumentWorker();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [customProperties, setCustomProperties] = useState<Record<string, string>>({});
@@ -553,7 +557,7 @@ export const useWordTemplateProcessor = ({
       if (newFolderData) {
         const newFolderId = await createNewFolder(newFolderData.name, newFolderData.parentId);
         if (!newFolderId) {
-          return false;
+          return { success: false, folderId: null };
         }
         targetFolderId = newFolderId;
 
@@ -566,7 +570,7 @@ export const useWordTemplateProcessor = ({
       const trimmedFilename = filename.trim();
       if (!trimmedFilename) {
         showErrorToast(t('templateProcessor.saveAsInvalidFilename'));
-        return false;
+        return { success: false, folderId: null };
       }
 
       const finalFilename = trimmedFilename.endsWith('.docx')
@@ -585,7 +589,7 @@ export const useWordTemplateProcessor = ({
 
       if (fileExists) {
         showErrorToast(t('templateProcessor.saveAsFileExists'));
-        return false;
+        return { success: false, folderId: null };
       }
 
       // Skip processing if no changes were made - preserves original file size and compression
@@ -642,6 +646,10 @@ export const useWordTemplateProcessor = ({
         doc: newTemplateDoc
       });
 
+      // Invalidate queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: templateKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: folderKeys.lists() });
+
       if (onTemplateChange) {
         onTemplateChange(newTemplateDoc);
       }
@@ -652,7 +660,7 @@ export const useWordTemplateProcessor = ({
       setHasChanges(false);
 
       showSuccessToast(t('templateProcessor.saveAsSuccess', { filename: finalFilename }));
-      return true;
+      return { success: true, folderId: targetFolderId };
     } catch (error) {
       console.error('Save As failed:', error);
       
@@ -666,7 +674,7 @@ export const useWordTemplateProcessor = ({
       } else {
         showErrorToast(t('templateProcessor.saveAsFailed'));
       }
-      return false;
+      return { success: false, folderId: null };
     } finally {
       setSaving(false);
     }

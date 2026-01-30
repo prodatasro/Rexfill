@@ -120,16 +120,10 @@ const ProcessorPage: FC = () => {
     // Clear all processing data from context
     clearProcessingData();
 
-    // Navigate back to dashboard, preserving the folder context if available
-    const folderId = template?.data.folderId || templates[0]?.data.folderId;
-    if (folderId) {
-      navigate(`/app?folder=${folderId}`);
-    } else {
-      navigate('/app');
-    }
-
-    // Clear folder ID from context after navigation
-    setCurrentFolderId(null);
+    // Navigate back to dashboard
+    // Note: Don't clear currentFolderId here - it may have been updated by Save As
+    // The dashboard will use the current folder context
+    navigate('/app');
   };
 
   const handleTemplateChange = (newTemplate: Doc<WordTemplateData>) => {
@@ -159,6 +153,7 @@ const ProcessorPage: FC = () => {
           templates={templates}
           onClose={handleClose}
           folderTree={folderTree}
+          onFolderSelect={setCurrentFolderId}
         />
       </ErrorBoundary>
     );
@@ -177,6 +172,7 @@ const ProcessorPage: FC = () => {
         onClose={handleClose}
         folderTree={folderTree}
         onTemplateChange={handleTemplateChange}
+        onFolderSelect={setCurrentFolderId}
       />
     </ErrorBoundary>
   );

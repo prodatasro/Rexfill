@@ -221,19 +221,24 @@ export abstract class BaseRepository<T> implements IRepository<T> {
    */
   async delete(key: string): Promise<void> {
     try {
+      // First, fetch the document to get all metadata
+      const doc = await this.get(key);
+      
+      if (!doc) {
+        throw new NotFoundError(this.collectionName, key);
+      }
+
+      // Now delete with the complete document
       await this.withTimeout(
         deleteDoc({
           collection: this.collectionName,
-          doc: {
-            key,
-            data: {} as any
-          }
+          doc
         }),
         DEFAULT_TIMEOUT,
         `delete document from ${this.collectionName}`
       );
     } catch (error) {
-      if (error instanceof TimeoutError) {
+      if (error instanceof TimeoutError || error instanceof NotFoundError) {
         throw error;
       }
       throw new RepositoryError(

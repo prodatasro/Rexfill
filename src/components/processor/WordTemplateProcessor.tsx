@@ -30,6 +30,7 @@ interface WordTemplateProcessorProps {
   onClose: () => void;
   folderTree: FolderTreeNode[];
   onTemplateChange?: (newTemplate: Doc<WordTemplateData>) => void;
+  onFolderSelect?: (folderId: string | null) => void;
 }
 
 export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
@@ -40,6 +41,7 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
   onClose,
   folderTree,
   onTemplateChange,
+  onFolderSelect,
 }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -363,9 +365,14 @@ export const WordTemplateProcessor: FC<WordTemplateProcessorProps> = ({
     folderId: string | null,
     newFolderData?: { name: string; parentId: string | null }
   ) => {
-    const success = await handleSaveAs(filename, folderId, newFolderData);
-    if (success) {
+    const result = await handleSaveAs(filename, folderId, newFolderData);
+    
+    if (result.success) {
       setShowSaveAsDialog(false);
+      // Navigate to the folder where the file was saved
+      if (onFolderSelect && result.folderId !== undefined) {
+        onFolderSelect(result.folderId);
+      }
     }
   };
 

@@ -29,6 +29,7 @@ import { useConfirm } from '../../contexts/ConfirmContext';
 import { useFileProcessing } from '../../contexts/FileProcessingContext';
 import { useSearch } from '../../contexts/SearchContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
+import { useProcessor } from '../../contexts/ProcessorContext';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { updateTemplatePathAfterRename, buildTemplatePath } from '../../utils/templatePathUtils';
 import { getAllSubfolderIds, buildStorageAssetMap, deleteTemplates } from '../../utils/templateDeletion';
@@ -47,11 +48,20 @@ const Dashboard: FC = () => {
   const { setAllTemplates, setFolderTree, setOnSelectTemplate, setOnSelectFolder } = useSearch();
   const { user } = useAuth();
   const { refreshUsage, incrementTemplateCount, showUpgradePrompt, plan, usage } = useSubscription();
+  const { currentFolderId, setCurrentFolderId } = useProcessor();
   const queryClient = useQueryClient();
 
-  // Initialize selectedFolderId from URL params BEFORE any hook calls
+  // Initialize selectedFolderId from URL params OR context BEFORE any hook calls
   const folderIdFromParams = searchParams.get('folder');
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(folderIdFromParams);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(currentFolderId || folderIdFromParams);
+
+  // Sync with context when currentFolderId changes
+  useEffect(() => {
+    if (currentFolderId !== null) {
+      setSelectedFolderId(currentFolderId);
+      setCurrentFolderId(null); // Clear context after using it
+    }
+  }, [currentFolderId, setCurrentFolderId]);
 
   // Clean up URL params after reading them
   useEffect(() => {

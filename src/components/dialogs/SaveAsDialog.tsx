@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { Loader2, FolderPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FolderTreeNode } from '../../types/folder';
@@ -32,6 +32,17 @@ export const SaveAsDialog: FC<SaveAsDialogProps> = ({
   const [showNewFolderForm, setShowNewFolderForm] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setFilename(nameWithoutExt);
+      setFolderId(initialFolderId);
+      setShowNewFolderForm(false);
+      setNewFolderName('');
+      setNewFolderParentId(null);
+    }
+  }, [isOpen, nameWithoutExt, initialFolderId]);
 
   if (!isOpen) return null;
 

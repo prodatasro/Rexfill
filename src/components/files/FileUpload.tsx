@@ -246,7 +246,7 @@ const FileUpload: FC<FileUploadProps> = ({ onUploadSuccess, onOneTimeProcess, on
           );
 
           // Juno automatically generates download URL based on storage path
-          const downloadUrl = `https://${process.env.VITE_JUNO_SATELLITE_ID || window.location.hostname}/storage/templates/${storagePath}`;
+          const downloadUrl = `https://${import.meta.env.VITE_JUNO_SATELLITE_ID || window.location.hostname}/storage/templates/${storagePath}`;
           const uploadedAssetPath = `/${storagePath}`;
 
           // Update progress - saving metadata
